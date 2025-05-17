@@ -6,8 +6,8 @@ const morgan = require("morgan");
 const busboy = require("connect-busboy");
 const busboyBodyParser = require("busboy-body-parser");
 const cors = require("cors");
-// const http = require("http");
-// const socketIo = require("socket.io");
+const http = require("http");
+const socketIo = require("socket.io");
 require("./database");
 
 // Middlewares
