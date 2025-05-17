@@ -1,0 +1,31 @@
+{
+  "colors": {
+    "primary": "#02555d",
+    "primary-light": "#3E7C78",
+    "light": "#fff",
+    "success": "#06D6A0",
+    "danger": "#D62828",
+    "dark": "#21232F",
+    "muted": "#5E6171",
+    "purple": "#7B2CBF",
+    "alert": "#f0ad4e"
+  },
+  "fonts": {
+    "regular": {
+      "fontFamily": "Your-Regular-Font",
+      "fontWeight": "normal"
+    },
+    "medium": {
+      "fontFamily": "Your-Medium-Font",
+      "fontWeight": "500"
+    },
+    "light": {
+      "fontFamily": "Your-Light-Font",
+      "fontWeight": "300"
+    },
+    "bold": {
+      "fontFamily": "Your-Bold-Font",
+      "fontWeight": "bold"
+    }
+  }
+}

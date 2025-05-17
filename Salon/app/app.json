@@ -1,0 +1,93 @@
+{
+  "expo": {
+    "name": "Parrudus",
+    "slug": "parrudus",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./src/assets/images/Logo.png",
+    "scheme": "parrudus-app",
+    "platforms": ["ios", "android", "web"],
+    "userInterfaceStyle": "automatic",
+    "newArchEnabled": true,
+    "splash": {
+      "image": "./src/assets/images/splash.png",
+      "resizeMode": "cover",
+      "backgroundColor": "#02555d"
+    },
+    "facebookAppId": "698093242776645",
+    "facebookDisplayName": "Parrudus",
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.parrudus.app",
+      "config": {
+        "googleSignIn": {
+          "reservedClientId": "com.googleusercontent.apps.790874627026-mmulgr8jvo20ud2li4e31690duj2o1rr"
+        },
+        "usesNonExemptEncryption": false
+      }
+    },
+    "android": {
+      "adaptiveIcon": {
+        "foregroundImage": "./src/assets/images/Logo.png",
+        "backgroundColor": "#02555d"
+      },
+      "package": "com.parrudus.app",
+      "config": {
+        "googleSignIn": {
+          "certificateHash": "BC:95:57:33:E2:3A:04:36:C1:46:C3:9D:2A:46:00:EC:8A:D5:BC:92"
+        }
+      },
+      "intentFilters": [
+        {
+          "action": "VIEW",
+          "data": [
+            {
+              "scheme": "parrudus-app",
+              "host": "pagamento",
+              "pathPrefix": "/agendamentos"
+            }
+          ],
+          "category": ["BROWSABLE", "DEFAULT"]
+        },
+        {
+          "action": "VIEW",
+          "data": [
+            {
+              "scheme": "parrudus-app",
+              "host": "sign-in"
+            }
+          ],
+          "category": ["BROWSABLE", "DEFAULT"]
+        }
+      ]
+    },
+    "web": {
+      "bundler": "metro",
+      "output": "static",
+      "favicon": "./src/assets/images/Logo.png"
+    },
+    "plugins": [
+      "expo-router",
+      "expo-font",
+      ["@react-native-google-signin/google-signin"],
+      [
+        "expo-secure-store",
+        {
+          "configureAndroidBackup": true,
+          "faceIDPermission": "Allow Parrudus to access your Face ID biometric data."
+        }
+      ]
+    ],
+    "experiments": {
+      "typedRoutes": true
+    },
+    "extra": {
+      "router": {
+        "origin": false
+      },
+      "eas": {
+        "projectId": "2ad1ba95-2e53-40a6-b983-a4de97f7fe3a"
+      }
+    }
+  }
+}
