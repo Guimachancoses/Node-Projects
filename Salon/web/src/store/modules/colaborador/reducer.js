@@ -40,6 +40,13 @@ const INITIAL_STATE = {
     title: "",
     open: false,
   },
+  user: {
+    colaboradorId: "",
+    email: "",
+    firstName: "",
+    lastName: "",
+    imageUrl: "",
+  }
 };
 
 function colaborador(state = INITIAL_STATE, action) {
@@ -64,6 +71,12 @@ function colaborador(state = INITIAL_STATE, action) {
     case types.SET_ALERTA: {
       return produce(state, (draft) => {
         draft.alerta = action.alerta;
+      });
+    }
+
+    case types.UPDATE_USER: {
+      return produce(state, (draft) => {
+        draft.user = action.user;
       });
     }
 

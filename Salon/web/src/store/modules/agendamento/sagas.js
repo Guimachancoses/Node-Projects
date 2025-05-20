@@ -1,21 +1,22 @@
 import { takeLatest, all, call, put } from "redux-saga/effects";
 import { updateAgendamento } from "./actions";
 import api from "../../../services/api";
-import consts from "../../../consts";
 import types from "./types";
+
+const SALAOID = `${process.env.REACT_APP_SALAO_ID}`;
 
 export function* filterAgendamentos({ start, end }) {
     //console.log('Disparou FILTER_AGENDAMENTOS', { start, end });
   try {
     const { data: res } = yield call(api.post, "/agendamento/filter", {
-      salaoId: consts.salaoId,
+      salaoId: SALAOID,
       periodo: {
         inicio: start,
         final: end,
       },
     });
 
-    console.log("Resposta da API:", res);
+    //console.log("Resposta da API:", res);
 
     if (res.error) {
       alert(res.message);

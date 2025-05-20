@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
 import {
   Box,
   Button,
@@ -11,30 +10,49 @@ import {
   Link,
   Avatar,
 } from "@mui/material";
-import { useUser } from "@clerk/clerk-react";
+import { useUser, useClerk } from "@clerk/clerk-react";
 import ListImage from "../../components/ListImage";
 import SocialButtons from "../../components/SocialButtons";
+import { useDispatch, useSelector } from "react-redux";
+import { checkUser, updateUser, setAlerta } from "../../store/modules/colaborador/actions";
+import MuiAlert from "@mui/material/Alert";
+import Snackbar from "@mui/material/Snackbar";
+import Slide from "@mui/material/Slide";
 
 import miniLogo from "../../assets/mini_logo.jpg";
 
+const Alert = React.forwardRef(function Alert(props, ref) {
+  return <MuiAlert elevation={6} ref={ref} variant="filled" {...props} />;
+});
+
+function SlideTransition(props) {
+  return <Slide {...props} direction="left" />;
+}
+
 const Login = () => {
+  const dispatch = useDispatch();
+  const alerta = useSelector((state) => state.colaborador.alerta);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const navigate = useNavigate();
   const { isSignedIn } = useUser();
+  const { user } = useClerk();
 
   useEffect(() => {
     if (isSignedIn) {
-      navigate("/agendamentos");
-    } else {
-      navigate("/");
-    }
-  }, [isSignedIn, navigate]);
+      dispatch(updateUser({ email: user.emailAddresses, firstName: user.firstName, lastName: user.lastName, imageUrl: user.imageUrl }));
+      dispatch(checkUser());
+    } 
+  }, [isSignedIn]);
 
   const handleSubmit = (e) => {
     e.preventDefault();
     // Lógica de login aqui
   };
+
+  const handleClose = () => {
+    dispatch(setAlerta({ ...alerta, open: false }));
+  };
+
 
   return (
     <Box
@@ -165,6 +183,19 @@ const Login = () => {
           </Typography> */}
         </Paper>
       </Container>
+      <Snackbar
+        open={alerta.open}
+        autoHideDuration={5000}
+        onClose={handleClose}
+        TransitionComponent={SlideTransition}
+        anchorOrigin={{ vertical: "top", horizontal: "right" }}
+      >
+        <Alert onClose={handleClose} severity={alerta.severity}>
+          <strong>{alerta.title}</strong>
+          <br />
+          {alerta.message}
+        </Alert>
+      </Snackbar>
     </Box>
   );
 };

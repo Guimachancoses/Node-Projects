@@ -28,12 +28,15 @@ export default function Servico({ servico }: ServicoProps) {
 
   const [modalVisible, setModalVisible] = useState(false);
 
+  // console.log(`${consts?.bucketUrl}/${servico?.arquivos?.[0]?.caminho}`)
+
   return (
     <>
       <Box width="70%" hasPadding spacing="10px 0" direction="row">
         {/* CLICA NA IMAGEM PARA ABRIR A MODAL */}
         <Pressable onPress={() => setModalVisible(true)}>
           <Cover
+            resizeMode="stretch"
             spacing="0 5px 0 0"
             image={{
               uri: `${consts?.bucketUrl}/${servico?.arquivos?.[0]?.caminho}`,

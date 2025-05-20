@@ -7,7 +7,8 @@ import {
 } from "./actions";
 import types from "./types";
 import api from "../../../services/api";
-import consts from "../../../consts";
+
+const SALAOID = `${process.env.REACT_APP_SALAO_ID}`;
 
 export function* allClientes() {
   const { form } = yield select((state) => state.cliente);
@@ -16,7 +17,7 @@ export function* allClientes() {
     yield put(updateCliente({ form: { ...form, filtering: true } }));
     const { data: res } = yield call(
       api.get,
-      `/cliente/salao/${consts.salaoId}`
+      `/cliente/salao/${SALAOID}`
     );
 
     yield put(updateCliente({ form: { ...form, filtering: false } }));
@@ -80,7 +81,7 @@ export function* addCliente() {
 
     if (behavior === "create") {
       const response = yield call(api.post, "/cliente", {
-        salaoId: consts.salaoId,
+        salaoId: SALAOID,
         cliente,
       });
       res = response.data;
@@ -159,7 +160,7 @@ export function* unlinkCliente({ vinculoId }) {
       })
     );
 
-    console.log("Resposta da API:", res);
+    //console.log("Resposta da API:", res);
 
     if (res.error) {
       yield put(

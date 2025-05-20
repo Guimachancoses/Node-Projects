@@ -211,4 +211,15 @@ router.get("/salao/:salaoId", async (req, res) => {
   }
 });
 
+// Rota para retornar o colaborador checar se colaborador existe
+router.get("/check/:email", async (req, res) => {
+  try {
+    const { email } = req.params;
+    const colaborador = await Colaborador.findOne({ email });
+    res.json({ error: false, colaborador });
+  } catch (err) {
+    res.json({ error: true, message: err.message });
+  }
+});
+
 module.exports = router;

@@ -4,10 +4,15 @@ import {
   allColaboradores as allColaboradoresActrions,
   resetColaborador,
   setAlerta,
+  updateUser,
 } from "./actions";
 import types from "./types";
 import api from "../../../services/api";
-import consts from "../../../consts";
+import history from "../../../history";
+import { signOutClerk } from "../../../utils/clerk";
+import { delay } from "redux-saga/effects";
+
+const SALAOID = `${process.env.REACT_APP_SALAO_ID}`;
 
 export function* allColaboradores() {
   const { form } = yield select((state) => state.colaborador);
@@ -16,7 +21,7 @@ export function* allColaboradores() {
     yield put(updateColaborador({ form: { ...form, filtering: true } }));
     const { data: res } = yield call(
       api.get,
-      `/colaborador/salao/${consts.salaoId}`
+      `/colaborador/salao/${SALAOID}`
     );
 
     yield put(updateColaborador({ form: { ...form, filtering: false } }));
@@ -82,7 +87,7 @@ export function* addColaborador() {
 
     if (behavior === "create") {
       const response = yield call(api.post, "/colaborador", {
-        salaoId: consts.salaoId,
+        salaoId: SALAOID,
         colaborador,
       });
       res = response.data;
@@ -162,7 +167,7 @@ export function* unlinkColaborador({ vinculoId }) {
       })
     );
 
-    console.log("Resposta da API:", res);
+    //console.log("Resposta da API:", res);
 
     if (res.error) {
       yield put(
@@ -216,7 +221,7 @@ export function* allServicos() {
 
     const { data: res } = yield call(
       api.get,
-      `/salao/servicos/${consts.salaoId}`
+      `/salao/servicos/${SALAOID}`
     );
 
     yield put(updateColaborador({ form: { ...form, filtering: false } }));
@@ -249,10 +254,64 @@ export function* allServicos() {
   }
 }
 
+export function* checkUser() {
+  const { user } = yield select((state) => state.colaborador);
+
+  try {
+    console.log("userSagas: ", user);
+    const { data: res } = yield call(api.get, `/colaborador/check/${user.email}`);
+
+    if (res.error) {
+      yield put(
+        setAlerta({
+          open: true,
+          severity: "error",
+          title: "Erro",
+          message: res.message,
+        })
+      );
+      return false;
+    }
+
+    console.log("res API: ", res);
+
+    if (res.colaborador) {
+      yield put(updateUser({ user: res.colaborador }));
+      history.push("/agendamentos");
+    } else {
+      yield put(
+        setAlerta({
+          open: true,
+          severity: "error",
+          title: "Erro",
+          message: "Colaborador não cadastrado no sistema! Fale com o administrador!",
+        })
+      );
+      
+      yield delay(5000); // espera 2 segundos para o usuário ver o alerta
+      
+      yield call(signOutClerk);
+      history.push("/");
+    }
+  } catch (err) {
+     // dispara o alerta de erro:
+     yield put(
+      setAlerta({
+        open: true,
+        severity: "error",
+        title: "Erro",
+        message: err.message,
+      })
+    );
+  }
+}
+
+
 export default all([
   takeLatest(types.ALL_COLABORADORES, allColaboradores),
   takeLatest(types.FILTER_COLABORADORES, filterColaboradores),
   takeLatest(types.ADD_COLABORADOR, addColaborador),
   takeLatest(types.UNLINK_COLABORADOR, unlinkColaborador),
   takeLatest(types.ALL_SERVICOS, allServicos),
+  takeLatest(types.CHECK_USER, checkUser),
 ]);

@@ -7,7 +7,8 @@ import {
 } from "./actions";
 import types from "./types";
 import api from "../../../services/api";
-import consts from "../../../consts";
+
+const SALAOID = `${process.env.REACT_APP_SALAO_ID}`;
 
 export function* allHorarios() {
   const { form } = yield select((state) => state.horario);
@@ -16,7 +17,7 @@ export function* allHorarios() {
     yield put(updateHorario({ form: { ...form, filtering: true } }));
     const { data: res } = yield call(
       api.get,
-      `/horario/salao/${consts.salaoId}`
+      `/horario/salao/${SALAOID}`
     );
 
     yield put(updateHorario({ form: { ...form, filtering: false } }));
@@ -43,7 +44,7 @@ export function* filterColaboradores() {
 
     const { data: res } = yield call(api.post, "/horario/colaboradores", {
       especialidades: horario.especialidades,
-      salaoId: consts.salaoId,
+      salaoId: SALAOID,
     });
     yield put(updateHorario({ form: { ...form, filtering: false } }));
 
@@ -77,7 +78,7 @@ export function* addHorario() {
 
     if (behavior === "create") {
       const response = yield call(api.post, "/horario", {
-        salaoId: consts.salaoId,
+        salaoId: SALAOID,
         ...horario,
       });
       res = response.data;
@@ -150,7 +151,7 @@ export function* removeHorario() {
       })
     );
 
-    console.log("Resposta da API:", res);
+    //console.log("Resposta da API:", res);
 
     if (res.error) {
       yield put(
@@ -204,7 +205,7 @@ export function* allServicos() {
 
     const { data: res } = yield call(
       api.get,
-      `/salao/servicos/${consts.salaoId}`
+      `/salao/servicos/${SALAOID}`
     );
 
     yield put(updateHorario({ form: { ...form, filtering: false } }));

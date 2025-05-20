@@ -30,3 +30,12 @@ export function unlinkColaborador(vinculoId) {
 export function allServicos() {
   return { type: types.ALL_SERVICOS };
 }
+
+export function checkUser() {
+  return { type: types.CHECK_USER };
+}
+
+export function updateUser(user) {
+  return { type: types.UPDATE_USER, user };
+}
+

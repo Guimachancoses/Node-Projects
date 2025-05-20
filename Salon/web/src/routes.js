@@ -1,4 +1,4 @@
-import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
+import { Routes, Route } from "react-router-dom";
 import { SignedIn, SignedOut, RedirectToSignIn } from "@clerk/clerk-react";
 
 import Login from "./pages/Login";
@@ -13,7 +13,6 @@ import "./styles.css";
 
 const Main = ({ toggleTheme, colorMode }) => {
   return (
-    <Router>
       <Routes>
         {/* Página pública */}
         <Route path="/" element={<Login />} />
@@ -44,7 +43,6 @@ const Main = ({ toggleTheme, colorMode }) => {
           }
         />
       </Routes>
-    </Router>
   );
 };
 

@@ -7,7 +7,8 @@ import {
 } from "./actions";
 import types from "./types";
 import api from "../../../services/api";
-import consts from "../../../consts";
+
+const SALAOID = `${process.env.REACT_APP_SALAO_ID}`;
 
 export function* allServicos() {
   const { form } = yield select((state) => state.servico);
@@ -16,12 +17,12 @@ export function* allServicos() {
     yield put(updateServico({ form: { ...form, filtering: true } }));
     const { data: res } = yield call(
       api.get,
-      `/servico/salao/${consts.salaoId}`
+      `/servico/salao/${SALAOID}`
     );
 
     yield put(updateServico({ form: { ...form, filtering: false } }));
 
-    console.log("Resposta da API:", res);
+    //console.log("Resposta da API:", res);
 
     if (res.error) {
       alert(res.message);
@@ -46,7 +47,7 @@ export function* addServicos() {
 
     const formData = new FormData();
 
-    formData.append("salaoId", consts.salaoId);
+    formData.append("salaoId", SALAOID);
     formData.append("servico", JSON.stringify(servico));
     servico.arquivos.forEach((arquivo, index) => {
       formData.append(`arquivo_${index}`, arquivo);
@@ -126,7 +127,7 @@ export function* removeServico({ vinculoId }) {
       })
     );
 
-    console.log("Resposta da API:", res);
+    //console.log("Resposta da API:", res);
 
     if (res.error) {
       yield put(
@@ -189,7 +190,7 @@ export function* removeArquivo({ key }) {
       })
     );
 
-    console.log("Resposta da API:", res);
+    //console.log("Resposta da API:", res);
 
     if (res.error) {
       yield put(
