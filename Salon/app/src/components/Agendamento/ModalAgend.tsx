@@ -18,7 +18,7 @@ import { ActivityIndicator, useTheme } from "react-native-paper";
 import moment from "moment";
 import { initMercadoPago } from "@mercadopago/sdk-react";
 import { openAuthSessionAsync } from "expo-web-browser";
-import { PUBLIC_MERCADO_PAGO_PUBLIC_KEY } from "@env";
+//import { PUBLIC_MERCADO_PAGO_PUBLIC_KEY } from "@env";
 
 import HeaderModal from "./HeaderModal";
 import Resume from "@/Agendamento/Resume";
@@ -39,7 +39,7 @@ import theme from "@/src/styles/theme.json";
 import ComoPagar from "./ComoPagar";
 import { useFocusEffect } from "expo-router";
 
-const mercadoPagoKey = PUBLIC_MERCADO_PAGO_PUBLIC_KEY;
+const mercadoPagoKey = process.env.PUBLIC_MERCADO_PAGO_PUBLIC_KEY;
 
 // Função para manipular a origem da transformação
 export const transformOrigin = (

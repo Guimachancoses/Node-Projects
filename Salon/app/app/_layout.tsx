@@ -24,7 +24,7 @@ import { ThemeProvider as StyledThemeProvider } from "styled-components/native";
 import Toast from "react-native-toast-message";
 import { ClerkProvider, useAuth } from "@clerk/clerk-expo";
 import { tokenCache } from "@clerk/clerk-expo/token-cache";
-import { EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY } from "@env";
+import Constants from "expo-constants";
 
 const loadFonts = async () => {
   await Font.loadAsync({
@@ -61,11 +61,9 @@ export default function RootLayout() {
   const [fontsLoaded, setFontsLoaded] = useState(false);
   const colorScheme = useColorScheme();
 
-
   useEffect(() => {
     loadFonts().then(() => setFontsLoaded(true));
   }, []);
-
 
   if (!fontsLoaded) return null;
 
@@ -73,7 +71,7 @@ export default function RootLayout() {
     colorScheme !== "dark" ? CombinedDefaultTheme : CombinedDarkTheme;
   const themeWithFonts = addFontsToTheme(paperTheme);
 
-  const publishableKey = EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY;
+  const publishableKey = Constants.expoConfig?.extra?.EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY;
 
   if (!publishableKey) {
     throw new Error("Adicione as credenciasis de EXPO_CLERK");
@@ -82,16 +80,16 @@ export default function RootLayout() {
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
       <ClerkProvider publishableKey={publishableKey} tokenCache={tokenCache}>
-          <Provider store={store}>
-            <PaperProvider theme={paperTheme}>
-              <StyledThemeProvider theme={paperTheme}>
-                <ThemeProvider value={themeWithFonts}>
-                  <Slot/>
-                  <Toast />
-                </ThemeProvider>
-              </StyledThemeProvider>
-            </PaperProvider>
-          </Provider>
+        <Provider store={store}>
+          <PaperProvider theme={paperTheme}>
+            <StyledThemeProvider theme={paperTheme}>
+              <ThemeProvider value={themeWithFonts}>
+                <Slot />
+                <Toast />
+              </ThemeProvider>
+            </StyledThemeProvider>
+          </PaperProvider>
+        </Provider>
       </ClerkProvider>
     </GestureHandlerRootView>
   );

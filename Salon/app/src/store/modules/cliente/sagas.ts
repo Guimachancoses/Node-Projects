@@ -5,8 +5,10 @@ import { all, call, takeLatest, select, put } from "redux-saga/effects";
 import { updateAgendamentos, updateCliente } from "./action";
 import Toast from "react-native-toast-message";
 import { router } from "expo-router";
+import Constants from "expo-constants";
 
-const salaoId = `${process.env.SALAO_ID}`;
+const SALAOID = Constants.expoConfig?.extra?.EXPO_SALAO_ID;
+//console.log("SALAOID SAGAS CLIENTE: ", SALAOID);
 
 export function* filterCliente() {
   try {
@@ -54,7 +56,7 @@ export function* addCliente() {
     //console.log("cliente: ", cliente);
 
     const { data: res } = yield call(api.post, `/cliente`, {
-      salaoId: salaoId,
+      salaoId: SALAOID,
       cliente: cliente,
     });
 

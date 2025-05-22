@@ -8,7 +8,7 @@ import util from "@/src/constants/util";
 import api from "@/src/services/api";
 import {
   updateSalao,
-  updateServicos,
+  updateServicos, 
   updateAgenda,
   updateAgendamento,
   updateColaboradores,
@@ -19,13 +19,14 @@ import {
 
 import { updateAgendamento as updateAgendamentoCliente } from "@/src/store/modules/cliente/action";
 import { router } from "expo-router";
+import Constants from "expo-constants";
 
-const salaoId = `${process.env.SALAO_ID}`;
+const SALAOID = Constants.expoConfig?.extra?.EXPO_SALAO_ID;
 
 // Função que busca o salao
 export function* getSalao() {
   try {
-    const { data: res } = yield call(api.get, `/salao/${salaoId}`);
+    const { data: res } = yield call(api.get, `/salao/${SALAOID}`);
     if (res.error) {
       Toast.show({
         type: "error",
@@ -51,7 +52,7 @@ export function* getSalao() {
 // Função que busca todos os serviços
 export function* allServicos() {
   try {
-    const { data: res } = yield call(api.get, `/servico/salao/${salaoId}`);
+    const { data: res } = yield call(api.get, `/servico/salao/${SALAOID}`);
     if (res.error) {
       Toast.show({
         type: "error",

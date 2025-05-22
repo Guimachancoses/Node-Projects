@@ -1,5 +1,5 @@
 import React from "react";
-import { Cover, Box } from "@/src/styles";
+import { Cover } from "@/src/styles";
 import Gradient from "../Agendamento/Gradient";
 import { useSelector } from "react-redux";
 import consts from "@/src/constants/consts";
