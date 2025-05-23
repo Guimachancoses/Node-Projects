@@ -1,6 +1,6 @@
 import "react-native-reanimated";
 import React, { useState, useEffect } from "react";
-import { Redirect, router, Slot } from "expo-router";
+import { Slot, SplashScreen } from "expo-router";
 import {
   MD3DarkTheme,
   MD3LightTheme,
@@ -22,9 +22,21 @@ import * as Font from "expo-font";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { ThemeProvider as StyledThemeProvider } from "styled-components/native";
 import Toast from "react-native-toast-message";
-import { ClerkProvider, useAuth } from "@clerk/clerk-expo";
+import { ClerkProvider } from "@clerk/clerk-expo";
 import { tokenCache } from "@clerk/clerk-expo/token-cache";
+import { NotificationProvider } from "@/src/context/NotificationContext";
 import Constants from "expo-constants";
+import * as Notifications from "expo-notifications";
+
+Notifications.setNotificationHandler({
+  handleNotification: async () => ({
+    shouldShowAlert: true,
+    shouldPlaySound: false,
+    shouldSetBadge: false,
+  }),
+});
+
+//SplashScreen.preventAutoHideAsync();
 
 const loadFonts = async () => {
   await Font.loadAsync({
@@ -84,7 +96,9 @@ export default function RootLayout() {
           <PaperProvider theme={paperTheme}>
             <StyledThemeProvider theme={paperTheme}>
               <ThemeProvider value={themeWithFonts}>
-                <Slot />
+                <NotificationProvider>
+                  <Slot />
+                </NotificationProvider>
                 <Toast />
               </ThemeProvider>
             </StyledThemeProvider>

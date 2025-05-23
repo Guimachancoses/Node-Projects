@@ -48,6 +48,7 @@ export default ({ config }: ConfigContext): ExpoConfig => {
         backgroundColor: "#02555d",
       },
       package: packageName,
+      googleServicesFile: process.env.GOOGLE_SERVICES_JSON,
       intentFilters: [
         {
           action: "VIEW",
@@ -118,10 +119,10 @@ export const getDynamicAppConfig = (
 
   return {
     name: `${APP_NAME} Development`,
-    bundleIdentifier: `${BUNDLE_IDENTIFIER}.dev`,
-    packageName: `${PACKAGE_NAME}.dev`,
+    bundleIdentifier: `${BUNDLE_IDENTIFIER}`,
+    packageName: `${PACKAGE_NAME}`,
     icon: "./src/assets/images/Logo.png",
     adaptiveIcon: "./src/assets/images/Logo.png",
-    scheme: `${SCHEME}-dev`,
+    scheme: `${SCHEME}`,
   };
 };

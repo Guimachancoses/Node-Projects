@@ -26,18 +26,18 @@ import {
   getSalao,
   updateAgendamento,
   updateForm,
-  updateTipoServicos,
-  updateTypeChoice,
 } from "@/src/store/modules/salao/actions";
 import { filterClinte, getCliente } from "@/src/store/modules/cliente/action";
 import Gradient from "@/src/components/Agendamento/Gradient";
-import MaterialCommunityIcons from "react-native-vector-icons/MaterialCommunityIcons";
+import MaterialCommunityIconsRaw from "react-native-vector-icons/MaterialCommunityIcons";
+import { useNotification } from "@/src/context/NotificationContext";
 
+const MaterialCommunityIcons = MaterialCommunityIconsRaw as any;
 const MENU_WIDTH = 250;
 
 export default function Home() {
   const dispatch = useDispatch();
-  const { servicos, form, salao, tipoServicos } = useSelector(
+  const { form, salao, tipoServicos } = useSelector(
     (state: any) => state.salao
   );
   const { cliente } = useSelector((state: any) => state.cliente);
@@ -47,6 +47,8 @@ export default function Home() {
   const [refreshing, setRefreshing] = useState(false);
   const [loading, setLoading] = useState(false);
   const listaBase = tipoServicos.length > 0 ? tipoServicos : [];
+
+  const { expoPushToken, notification, error } = useNotification();
 
   //console.log(listaBase);
 
@@ -116,6 +118,20 @@ export default function Home() {
           );
         })
       : listaBase;
+
+  // useEffect(() => {
+  //   if (error) {
+  //     console.error("Erro ao receber notificações:", error);
+  //   }
+  // }, [error]);
+
+  if (error) {
+    return (
+      <Box align="center" justify="center" height="100%">
+        <Text>Erro ao receber notificações: {error.message}</Text>
+      </Box>
+    );
+  }
 
   return (
     <>
