@@ -2,6 +2,7 @@ import { produce } from "immer";
 import types from "./types";
 import _ from "lodash";
 
+
 interface State {
   agendamento: object;
   agendamentos: any[];

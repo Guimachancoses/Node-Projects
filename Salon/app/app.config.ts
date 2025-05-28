@@ -11,7 +11,9 @@ const PACKAGE_NAME = "com.parrudus.app";
 const ICON = "./src/assets/images/Logo.png";
 const SPLASH = "./src/assets/images/splash.png";
 const FAVICON = "./src/assets/images/Logo.png";
+const NOTIFICATION_ICON = "./src/assets/images/ic_notification.png";
 const SCHEME = "parrudus-app";
+const DEFAULT_COLOR = "#02555d";
 
 export default ({ config }: ConfigContext): ExpoConfig => {
   console.log("⚙️ Building app for environment:", process.env.APP_ENV);
@@ -36,7 +38,7 @@ export default ({ config }: ConfigContext): ExpoConfig => {
     splash: {
       image: SPLASH,
       resizeMode: "cover",
-      backgroundColor: "#02555d",
+      backgroundColor: DEFAULT_COLOR,
     },
     ios: {
       supportsTablet: true,
@@ -45,7 +47,7 @@ export default ({ config }: ConfigContext): ExpoConfig => {
     android: {
       adaptiveIcon: {
         foregroundImage: adaptiveIcon,
-        backgroundColor: "#02555d",
+        backgroundColor: DEFAULT_COLOR,
       },
       package: packageName,
       googleServicesFile: process.env.GOOGLE_SERVICES_JSON,
@@ -67,7 +69,18 @@ export default ({ config }: ConfigContext): ExpoConfig => {
       output: "static",
       favicon: FAVICON,
     },
-    plugins: ["expo-router", "expo-font"],
+    plugins: [
+      "expo-router",
+      "expo-font",
+      [
+        "expo-notifications",
+        {
+          icon: NOTIFICATION_ICON,
+          color: DEFAULT_COLOR,
+          defaultChannel: "default",
+        },
+      ],
+    ],
     experiments: {
       typedRoutes: true,
     },
@@ -118,11 +131,11 @@ export const getDynamicAppConfig = (
   }
 
   return {
-    name: `${APP_NAME} Development`,
+    name: `${APP_NAME}`,
     bundleIdentifier: `${BUNDLE_IDENTIFIER}`,
     packageName: `${PACKAGE_NAME}`,
-    icon: "./src/assets/images/Logo.png",
-    adaptiveIcon: "./src/assets/images/Logo.png",
+    icon: ICON,
+    adaptiveIcon: ICON,
     scheme: `${SCHEME}`,
   };
 };

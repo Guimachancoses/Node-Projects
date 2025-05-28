@@ -27,10 +27,17 @@ import {
   updateAgendamento,
   updateForm,
 } from "@/src/store/modules/salao/actions";
-import { filterClinte, getCliente } from "@/src/store/modules/cliente/action";
+import {
+  filterClinte,
+  getCliente,
+  pushToken,
+} from "@/src/store/modules/cliente/action";
 import Gradient from "@/src/components/Agendamento/Gradient";
 import MaterialCommunityIconsRaw from "react-native-vector-icons/MaterialCommunityIcons";
 import { useNotification } from "@/src/context/NotificationContext";
+import { registerForPushNotificationsAsync } from "@/src/utils/registerForPushNotificationsAsync";
+import * as Notifications from "expo-notifications";
+import { router } from "expo-router";
 
 const MaterialCommunityIcons = MaterialCommunityIconsRaw as any;
 const MENU_WIDTH = 250;
@@ -47,10 +54,7 @@ export default function Home() {
   const [refreshing, setRefreshing] = useState(false);
   const [loading, setLoading] = useState(false);
   const listaBase = tipoServicos.length > 0 ? tipoServicos : [];
-
-  const { expoPushToken, notification, error } = useNotification();
-
-  //console.log(listaBase);
+  const { notification, error, clearNotification } = useNotification();
 
   const onRefresh = async () => {
     setRefreshing(true);
@@ -59,7 +63,8 @@ export default function Home() {
       dispatch(allServicos());
       dispatch(getCliente());
       dispatch(filterClinte());
-      dispatch(updateAgendamento({ clienteId: cliente?.clienteId }));
+      //console.log("cliente: ", cliente);
+      dispatch(updateAgendamento({ clienteId: cliente?._id }));
       dispatch(updateForm({ modalAgendamento: false, buttonCard: false }));
     } catch (error) {
       console.error("Erro ao atualizar dados:", error);
@@ -81,7 +86,8 @@ export default function Home() {
   // Carrega dados do salão
   useEffect(() => {
     dispatch(getCliente());
-    dispatch(updateAgendamento({ clienteId: cliente?.clienteId }));
+    //console.log("cliente: ", cliente);
+    dispatch(updateAgendamento({ clienteId: cliente?._id }));
   }, []);
 
   // PanResponder para swipe lateral
@@ -119,19 +125,24 @@ export default function Home() {
         })
       : listaBase;
 
-  // useEffect(() => {
-  //   if (error) {
-  //     console.error("Erro ao receber notificações:", error);
-  //   }
-  // }, [error]);
+  useEffect(() => {
+    if (error) {
+      console.error("Erro ao receber notificações:", error);
+    }
+  }, [error]);
 
-  if (error) {
-    return (
-      <Box align="center" justify="center" height="100%">
-        <Text>Erro ao receber notificações: {error.message}</Text>
-      </Box>
-    );
-  }
+  useEffect(() => {
+    async function registerToken() {
+      try {
+        const token = await registerForPushNotificationsAsync();
+        dispatch(pushToken(token));
+      } catch (error) {
+        console.warn("Erro ao registrar push token:", error);
+      }
+    }
+
+    registerToken();
+  }, []);
 
   return (
     <>
@@ -252,7 +263,7 @@ export default function Home() {
         }
         data={finalServicos}
         keyExtractor={(item) => item._id}
-        renderItem={({ item }) => <Servico servico={item}/>}
+        renderItem={({ item }) => <Servico servico={item} />}
         refreshControl={
           <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
         }
@@ -261,14 +272,26 @@ export default function Home() {
             {loading ? (
               <>
                 <ActivityIndicator size="large" color={theme.colors.primary} />
-                <Text spacing="10px 0 0" align="center" color={theme.colors.primary}>
+                <Text
+                  spacing="10px 0 0"
+                  align="center"
+                  color={theme.colors.primary}
+                >
                   Buscando serviços...
                 </Text>
               </>
             ) : (
               <>
-                <MaterialCommunityIcons name="alert-circle-outline" size={48} color={theme.colors.primary} />
-                <Text spacing="10px 0 0" align="center" color={theme.colors.primary}>
+                <MaterialCommunityIcons
+                  name="alert-circle-outline"
+                  size={48}
+                  color={theme.colors.primary}
+                />
+                <Text
+                  spacing="10px 0 0"
+                  align="center"
+                  color={theme.colors.primary}
+                >
                   Nenhum serviço encontrado
                 </Text>
               </>
@@ -293,6 +316,56 @@ export default function Home() {
           </Text>
         </View>
       </Modal>
+      <Portal>
+        <Modal visible={notification !== null} transparent animationType="fade">
+          <View
+            style={{
+              flex: 1,
+              backgroundColor: "rgba(0,0,0,0.4)",
+              justifyContent: "center",
+              alignItems: "center",
+            }}
+          >
+            <View
+              style={{
+                backgroundColor: "white",
+                padding: 30,
+                borderRadius: 10,
+                width: "80%",
+              }}
+            >
+              <Text
+                bold
+                color="primary"
+                spacing="0 0 10px"
+                hasPadding
+                removePaddingBottom
+              >
+                {notification?.request.content.title}
+              </Text>
+              <Text hasPadding removePaddingBottom>
+                {notification?.request.content.body}
+              </Text>
+              <TouchableWithoutFeedback
+                onPress={() => {
+                  clearNotification();
+                  router.push("/(agendamentos)/agendamentos");
+                }}
+              >
+                <Text
+                  hasPadding
+                  removePaddingBottom
+                  bold
+                  color="primary"
+                  align="center"
+                >
+                  Confirmar
+                </Text>
+              </TouchableWithoutFeedback>
+            </View>
+          </View>
+        </Modal>
+      </Portal>
     </>
   );
 }

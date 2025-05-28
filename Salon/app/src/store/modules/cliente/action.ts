@@ -49,3 +49,8 @@ export const updateAgendamento = (agendamento: any) => ({
 export const resetAgendamento = () => ({
   type: types.RESET_AGENDAMENTO,
 });
+
+export const pushToken = (token: any) => ({
+  type: types.PUSH_TOKEN,
+  token,
+});

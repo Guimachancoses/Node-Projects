@@ -1,5 +1,5 @@
 import "react-native-reanimated";
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { Slot, SplashScreen } from "expo-router";
 import {
   MD3DarkTheme,
@@ -28,15 +28,18 @@ import { NotificationProvider } from "@/src/context/NotificationContext";
 import Constants from "expo-constants";
 import * as Notifications from "expo-notifications";
 
+
 Notifications.setNotificationHandler({
   handleNotification: async () => ({
     shouldShowAlert: true,
-    shouldPlaySound: false,
+    shouldPlaySound: true,
     shouldSetBadge: false,
   }),
 });
 
-//SplashScreen.preventAutoHideAsync();
+// <- ATENÇÃO: impede o auto-hide da splash
+SplashScreen.preventAutoHideAsync();
+
 
 const loadFonts = async () => {
   await Font.loadAsync({
@@ -47,7 +50,6 @@ const loadFonts = async () => {
   });
 };
 
-// Customização dos temas
 const customDarkTheme = { ...MD3DarkTheme, colors: Colors.dark };
 const customLightTheme = { ...MD3LightTheme, colors: Colors.light };
 
@@ -70,14 +72,37 @@ const addFontsToTheme = (theme: any) => ({
 });
 
 export default function RootLayout() {
-  const [fontsLoaded, setFontsLoaded] = useState(false);
+  const [appIsReady, setAppIsReady] = useState(false);
   const colorScheme = useColorScheme();
 
   useEffect(() => {
-    loadFonts().then(() => setFontsLoaded(true));
+    async function prepare() {
+      try {
+        // Carregar fontes e outros recursos necessários
+        await loadFonts();
+      } catch (e) {
+        console.warn(e);
+      } finally {
+        setAppIsReady(true);
+        // <- Agora sim, esconde a splash
+        await SplashScreen.hideAsync();
+      }
+    }
+
+    prepare();
   }, []);
 
-  if (!fontsLoaded) return null;
+  const onLayoutRootView = useCallback(async () => {
+    if (appIsReady) {
+      // Garante que a splash só será escondida quando tudo estiver pronto
+      await SplashScreen.hideAsync();
+    }
+  }, [appIsReady]);
+
+  if (!appIsReady) {
+    // Não renderiza nada enquanto prepara (splash permanece visível)
+    return null;
+  }
 
   const paperTheme =
     colorScheme !== "dark" ? CombinedDefaultTheme : CombinedDarkTheme;
@@ -86,11 +111,11 @@ export default function RootLayout() {
   const publishableKey = Constants.expoConfig?.extra?.EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY;
 
   if (!publishableKey) {
-    throw new Error("Adicione as credenciasis de EXPO_CLERK");
+    throw new Error("Adicione as credenciais de EXPO_CLERK");
   }
 
   return (
-    <GestureHandlerRootView style={{ flex: 1 }}>
+    <GestureHandlerRootView style={{ flex: 1 }} onLayout={onLayoutRootView}>
       <ClerkProvider publishableKey={publishableKey} tokenCache={tokenCache}>
         <Provider store={store}>
           <PaperProvider theme={paperTheme}>

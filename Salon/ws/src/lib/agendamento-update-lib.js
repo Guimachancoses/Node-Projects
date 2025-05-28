@@ -34,7 +34,7 @@ function iniciarAgendamentoScheduler() {
   atualizarAgendamentos();
 
   // Executa a cada 1 minuto
-  setInterval(atualizarAgendamentos, 60 * 10000);
+  setInterval(atualizarAgendamentos, 10 * 60 * 1000);
 }
 
 module.exports = iniciarAgendamentoScheduler;

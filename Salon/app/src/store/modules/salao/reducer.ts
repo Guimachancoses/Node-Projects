@@ -1,6 +1,9 @@
 import { produce } from "immer";
 import types from "./types";
 import _ from "lodash";
+import Constants from "expo-constants";
+
+const SALAOID = Constants.expoConfig?.extra?.EXPO_SALAO_ID;
 
 interface State {
   payload: Record<string, any>;
@@ -44,7 +47,7 @@ const INITIAL_STATE: State = {
   colaboradores: [],
   agendamento: {
     clienteId: "",
-    salaoId: `${process.env.SALAO_ID}`,
+    salaoId: `${SALAOID}`,
     servicoId: null,
     colaboradorId: null,
     transectionId: null,

@@ -23,6 +23,8 @@ import Constants from "expo-constants";
 
 const SALAOID = Constants.expoConfig?.extra?.EXPO_SALAO_ID;
 
+//console.log("SALAOID: ", SALAOID);
+
 // Função que busca o salao
 export function* getSalao() {
   try {
@@ -77,9 +79,12 @@ export function* allServicos() {
 
 // // Função para filtrar a agenda
 export function* filterAgenda({ payload }: any) {
+
   try {
     const { agendamento, agenda } = yield select((state) => state.salao);
 
+    //console.log("agendamento: ", agendamento);
+    //console.log("agenda: ", agenda);
     const finalStartDate =
       payload?.startDate ||
       (agenda.length === 0

@@ -10,6 +10,7 @@ const types = {
   RESET_CLIENTE: "@cliente/RESET_CLIENTE",
   UPDATE_AGENDAMENTO: "@cliente/UPDATE_AGENDAMENTO",
   RESET_AGENDAMENTO: "@cliente/RESET_AGENDAMENTO",
+  PUSH_TOKEN: "@cliente/PUSH_TOKEN",
 };
 
 export default types;
