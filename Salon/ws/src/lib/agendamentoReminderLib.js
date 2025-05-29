@@ -92,7 +92,7 @@ function iniciarAgendamentoReminderScheduler() {
     verificarAgendamentos();
 
     // A cada 10 minutos
-    setInterval(verificarAgendamentos, 10 * 60 * 1000);
+    setInterval(verificarAgendamentos, 30 * 60 * 1000);
     //setInterval(verificarAgendamentos, 1000);
   } catch (error) {
     console.error("Erro ao iniciar Agendamento Reminder Scheduler:", error);

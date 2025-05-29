@@ -73,6 +73,13 @@ export default ({ config }: ConfigContext): ExpoConfig => {
       "expo-router",
       "expo-font",
       [
+        "expo-calendar",
+        {
+          calendarPermission:
+            "Precisamos acessar seu calendário para sincronizar agendamentos.",
+        },
+      ],
+      [
         "expo-notifications",
         {
           icon: NOTIFICATION_ICON,

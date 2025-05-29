@@ -13,6 +13,7 @@ import {
 import { useDispatch, useSelector } from "react-redux";
 import { Portal } from "react-native-paper";
 import { useClerk } from "@clerk/clerk-expo";
+import { router } from "expo-router";
 
 import Header from "@/Agendamento/Header";
 import Servico from "@/Agendamento/Servico";
@@ -24,6 +25,7 @@ import MenuComponent from "@/src/components/Menu/MenuComponet";
 import {
   allServicos,
   getSalao,
+  resetAgendamento,
   updateAgendamento,
   updateForm,
 } from "@/src/store/modules/salao/actions";
@@ -36,15 +38,15 @@ import Gradient from "@/src/components/Agendamento/Gradient";
 import MaterialCommunityIconsRaw from "react-native-vector-icons/MaterialCommunityIcons";
 import { useNotification } from "@/src/context/NotificationContext";
 import { registerForPushNotificationsAsync } from "@/src/utils/registerForPushNotificationsAsync";
-import * as Notifications from "expo-notifications";
-import { router } from "expo-router";
+import { createEvent } from "@/src/hook/expoCalendar";
+import moment from "moment";
 
 const MaterialCommunityIcons = MaterialCommunityIconsRaw as any;
 const MENU_WIDTH = 250;
 
 export default function Home() {
   const dispatch = useDispatch();
-  const { form, salao, tipoServicos } = useSelector(
+  const { form, salao, tipoServicos, agendamento, servicos } = useSelector(
     (state: any) => state.salao
   );
   const { cliente } = useSelector((state: any) => state.cliente);
@@ -128,7 +130,7 @@ export default function Home() {
   useEffect(() => {
     if (error) {
       console.error("Erro ao receber notificações:", error);
-    }
+    } 
   }, [error]);
 
   useEffect(() => {
@@ -317,6 +319,7 @@ export default function Home() {
         </View>
       </Modal>
       <Portal>
+        {/* Modal de notificação padrão */}
         <Modal visible={notification !== null} transparent animationType="fade">
           <View
             style={{
@@ -360,6 +363,116 @@ export default function Home() {
                   align="center"
                 >
                   Confirmar
+                </Text>
+              </TouchableWithoutFeedback>
+            </View>
+          </View>
+        </Modal>
+
+        {/* Modal de sucesso de agendamento */}
+        <Modal
+          visible={!!form?.saveAgendamento}
+          transparent
+          animationType="fade"
+        >
+          <View
+            style={{
+              flex: 1,
+              backgroundColor: "rgba(0,0,0,0.4)",
+              justifyContent: "center",
+              alignItems: "center",
+            }}
+          >
+            <View
+              style={{
+                backgroundColor: "white",
+                padding: 32,
+                borderRadius: 16,
+                width: "85%",
+                alignItems: "center",
+                elevation: 4,
+              }}
+            >
+              <Text
+                bold
+                color="primary"
+                align="center"
+                hasPadding
+                style={{ fontSize: 20 }}
+              >
+                Agendamento realizado com sucesso!
+              </Text>
+              <Text align="center" spacing="0 0 18px" style={{ color: "#666" }}>
+                Seu agendamento foi confirmado. Você receberá uma notificação de
+                lembrete próximo ao horário.
+              </Text>
+              <TouchableWithoutFeedback
+                onPress={() => {
+                  dispatch(updateForm({ saveAgendamento: false }));
+
+                  const servico = servicos?.find(
+                    (s: any) => s._id === agendamento?.servicoId
+                  );
+
+                  console.log("servico: ", servico);
+
+                  // Ajuste fuso horário
+                  const duracaoMoment = moment.tz(
+                    servico?.duracao,
+                    "America/Sao_Paulo"
+                  );
+                  const horas = duracaoMoment.hours(); // Deve resultar em 0
+                  const minutos = duracaoMoment.minutes(); // Deve resultar em 30
+
+                  const totalMinutes = horas * 60 + minutos; // Exemplo: 0 * 60 + 30 = 30 minutos
+
+                  const startMoment = moment(agendamento?.data);
+                  const endMoment = startMoment
+                    .clone()
+                    .add(totalMinutes, "minutes");
+
+                  createEvent({
+                    title: "Parrudus Barbearia",
+                    description: `Servico: ${servico?.titulo}`,
+                    startDate: startMoment.toDate(),
+                    endDate: endMoment.toDate(),
+                  });
+
+                  dispatch(resetAgendamento());
+                }}
+              >
+                <View
+                  style={{
+                    backgroundColor: theme.colors.primary,
+                    borderRadius: 8,
+                    paddingVertical: 12,
+                    paddingHorizontal: 18,
+                    marginBottom: 6,
+                    width: "100%",
+                  }}
+                >
+                  <Text
+                    bold
+                    color="white"
+                    align="center"
+                    style={{ fontSize: 16 }}
+                  >
+                    Deseja sincronizar com seu calendário?
+                  </Text>
+                </View>
+              </TouchableWithoutFeedback>
+              <TouchableWithoutFeedback
+                onPress={() => {
+                  dispatch(updateForm({ saveAgendamento: false }));
+                  dispatch(resetAgendamento());
+                }}
+              >
+                <Text
+                  align="center"
+                  color="primary"
+                  style={{ marginTop: 8, textDecorationLine: "underline" }}
+                >
+                  Fechar
                 </Text>
               </TouchableWithoutFeedback>
             </View>

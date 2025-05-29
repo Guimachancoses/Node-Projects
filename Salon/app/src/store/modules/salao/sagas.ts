@@ -227,9 +227,8 @@ export function* saveAgendamento() {
     }
 
     //console.log(res);
-
+    //yield put(resetAgendamento());
     yield put(updateForm({ agendamentoLoading: false, saveAgendamento: true }));
-    yield put(resetAgendamento());
     router.replace("/(home)/home");
   } catch (err: any) {
     // Verifica se é um erro de resposta da API com status e dados
