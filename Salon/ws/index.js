@@ -23,7 +23,7 @@ require("dotenv").config();
 app.use(express.static(path.resolve(__dirname, "../web")));
 
 // Define a porta
-app.set("port", 8000);
+app.set("port", process.env.PORT || 8000);
 
 // Rotas
 app.use("/salao", require("./src/routes/salao.routes"));
@@ -40,9 +40,8 @@ app.use("/mercado-pago/webhook", require("./src/routes/api/mercado-pago/webhook/
 const iniciarAgendamentoScheduler = require("./src/lib/agendamento-update-lib");
 
 // Abre um ouvinte
-app.listen(app.get("port"), () => {
+app.listen(app.get("port"), "0.0.0.0", () => {
   console.log("Antes de iniciar o servidor...");
   console.log(`WS Escutando na porta ${app.get("port")}`);
-  
   iniciarAgendamentoScheduler();
 });
