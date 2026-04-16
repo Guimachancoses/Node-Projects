@@ -63,7 +63,7 @@ const Horarios = () => {
 
     // Todos os serviços
     dispatch(allServicos());
-  }, []);
+  }, [dispatch]);
 
   useEffect(() => {
     if (horario.especialidades.length > 0) {

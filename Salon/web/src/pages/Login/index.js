@@ -42,7 +42,7 @@ const Login = () => {
       dispatch(updateUser({ email: user.emailAddresses, firstName: user.firstName, lastName: user.lastName, imageUrl: user.imageUrl }));
       dispatch(checkUser());
     } 
-  }, [isSignedIn]);
+  }, [isSignedIn, dispatch]);
 
   const handleSubmit = (e) => {
     e.preventDefault();

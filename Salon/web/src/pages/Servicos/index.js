@@ -73,7 +73,7 @@ const Servicos = () => {
 
   useEffect(() => {
     dispatch(allServicos());
-  }, []);
+  }, [dispatch]);
 
   const setComponent = (component, state) => {
     dispatch(
@@ -150,7 +150,7 @@ const Servicos = () => {
       }));
       setImages(imagensSalvas);
     }
-  }, [servico, behavior, images]);
+  }, [servico, behavior, images, dispatch]);
 
   // Responsavel pelo alerta
   const alerta = useSelector((state) => state.servico.alerta);

@@ -67,7 +67,7 @@ const Clientes = () => {
 
   useEffect(() => {
     dispatch(allClientes());
-  }, []);
+  }, [dispatch]);
 
   const setComponent = (component, state) => {
     dispatch(

@@ -64,7 +64,7 @@ const Agendamentos = () => {
         moment().weekday(6).format("YYYY-MM-DD")
       )
     );
-  }, []);
+  }, [dispatch]);
 
   const handleSelectEvent = (event) => {
     setEventoSelecionado(event);

@@ -72,7 +72,7 @@ const Colaboradores = () => {
   useEffect(() => {
     dispatch(allColaboradores());
     dispatch(allServicos());
-  }, []);
+  }, [dispatch]);
 
   const setComponent = (component, state) => {
     dispatch(
