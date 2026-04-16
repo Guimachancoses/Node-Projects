@@ -1,17 +1,46 @@
-import { useState } from 'react';
-import { Box, TextField, Typography, Container, Paper } from '@mui/material';
-import { AdapterMoment } from '@mui/x-date-pickers/AdapterMoment';
-import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
-import { DatePicker } from '@mui/x-date-pickers/DatePicker';
-import { useClerk } from '@clerk/clerk-react';
+import { useMemo, useState } from "react";
+import {
+  Box,
+  TextField,
+  Typography,
+  Container,
+  Paper,
+  Button,
+  Divider,
+  Alert,
+} from "@mui/material";
+import { AdapterMoment } from "@mui/x-date-pickers/AdapterMoment";
+import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
+import { DatePicker } from "@mui/x-date-pickers/DatePicker";
+import { useAuth, useUser } from "@clerk/clerk-react";
+import { useLocation } from "react-router-dom";
+
+const BACKEND_URL = "https://salon.fabrisportalhub.com.br";
 
 export default function Account() {
   const [birthDate, setBirthDate] = useState(null);
-  const { user } = useClerk();
+  const { user } = useUser();
+  const { userId, isLoaded, isSignedIn } = useAuth();
+  const location = useLocation();
 
-  const email = user?.emailAddresses?.[0]?.emailAddress ?? '';
-  const firstName = user?.firstName ?? '';
-  const lastName = user?.lastName ?? '';
+  const email = user?.emailAddresses?.[0]?.emailAddress ?? "";
+  const firstName = user?.firstName ?? "";
+  const lastName = user?.lastName ?? "";
+
+  const query = useMemo(() => new URLSearchParams(location.search), [location.search]);
+  const googleStatus = query.get("google"); // success | error | null
+
+  const handleConnectGoogle = () => {
+    if (!isLoaded || !isSignedIn || !userId) return;
+
+    const returnTo = "/account";
+    const url =
+      `${BACKEND_URL}/oauth/google/start` +
+      `?userId=${encodeURIComponent(userId)}` +
+      `&returnTo=${encodeURIComponent(returnTo)}`;
+
+    window.location.href = url;
+  };
 
   return (
     <Container component="main" maxWidth="sm">
@@ -20,9 +49,9 @@ export default function Account() {
           Olá, {firstName} {lastName}
         </Typography>
 
-        <Box sx={{ mb: 3, display: 'flex', alignItems: 'center' }}>
+        <Box sx={{ mb: 3, display: "flex", alignItems: "center" }}>
           <Typography variant="body2">Você está logado como:</Typography>
-          <Typography variant="body2" sx={{ color: 'var(--primary)', ml: 1 }}>
+          <Typography variant="body2" sx={{ color: "var(--primary)", ml: 1 }}>
             {email}
           </Typography>
         </Box>
@@ -63,6 +92,35 @@ export default function Account() {
             />
           </LocalizationProvider>
         </Box>
+
+        <Divider sx={{ my: 3 }} />
+
+        <Typography variant="h6" sx={{ mb: 1 }}>
+          Integração Google
+        </Typography>
+        <Typography variant="body2" sx={{ mb: 2, opacity: 0.85 }}>
+          Conecte sua conta para sincronizar <strong>Google Agenda</strong> e{" "}
+          <strong>Google Drive</strong>.
+        </Typography>
+
+        {googleStatus === "success" && (
+          <Alert severity="success" sx={{ mb: 2 }}>
+            Conta Google conectada com sucesso.
+          </Alert>
+        )}
+        {googleStatus === "error" && (
+          <Alert severity="error" sx={{ mb: 2 }}>
+            Não foi possível conectar sua conta Google.
+          </Alert>
+        )}
+
+        <Button
+          variant="contained"
+          onClick={handleConnectGoogle}
+          disabled={!isLoaded || !isSignedIn || !userId}
+        >
+          Sincronizar Google Agenda e Drive
+        </Button>
       </Paper>
     </Container>
   );

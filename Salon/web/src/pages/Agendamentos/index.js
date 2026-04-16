@@ -8,6 +8,7 @@ import "moment/locale/pt-br";
 import util from "../../util";
 import { Modal, Button } from "react-bootstrap";
 import { useTheme } from '@mui/material/styles'; // Para acessar o tema
+import PopSyncCalendarDrive from "../../components/pop-sync-calendarDrive";
 
 moment.locale("pt-br");
 const localizer = momentLocalizer(moment);
@@ -23,11 +24,9 @@ const Agendamentos = () => {
   const formatEventos = useMemo(() => {
     return agendamentos.map((agendamento) => ({
       ...agendamento,
-      title: `${agendamento.servicoId.titulo} - ${agendamento.clienteId.nome} ${
-        agendamento.clienteId.sobrenome?.charAt(0) || ""
-      }. - ${agendamento.colaboradorId.nome} ${
-        agendamento.colaboradorId.sobrenome?.charAt(0) || ""
-      }.`,
+      title: `${agendamento.servicoId.titulo} - ${agendamento.clienteId.nome} ${agendamento.clienteId.sobrenome?.charAt(0) || ""
+        }. - ${agendamento.colaboradorId.nome} ${agendamento.colaboradorId.sobrenome?.charAt(0) || ""
+        }.`,
       start: moment(agendamento.data).toDate(),
       end: moment(agendamento.data)
         .add(
@@ -99,13 +98,15 @@ const Agendamentos = () => {
     borderRadius: 2,
     boxShadow: theme.shadows[3],
   };
-  
+
 
   return (
     <div className="col p-5 overflow-auto h-100">
+      <PopSyncCalendarDrive />
       <div className="row">
         <div className="col-12">
-          <h2 className="mb-4 mt-0" style={{color: "white"}}>Agendamentos</h2>
+          
+          <h2 className="mb-4 mt-0" style={{ color: "white" }}>Agendamentos</h2>
           <Calendar
             localizer={localizer}
             onRangeChange={(periodo) => {

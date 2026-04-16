@@ -9,6 +9,7 @@ import Serviços from "./pages/Servicos";
 import Horarios from "./pages/Horarios";
 import Account from "./pages/Account";
 import Layout from "./components/HeaderSide";
+import GoogleCalendarDriveConnectButton from "./components/pop-sync-calendarDrive";
 import "./styles.css";
 
 const Main = ({ toggleTheme, colorMode }) => {
