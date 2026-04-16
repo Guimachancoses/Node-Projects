@@ -17,7 +17,7 @@ router.post("/", async (req, res) => {
   const session = await db.startSession();
   session.startTransaction();
   try {
-    console.log("req.body:", req.body);
+    //console.log("req.body:", req.body);
 
     const { clienteId, salaoId, servicoId, colaboradorId, status_payment } =
       req.body;
@@ -112,7 +112,7 @@ router.post("/", async (req, res) => {
       );
     });
     
-    console.log("clienteConflito:", clienteConflito);
+    //console.log("clienteConflito:", clienteConflito);
 
     if (clienteConflito) {
       await session.abortTransaction();

@@ -100,7 +100,7 @@ const colaborador = new Schema({
   },
 });
 
-// ⬇️ Middleware para incrementar o ID do endereço
+//⬇️ Middleware para incrementar o ID do endereço
 colaborador.pre("save", async function (next) {
   const doc = this;
 

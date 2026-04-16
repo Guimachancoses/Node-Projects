@@ -117,7 +117,6 @@ router.post("/", async (req, res) => {
   }
 });
 
-
 // Rota de atualização do colaborador no banco de dados MongoDB e no MercadoPago
 router.put("/:colaboradorId", async (req, res) => {
   try {
@@ -206,6 +205,17 @@ router.get("/salao/:salaoId", async (req, res) => {
         dataCadastro: vinculo.dataCadastro,
       })),
     });
+  } catch (err) {
+    res.json({ error: true, message: err.message });
+  }
+});
+
+// Rota para retornar o colaborador checar se colaborador existe
+router.get("/check/:email", async (req, res) => {
+  try {
+    const { email } = req.params;
+    const colaborador = await Colaborador.findOne({ email });
+    res.json({ error: false, colaborador });
   } catch (err) {
     res.json({ error: true, message: err.message });
   }

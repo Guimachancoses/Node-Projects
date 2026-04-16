@@ -1,24 +1,24 @@
 const mongoose = require("mongoose");
 const Schema = mongoose.Schema;
 
-const arquivo = new Schema({
+const push_tokens = new Schema({
   referenciaId: {
     type: Schema.Types.ObjectId,
     refPath: "model",
   },
   model: {
     type: String,
-    riquered: true,
-    enum: ["Servico", "Salao"],
+    required: true,
+    enum: ["Cliente", "Colaborador"],
   },
-  caminho: {
+  token: {
     type: String,
     required: true,
   },
-  dataCadastro: {
+  dataAtualizacao: {
     type: Date,
     default: Date.now,
   },
 });
 
-module.exports = mongoose.model("Arquivo", arquivo);
+module.exports = mongoose.model("Push_tokens", push_tokens);

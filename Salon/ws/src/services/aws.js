@@ -1,3 +1,4 @@
+const AWS = require("aws-sdk");
 
 const {
   AWS_ACCESS_KEY_ID,
