@@ -1,4 +1,6 @@
 // Responsavel pela configuração do ws
+require("dotenv").config();
+
 const path = require("path");
 const express = require("express");
 const app = express();
@@ -17,7 +19,7 @@ app.use(express.json());
 app.use(busboy());
 app.use(busboyBodyParser());
 app.use(cors());
-require("dotenv").config();
+
 
 // Servir HTML do /web
 app.use(express.static(path.resolve(__dirname, "../web")));
