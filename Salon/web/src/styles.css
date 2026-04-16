@@ -1,0 +1,56 @@
+:root {
+  --primary: #02555d;
+  --dark: #21232f;
+  --dark-light: #2f3243;
+  --danger: #d62828;
+  --success: #06d6a0;
+  --white: #f5f6f7;
+  --Gold: #ffcc00;
+  --Silver: #c0c0c0;
+  --Bronze: #c08040;
+}
+
+/* Configurações padrões da página */
+html, body {
+  min-height: 100%;
+  margin: 0;
+}
+
+body {
+  background-image: url('./assets/background_parrudus.jpg');
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  background-attachment: fixed; /* <<< esse faz a imagem acompanhar o scroll */
+}
+
+
+/* Estilos gerais para o conteúdo */
+.bg-primary {
+  background-color: var(--primary);
+}
+
+.text-primary {
+  color: #000;
+}
+
+.btn-primary {
+  background-color: var(--primary) !important;
+  border-color: var(--primary) !important;
+}
+
+/* CSS personalizado para os botões */
+.rbc-btn-group button {
+  background-color: inherit;
+  color: inherit;
+  border: 1px solid transparent;
+}
+
+.rbc-btn-group button:hover {
+  background-color: #007bff; /* Exemplo de cor para hover */
+}
+
+.rbc-btn-group button:focus {
+  outline: none;
+  box-shadow: none;
+}
