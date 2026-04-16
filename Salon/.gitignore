@@ -4,14 +4,25 @@
 app/node_modules/
 web/node_modules/
 ws/node_modules/
+.pnp/
+.pnp.js
+
+# local env files
 ws/.env
-app/android
+.env
+.env*.local
+!.env.example
+
+# build outputs
+dist/
+web-build/
+coverage/
+build/
 
 # Expo
 .expo/
-dist/
-web-build/
 expo-env.d.ts
+app/android/
 
 # Native
 *.orig.*
@@ -24,18 +35,22 @@ expo-env.d.ts
 # Metro
 .metro-health-check*
 
-# debug
-npm-debug.*
-yarn-debug.*
-yarn-error.*
+# debug logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
 
-# macOS
+# macOS / misc
 .DS_Store
 *.pem
 
-# local env files
-.env*.local
-/app
-
-# typescript
+# TypeScript
 *.tsbuildinfo
+
+# Keep lockfiles versioned
+!yarn.lock
+!app/yarn.lock
+!web/yarn.lock
+!ws/yarn.lock
+!package-lock.json
+!pnpm-lock.yaml
