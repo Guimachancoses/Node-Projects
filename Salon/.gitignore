@@ -6,7 +6,6 @@ web/node_modules/
 ws/node_modules/
 ws/.env
 app/android
-yarn.lock
 
 # Expo
 .expo/
