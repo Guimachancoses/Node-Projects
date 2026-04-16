@@ -1,22 +1,18 @@
-import { createStore, applyMiddleware } from "redux";
-import crateSagaMiddleware from "redux-saga";
-import { composeWithDevTools } from "redux-devtools-extension";
+import { configureStore } from "@reduxjs/toolkit";
+import createSagaMiddleware from "redux-saga";
 
 import rootReducer from "./modules/rootReducer";
 import rootSaga from "./modules/rootSaga";
 
-const sagaMiddleware = crateSagaMiddleware();
+const sagaMiddleware = createSagaMiddleware();
 
-const store = createStore(
-  rootReducer,
-  window.__REDUX_DEVTOOLS_EXTENSION__ && window.__REDUX_DEVTOOLS_EXTENSION__()
-    ? composeWithDevTools(applyMiddleware(sagaMiddleware))
-    : applyMiddleware(sagaMiddleware)
-);
-
+const store = configureStore({
+  reducer: rootReducer,
+  middleware: (getDefaultMiddleware) =>
+    getDefaultMiddleware({ thunk: false }).concat(sagaMiddleware),
+  devTools: process.env.NODE_ENV !== "production",
+});
 
 sagaMiddleware.run(rootSaga);
 
 export default store;
-
-
