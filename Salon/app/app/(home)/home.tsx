@@ -13,6 +13,10 @@ import {
 import { useDispatch, useSelector } from "react-redux";
 import { Portal } from "react-native-paper";
 import { useClerk } from "@clerk/clerk-expo";
+<<<<<<< HEAD
+=======
+import { router } from "expo-router";
+>>>>>>> parent of 10c19fd (Delete Salon/app directory)
 
 import Header from "@/Agendamento/Header";
 import Servico from "@/Agendamento/Servico";
@@ -24,6 +28,7 @@ import MenuComponent from "@/src/components/Menu/MenuComponet";
 import {
   allServicos,
   getSalao,
+<<<<<<< HEAD
   updateAgendamento,
   updateForm,
   updateTipoServicos,
@@ -33,11 +38,34 @@ import { filterClinte, getCliente } from "@/src/store/modules/cliente/action";
 import Gradient from "@/src/components/Agendamento/Gradient";
 import MaterialCommunityIcons from "react-native-vector-icons/MaterialCommunityIcons";
 
+=======
+  resetAgendamento,
+  updateAgendamento,
+  updateForm,
+} from "@/src/store/modules/salao/actions";
+import {
+  filterClinte,
+  getCliente,
+  pushToken,
+} from "@/src/store/modules/cliente/action";
+import Gradient from "@/src/components/Agendamento/Gradient";
+import MaterialCommunityIconsRaw from "react-native-vector-icons/MaterialCommunityIcons";
+import { useNotification } from "@/src/context/NotificationContext";
+import { registerForPushNotificationsAsync } from "@/src/utils/registerForPushNotificationsAsync";
+import { createEvent } from "@/src/hook/expoCalendar";
+import moment from "moment";
+
+const MaterialCommunityIcons = MaterialCommunityIconsRaw as any;
+>>>>>>> parent of 10c19fd (Delete Salon/app directory)
 const MENU_WIDTH = 250;
 
 export default function Home() {
   const dispatch = useDispatch();
+<<<<<<< HEAD
   const { servicos, form, salao, tipoServicos } = useSelector(
+=======
+  const { form, salao, tipoServicos, agendamento, servicos } = useSelector(
+>>>>>>> parent of 10c19fd (Delete Salon/app directory)
     (state: any) => state.salao
   );
   const { cliente } = useSelector((state: any) => state.cliente);
@@ -47,8 +75,12 @@ export default function Home() {
   const [refreshing, setRefreshing] = useState(false);
   const [loading, setLoading] = useState(false);
   const listaBase = tipoServicos.length > 0 ? tipoServicos : [];
+<<<<<<< HEAD
 
   //console.log(listaBase);
+=======
+  const { notification, error, clearNotification } = useNotification();
+>>>>>>> parent of 10c19fd (Delete Salon/app directory)
 
   const onRefresh = async () => {
     setRefreshing(true);
@@ -57,7 +89,12 @@ export default function Home() {
       dispatch(allServicos());
       dispatch(getCliente());
       dispatch(filterClinte());
+<<<<<<< HEAD
       dispatch(updateAgendamento({ clienteId: cliente?.clienteId }));
+=======
+      //console.log("cliente: ", cliente);
+      dispatch(updateAgendamento({ clienteId: cliente?._id }));
+>>>>>>> parent of 10c19fd (Delete Salon/app directory)
       dispatch(updateForm({ modalAgendamento: false, buttonCard: false }));
     } catch (error) {
       console.error("Erro ao atualizar dados:", error);
@@ -79,7 +116,12 @@ export default function Home() {
   // Carrega dados do salão
   useEffect(() => {
     dispatch(getCliente());
+<<<<<<< HEAD
     dispatch(updateAgendamento({ clienteId: cliente?.clienteId }));
+=======
+    //console.log("cliente: ", cliente);
+    dispatch(updateAgendamento({ clienteId: cliente?._id }));
+>>>>>>> parent of 10c19fd (Delete Salon/app directory)
   }, []);
 
   // PanResponder para swipe lateral
@@ -117,6 +159,28 @@ export default function Home() {
         })
       : listaBase;
 
+<<<<<<< HEAD
+=======
+  useEffect(() => {
+    if (error) {
+      console.error("Erro ao receber notificações:", error);
+    } 
+  }, [error]);
+
+  useEffect(() => {
+    async function registerToken() {
+      try {
+        const token = await registerForPushNotificationsAsync();
+        dispatch(pushToken(token));
+      } catch (error) {
+        console.warn("Erro ao registrar push token:", error);
+      }
+    }
+
+    registerToken();
+  }, []);
+
+>>>>>>> parent of 10c19fd (Delete Salon/app directory)
   return (
     <>
       {/* Menu lateral com fundo opaco */}
@@ -236,7 +300,11 @@ export default function Home() {
         }
         data={finalServicos}
         keyExtractor={(item) => item._id}
+<<<<<<< HEAD
         renderItem={({ item }) => <Servico servico={item}/>}
+=======
+        renderItem={({ item }) => <Servico servico={item} />}
+>>>>>>> parent of 10c19fd (Delete Salon/app directory)
         refreshControl={
           <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
         }
@@ -245,14 +313,35 @@ export default function Home() {
             {loading ? (
               <>
                 <ActivityIndicator size="large" color={theme.colors.primary} />
+<<<<<<< HEAD
                 <Text spacing="10px 0 0" align="center" color={theme.colors.primary}>
+=======
+                <Text
+                  spacing="10px 0 0"
+                  align="center"
+                  color={theme.colors.primary}
+                >
+>>>>>>> parent of 10c19fd (Delete Salon/app directory)
                   Buscando serviços...
                 </Text>
               </>
             ) : (
               <>
+<<<<<<< HEAD
                 <MaterialCommunityIcons name="alert-circle-outline" size={48} color={theme.colors.primary} />
                 <Text spacing="10px 0 0" align="center" color={theme.colors.primary}>
+=======
+                <MaterialCommunityIcons
+                  name="alert-circle-outline"
+                  size={48}
+                  color={theme.colors.primary}
+                />
+                <Text
+                  spacing="10px 0 0"
+                  align="center"
+                  color={theme.colors.primary}
+                >
+>>>>>>> parent of 10c19fd (Delete Salon/app directory)
                   Nenhum serviço encontrado
                 </Text>
               </>
@@ -277,6 +366,170 @@ export default function Home() {
           </Text>
         </View>
       </Modal>
+<<<<<<< HEAD
+=======
+      <Portal>
+        {/* Modal de notificação padrão */}
+        <Modal visible={notification !== null} transparent animationType="fade">
+          <View
+            style={{
+              flex: 1,
+              backgroundColor: "rgba(0,0,0,0.4)",
+              justifyContent: "center",
+              alignItems: "center",
+            }}
+          >
+            <View
+              style={{
+                backgroundColor: "white",
+                padding: 30,
+                borderRadius: 10,
+                width: "80%",
+              }}
+            >
+              <Text
+                bold
+                color="primary"
+                spacing="0 0 10px"
+                hasPadding
+                removePaddingBottom
+              >
+                {notification?.request.content.title}
+              </Text>
+              <Text hasPadding removePaddingBottom>
+                {notification?.request.content.body}
+              </Text>
+              <TouchableWithoutFeedback
+                onPress={() => {
+                  clearNotification();
+                  router.push("/(agendamentos)/agendamentos");
+                }}
+              >
+                <Text
+                  hasPadding
+                  removePaddingBottom
+                  bold
+                  color="primary"
+                  align="center"
+                >
+                  Confirmar
+                </Text>
+              </TouchableWithoutFeedback>
+            </View>
+          </View>
+        </Modal>
+
+        {/* Modal de sucesso de agendamento */}
+        <Modal
+          visible={!!form?.saveAgendamento}
+          transparent
+          animationType="fade"
+        >
+          <View
+            style={{
+              flex: 1,
+              backgroundColor: "rgba(0,0,0,0.4)",
+              justifyContent: "center",
+              alignItems: "center",
+            }}
+          >
+            <View
+              style={{
+                backgroundColor: "white",
+                padding: 32,
+                borderRadius: 16,
+                width: "85%",
+                alignItems: "center",
+                elevation: 4,
+              }}
+            >
+              <Text
+                bold
+                color="primary"
+                align="center"
+                hasPadding
+                style={{ fontSize: 20 }}
+              >
+                Agendamento realizado com sucesso!
+              </Text>
+              <Text align="center" spacing="0 0 18px" style={{ color: "#666" }}>
+                Seu agendamento foi confirmado. Você receberá uma notificação de
+                lembrete próximo ao horário.
+              </Text>
+              <TouchableWithoutFeedback
+                onPress={() => {
+                  dispatch(updateForm({ saveAgendamento: false }));
+
+                  const servico = servicos?.find(
+                    (s: any) => s._id === agendamento?.servicoId
+                  );
+
+                  console.log("servico: ", servico);
+
+                  // Ajuste fuso horário
+                  const duracaoMoment = moment.tz(
+                    servico?.duracao,
+                    "America/Sao_Paulo"
+                  );
+                  const horas = duracaoMoment.hours(); // Deve resultar em 0
+                  const minutos = duracaoMoment.minutes(); // Deve resultar em 30
+
+                  const totalMinutes = horas * 60 + minutos; // Exemplo: 0 * 60 + 30 = 30 minutos
+
+                  const startMoment = moment(agendamento?.data);
+                  const endMoment = startMoment
+                    .clone()
+                    .add(totalMinutes, "minutes");
+
+                  createEvent({
+                    title: "Parrudus Barbearia",
+                    description: `Servico: ${servico?.titulo}`,
+                    startDate: startMoment.toDate(),
+                    endDate: endMoment.toDate(),
+                  });
+
+                  dispatch(resetAgendamento());
+                }}
+              >
+                <View
+                  style={{
+                    backgroundColor: theme.colors.primary,
+                    borderRadius: 8,
+                    paddingVertical: 12,
+                    paddingHorizontal: 18,
+                    marginBottom: 6,
+                    width: "100%",
+                  }}
+                >
+                  <Text
+                    bold
+                    color="white"
+                    align="center"
+                    style={{ fontSize: 16 }}
+                  >
+                    Deseja sincronizar com seu calendário?
+                  </Text>
+                </View>
+              </TouchableWithoutFeedback>
+              <TouchableWithoutFeedback
+                onPress={() => {
+                  dispatch(updateForm({ saveAgendamento: false }));
+                  dispatch(resetAgendamento());
+                }}
+              >
+                <Text
+                  align="center"
+                  color="primary"
+                  style={{ marginTop: 8, textDecorationLine: "underline" }}
+                >
+                  Fechar
+                </Text>
+              </TouchableWithoutFeedback>
+            </View>
+          </View>
+        </Modal>
+      </Portal>
+>>>>>>> parent of 10c19fd (Delete Salon/app directory)
     </>
   );
 }

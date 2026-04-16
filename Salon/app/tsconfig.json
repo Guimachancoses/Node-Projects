@@ -2,6 +2,11 @@
   "extends": "expo/tsconfig.base",
   "compilerOptions": {
     "strict": true,
+<<<<<<< HEAD
+=======
+    "esModuleInterop": true,
+    "allowSyntheticDefaultImports": true,
+>>>>>>> parent of 10c19fd (Delete Salon/app directory)
     "baseUrl": ".",
     "paths": {
       "@/*": ["./*"],

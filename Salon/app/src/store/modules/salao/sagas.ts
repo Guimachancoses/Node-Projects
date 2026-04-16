@@ -8,7 +8,11 @@ import util from "@/src/constants/util";
 import api from "@/src/services/api";
 import {
   updateSalao,
+<<<<<<< HEAD
   updateServicos,
+=======
+  updateServicos, 
+>>>>>>> parent of 10c19fd (Delete Salon/app directory)
   updateAgenda,
   updateAgendamento,
   updateColaboradores,
@@ -19,13 +23,25 @@ import {
 
 import { updateAgendamento as updateAgendamentoCliente } from "@/src/store/modules/cliente/action";
 import { router } from "expo-router";
+<<<<<<< HEAD
 
 const salaoId = `${process.env.SALAO_ID}`;
+=======
+import Constants from "expo-constants";
+
+const SALAOID = Constants.expoConfig?.extra?.EXPO_SALAO_ID;
+
+//console.log("SALAOID: ", SALAOID);
+>>>>>>> parent of 10c19fd (Delete Salon/app directory)
 
 // Função que busca o salao
 export function* getSalao() {
   try {
+<<<<<<< HEAD
     const { data: res } = yield call(api.get, `/salao/${salaoId}`);
+=======
+    const { data: res } = yield call(api.get, `/salao/${SALAOID}`);
+>>>>>>> parent of 10c19fd (Delete Salon/app directory)
     if (res.error) {
       Toast.show({
         type: "error",
@@ -51,7 +67,11 @@ export function* getSalao() {
 // Função que busca todos os serviços
 export function* allServicos() {
   try {
+<<<<<<< HEAD
     const { data: res } = yield call(api.get, `/servico/salao/${salaoId}`);
+=======
+    const { data: res } = yield call(api.get, `/servico/salao/${SALAOID}`);
+>>>>>>> parent of 10c19fd (Delete Salon/app directory)
     if (res.error) {
       Toast.show({
         type: "error",
@@ -76,9 +96,18 @@ export function* allServicos() {
 
 // // Função para filtrar a agenda
 export function* filterAgenda({ payload }: any) {
+<<<<<<< HEAD
   try {
     const { agendamento, agenda } = yield select((state) => state.salao);
 
+=======
+
+  try {
+    const { agendamento, agenda } = yield select((state) => state.salao);
+
+    //console.log("agendamento: ", agendamento);
+    //console.log("agenda: ", agenda);
+>>>>>>> parent of 10c19fd (Delete Salon/app directory)
     const finalStartDate =
       payload?.startDate ||
       (agenda.length === 0
@@ -221,9 +250,14 @@ export function* saveAgendamento() {
     }
 
     //console.log(res);
+<<<<<<< HEAD
 
     yield put(updateForm({ agendamentoLoading: false, saveAgendamento: true }));
     yield put(resetAgendamento());
+=======
+    //yield put(resetAgendamento());
+    yield put(updateForm({ agendamentoLoading: false, saveAgendamento: true }));
+>>>>>>> parent of 10c19fd (Delete Salon/app directory)
     router.replace("/(home)/home");
   } catch (err: any) {
     // Verifica se é um erro de resposta da API com status e dados

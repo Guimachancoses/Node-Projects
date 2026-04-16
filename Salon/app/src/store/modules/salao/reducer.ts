@@ -1,6 +1,12 @@
 import { produce } from "immer";
 import types from "./types";
 import _ from "lodash";
+<<<<<<< HEAD
+=======
+import Constants from "expo-constants";
+
+const SALAOID = Constants.expoConfig?.extra?.EXPO_SALAO_ID;
+>>>>>>> parent of 10c19fd (Delete Salon/app directory)
 
 interface State {
   payload: Record<string, any>;
@@ -44,7 +50,11 @@ const INITIAL_STATE: State = {
   colaboradores: [],
   agendamento: {
     clienteId: "",
+<<<<<<< HEAD
     salaoId: `${process.env.SALAO_ID}`,
+=======
+    salaoId: `${SALAOID}`,
+>>>>>>> parent of 10c19fd (Delete Salon/app directory)
     servicoId: null,
     colaboradorId: null,
     transectionId: null,

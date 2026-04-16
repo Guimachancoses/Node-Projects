@@ -1,6 +1,11 @@
 import "react-native-reanimated";
+<<<<<<< HEAD
 import React, { useState, useEffect } from "react";
 import { Redirect, router, Slot } from "expo-router";
+=======
+import React, { useState, useEffect, useCallback } from "react";
+import { Slot, SplashScreen } from "expo-router";
+>>>>>>> parent of 10c19fd (Delete Salon/app directory)
 import {
   MD3DarkTheme,
   MD3LightTheme,
@@ -22,9 +27,30 @@ import * as Font from "expo-font";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { ThemeProvider as StyledThemeProvider } from "styled-components/native";
 import Toast from "react-native-toast-message";
+<<<<<<< HEAD
 import { ClerkProvider, useAuth } from "@clerk/clerk-expo";
 import { tokenCache } from "@clerk/clerk-expo/token-cache";
 import { EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY } from "@env";
+=======
+import { ClerkProvider } from "@clerk/clerk-expo";
+import { tokenCache } from "@clerk/clerk-expo/token-cache";
+import { NotificationProvider } from "@/src/context/NotificationContext";
+import Constants from "expo-constants";
+import * as Notifications from "expo-notifications";
+
+
+Notifications.setNotificationHandler({
+  handleNotification: async () => ({
+    shouldShowAlert: true,
+    shouldPlaySound: true,
+    shouldSetBadge: false,
+  }),
+});
+
+// <- ATENÇÃO: impede o auto-hide da splash
+SplashScreen.preventAutoHideAsync();
+
+>>>>>>> parent of 10c19fd (Delete Salon/app directory)
 
 const loadFonts = async () => {
   await Font.loadAsync({
@@ -35,7 +61,10 @@ const loadFonts = async () => {
   });
 };
 
+<<<<<<< HEAD
 // Customização dos temas
+=======
+>>>>>>> parent of 10c19fd (Delete Salon/app directory)
 const customDarkTheme = { ...MD3DarkTheme, colors: Colors.dark };
 const customLightTheme = { ...MD3LightTheme, colors: Colors.light };
 
@@ -58,6 +87,7 @@ const addFontsToTheme = (theme: any) => ({
 });
 
 export default function RootLayout() {
+<<<<<<< HEAD
   const [fontsLoaded, setFontsLoaded] = useState(false);
   const colorScheme = useColorScheme();
 
@@ -68,11 +98,45 @@ export default function RootLayout() {
 
 
   if (!fontsLoaded) return null;
+=======
+  const [appIsReady, setAppIsReady] = useState(false);
+  const colorScheme = useColorScheme();
+
+  useEffect(() => {
+    async function prepare() {
+      try {
+        // Carregar fontes e outros recursos necessários
+        await loadFonts();
+      } catch (e) {
+        console.warn(e);
+      } finally {
+        setAppIsReady(true);
+        // <- Agora sim, esconde a splash
+        await SplashScreen.hideAsync();
+      }
+    }
+
+    prepare();
+  }, []);
+
+  const onLayoutRootView = useCallback(async () => {
+    if (appIsReady) {
+      // Garante que a splash só será escondida quando tudo estiver pronto
+      await SplashScreen.hideAsync();
+    }
+  }, [appIsReady]);
+
+  if (!appIsReady) {
+    // Não renderiza nada enquanto prepara (splash permanece visível)
+    return null;
+  }
+>>>>>>> parent of 10c19fd (Delete Salon/app directory)
 
   const paperTheme =
     colorScheme !== "dark" ? CombinedDefaultTheme : CombinedDarkTheme;
   const themeWithFonts = addFontsToTheme(paperTheme);
 
+<<<<<<< HEAD
   const publishableKey = EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY;
 
   if (!publishableKey) {
@@ -96,3 +160,30 @@ export default function RootLayout() {
     </GestureHandlerRootView>
   );
 }
+=======
+  const publishableKey = Constants.expoConfig?.extra?.EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY;
+
+  if (!publishableKey) {
+    throw new Error("Adicione as credenciais de EXPO_CLERK");
+  }
+
+  return (
+    <GestureHandlerRootView style={{ flex: 1 }} onLayout={onLayoutRootView}>
+      <ClerkProvider publishableKey={publishableKey} tokenCache={tokenCache}>
+        <Provider store={store}>
+          <PaperProvider theme={paperTheme}>
+            <StyledThemeProvider theme={paperTheme}>
+              <ThemeProvider value={themeWithFonts}>
+                <NotificationProvider>
+                  <Slot />
+                </NotificationProvider>
+                <Toast />
+              </ThemeProvider>
+            </StyledThemeProvider>
+          </PaperProvider>
+        </Provider>
+      </ClerkProvider>
+    </GestureHandlerRootView>
+  );
+}
+>>>>>>> parent of 10c19fd (Delete Salon/app directory)

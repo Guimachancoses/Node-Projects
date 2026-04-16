@@ -5,8 +5,15 @@ import { all, call, takeLatest, select, put } from "redux-saga/effects";
 import { updateAgendamentos, updateCliente } from "./action";
 import Toast from "react-native-toast-message";
 import { router } from "expo-router";
+<<<<<<< HEAD
 
 const salaoId = `${process.env.SALAO_ID}`;
+=======
+import Constants from "expo-constants";
+
+const SALAOID = Constants.expoConfig?.extra?.EXPO_SALAO_ID;
+//console.log("SALAOID SAGAS CLIENTE: ", SALAOID);
+>>>>>>> parent of 10c19fd (Delete Salon/app directory)
 
 export function* filterCliente() {
   try {
@@ -54,7 +61,11 @@ export function* addCliente() {
     //console.log("cliente: ", cliente);
 
     const { data: res } = yield call(api.post, `/cliente`, {
+<<<<<<< HEAD
       salaoId: salaoId,
+=======
+      salaoId: SALAOID,
+>>>>>>> parent of 10c19fd (Delete Salon/app directory)
       cliente: cliente,
     });
 
@@ -183,10 +194,42 @@ export function* filterAgendamentos({ filters }: any) {
   }
 }
 
+<<<<<<< HEAD
+=======
+export function* pushToken({ token }: any) {
+  try {
+    const { cliente } = yield select((state) => state.cliente);
+    const { data: res } = yield call(api.post, `/push-token`, { token, model: "Cliente", referenciaId: cliente.clienteId });
+
+    if (res.error) {
+      Toast.show({
+        type: "error",
+        text1: "Erro!",
+        text2: res.message,
+      });
+      return false;
+    }
+
+    //console.log("Token cadastrado com sucesso: ", res);
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err);
+    Toast.show({
+      type: "error",
+      text1: "Erro!",
+      text2: message,
+    });
+  }
+}
+
+>>>>>>> parent of 10c19fd (Delete Salon/app directory)
 export default all([
   takeLatest(types.FILTER_CLIENTE, filterCliente),
   takeLatest(types.ADD_CLIENTE, addCliente),
   takeLatest(types.GET_CLIENTE, getCliente),
   takeLatest(types.UPDATE_CADASTRO, updateCadastro),
   takeLatest(types.FILTER_AGENDAMENTOS, filterAgendamentos),
+<<<<<<< HEAD
+=======
+  takeLatest(types.PUSH_TOKEN, pushToken),
+>>>>>>> parent of 10c19fd (Delete Salon/app directory)
 ]);

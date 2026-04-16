@@ -2,6 +2,10 @@ import { produce } from "immer";
 import types from "./types";
 import _ from "lodash";
 
+<<<<<<< HEAD
+=======
+
+>>>>>>> parent of 10c19fd (Delete Salon/app directory)
 interface State {
   agendamento: object;
   agendamentos: any[];
