@@ -1,54 +1,49 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useMemo } from 'react';
 import { Button, CircularProgress } from '@mui/material';
 import GoogleIcon from '@mui/icons-material/Google';
 import FacebookIcon from '@mui/icons-material/Facebook';
-//import AppleIcon from '@mui/icons-material/Apple';
+// import AppleIcon from '@mui/icons-material/Apple';
 import { useSignIn } from '@clerk/clerk-react';
+
+const STRATEGY_MAP = {
+  facebook: 'oauth_facebook',
+  google: 'oauth_google',
+  apple: 'oauth_apple',
+};
+
+const BUTTON_TEXT_MAP = {
+  facebook: 'Entrar com Facebook',
+  google: 'Entrar com Google',
+  apple: 'Entrar com Apple',
+};
 
 const SocialButton = ({ strategy, icon: Icon, color }) => {
   const [isLoading, setIsLoading] = useState(false);
   const { signIn } = useSignIn();
 
-  const getStrategy = () => {
-    switch (strategy) {
-      case 'facebook':
-        return 'oauth_facebook';
-      case 'google':
-        return 'oauth_google';  
-      case 'apple':
-        return 'oauth_apple';
-      default:
-        return 'oauth_facebook';
-    }
-  };
+  const oauthStrategy = useMemo(
+    () => STRATEGY_MAP[strategy] || 'oauth_facebook',
+    [strategy]
+  );
 
   const getButtonText = () => {
     if (isLoading) return 'Carregando...';
-    switch (strategy) {
-      case 'facebook':
-        return 'Entrar com Facebook';
-      case 'google':
-        return 'Entrar com Google';
-      case 'apple':
-        return 'Entrar com Apple';
-      default:
-        return 'Entrar';
-    }
+    return BUTTON_TEXT_MAP[strategy] || 'Entrar';
   };
 
   const onSocialLoginPress = useCallback(async () => {
     try {
       setIsLoading(true);
       await signIn.authenticateWithRedirect({
-        strategy: getStrategy(),
+        strategy: oauthStrategy,
         redirectUrl: '/sign-in',
-        redirectUrlComplete: '/'
+        redirectUrlComplete: '/',
       });
     } catch (err) {
       console.error('Error during social login:', err);
       setIsLoading(false);
     }
-  }, [signIn, strategy]);
+  }, [signIn, oauthStrategy]);
 
   return (
     <Button
@@ -58,7 +53,7 @@ const SocialButton = ({ strategy, icon: Icon, color }) => {
         isLoading ? (
           <CircularProgress size={20} color="inherit" />
         ) : (
-          <Icon sx={{ color: color }} />
+          <Icon sx={{ color }} />
         )
       }
       onClick={onSocialLoginPress}
@@ -73,21 +68,9 @@ const SocialButton = ({ strategy, icon: Icon, color }) => {
 const SocialButtons = () => {
   return (
     <>
-      <SocialButton 
-        strategy="google"
-        icon={GoogleIcon}
-        color="#DB4437"
-      />
-      <SocialButton
-        strategy="facebook" 
-        icon={FacebookIcon}
-        color="#1977F3"
-      />
-      {/* <SocialButton
-        strategy="apple"
-        icon={AppleIcon} 
-        color="#000000"
-      /> */}
+      <SocialButton strategy="google" icon={GoogleIcon} color="#DB4437" />
+      <SocialButton strategy="facebook" icon={FacebookIcon} color="#1977F3" />
+      {/* <SocialButton strategy="apple" icon={AppleIcon} color="#000000" /> */}
     </>
   );
 };

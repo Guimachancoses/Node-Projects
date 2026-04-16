@@ -283,7 +283,7 @@ const Servicos = () => {
   };
 
   const [selectedId, setSelectedId] = useState(null);
-  const [selectedToDelete, setSelectedToDelete] = useState([]);
+  const [, setSelectedToDelete] = useState([]);
 
   const handleOpenDialog = (selectedIds) => {
     setSelectedId(selectedIds[0]);

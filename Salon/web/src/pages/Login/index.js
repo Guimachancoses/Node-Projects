@@ -37,12 +37,24 @@ const Login = () => {
   const { isSignedIn } = useUser();
   const { user } = useClerk();
 
+  const firstName = user?.firstName ?? "";
+  const lastName = user?.lastName ?? "";
+  const imageUrl = user?.imageUrl ?? "";
+  const emailAddress = user?.emailAddresses?.[0]?.emailAddress ?? "";
+
   useEffect(() => {
-    if (isSignedIn) {
-      dispatch(updateUser({ email: user.emailAddresses, firstName: user.firstName, lastName: user.lastName, imageUrl: user.imageUrl }));
-      dispatch(checkUser());
-    } 
-  }, [isSignedIn, dispatch]);
+    if (!isSignedIn || !emailAddress) return;
+
+    dispatch(
+      updateUser({
+        email: emailAddress,
+        firstName,
+        lastName,
+        imageUrl,
+      })
+    );
+    dispatch(checkUser());
+  }, [isSignedIn, emailAddress, firstName, lastName, imageUrl, dispatch]);
 
   const handleSubmit = (e) => {
     e.preventDefault();
