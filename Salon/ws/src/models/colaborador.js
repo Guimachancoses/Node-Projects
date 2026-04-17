@@ -94,6 +94,12 @@ const colaborador = new Schema({
   recipientId: {
     type: String,
   },
+  idCalendar: {
+    type: String,
+  },
+  idDrive: {
+    type: String,
+  },
   dataCadastro: {
     type: Date,
     default: Date.now,

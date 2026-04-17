@@ -10,7 +10,7 @@ const busboyBodyParser = require("busboy-body-parser");
 const cors = require("cors");
 const crypto = require("crypto");
 const { google } = require("googleapis");
-const { onboardingGoogleN8n } = require("./src/services/onboardingGoogleN8n");
+const Colaborador = require("./src/models/colaboradorModel"); // ajuste o caminho se necessário
 
 require("./database");
 
@@ -149,7 +149,7 @@ app.get("/oauth/google/start", (req, res) => {
     "https://www.googleapis.com/auth/userinfo.email",
     "https://www.googleapis.com/auth/userinfo.profile",
     "https://www.googleapis.com/auth/calendar.events",
-    "https://www.googleapis.com/auth/drive.file",
+    "https://www.googleapis.com/auth/drive.metadata.readonly"
   ];
 
   const authUrl = oauth2Client.generateAuthUrl({
@@ -236,42 +236,62 @@ app.get("/oauth/google/callback", async (req, res) => {
 
     console.log("[OAUTH CALLBACK] googleEmail:", googleEmail);
 
-    // 3) mantém seu store atual
+    // 3) pegar idCalendar (principal)
+    const calendarApi = google.calendar({ version: "v3", auth: oauth2Client });
+    const calList = await calendarApi.calendarList.list();
+    const primaryCalendar = (calList.data.items || []).find((c) => c.primary) || null;
+    const idCalendar = primaryCalendar?.id || "primary";
+
+    // 4) pegar idDrive (root folder id)
+    const driveApi = google.drive({ version: "v3", auth: oauth2Client });
+    const about = await driveApi.about.get({
+      fields: "user(emailAddress,displayName),rootFolderId",
+    });
+    const idDrive = about?.data?.rootFolderId || null;
+
+    console.log("[OAUTH CALLBACK] idCalendar:", idCalendar);
+    console.log("[OAUTH CALLBACK] idDrive(root):", idDrive);
+
+    // 5) salva no tokenStore (temporário)
     const prev = tokenStore.get(userId) || {};
     tokenStore.set(userId, {
       ...prev,
       ...tokens,
       googleEmail,
+      idCalendar,
+      idDrive,
       updatedAt: new Date().toISOString(),
     });
 
     console.log("[OAUTH CALLBACK] tokenStore atualizado para userId:", userId);
 
-    // 4) onboarding n8n
-    console.log("[OAUTH CALLBACK] iniciando onboardingGoogleN8n...");
-    const result = await onboardingGoogleN8n({
-      appUserId: String(userId),
-      clientName: String(clientName),
-      googleEmail,
-      googleTokens: tokens,
-    });
+    // 6) persistir no Mongo (Colaborador)
+    const updated = await Colaborador.findOneAndUpdate(
+      { email: googleEmail }, // ideal: no futuro usar clerkUserId
+      {
+        $set: {
+          idCalendar,
+          idDrive,
+        },
+      },
+      { new: true }
+    );
 
-    console.log("[OAUTH CALLBACK] onboarding n8n OK:", result);
-
-    // opcional: guardar ids n8n no store temporário
-    tokenStore.set(userId, {
-      ...(tokenStore.get(userId) || {}),
-      n8nCredentialId: result.credentialId,
-      n8nWorkflowId: result.workflowId,
-    });
+    if (!updated) {
+      console.warn("[OAUTH CALLBACK] Colaborador não encontrado por email:", googleEmail);
+    } else {
+      console.log("[OAUTH CALLBACK] Colaborador atualizado:", updated._id?.toString());
+    }
 
     const safeReturn = String(returnTo).startsWith("/") ? returnTo : "/account";
-    const redirectUrl = `${process.env.FRONTEND_URL}${safeReturn}?google=success&email=${encodeURIComponent(
-      googleEmail
-    )}`;
+    const redirectUrl =
+      `${process.env.FRONTEND_URL}${safeReturn}` +
+      `?google=success` +
+      `&email=${encodeURIComponent(googleEmail)}` +
+      `&idCalendar=${encodeURIComponent(idCalendar)}` +
+      `&idDrive=${encodeURIComponent(idDrive || "")}`;
 
     console.log("[OAUTH CALLBACK] redirect sucesso:", redirectUrl);
-
     return res.redirect(redirectUrl);
   } catch (err) {
     console.error("[OAUTH CALLBACK] ERRO message:", err?.message);
