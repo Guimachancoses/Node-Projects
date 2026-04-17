@@ -1,12 +1,17 @@
 import { useEffect, useMemo, useState } from "react";
 import { createPortal } from "react-dom";
-import { useAuth } from "@clerk/clerk-react";
+import { useAuth, useUser } from "@clerk/clerk-react";
 
 const MAX_Z = 2147483647;
 
 export default function PopSyncCalendarDrive() {
   const { isLoaded, isSignedIn, userId } = useAuth();
   const [open, setOpen] = useState(false);
+
+  const { user } = useUser();
+  const firstName = user?.firstName ?? "";
+  const lastName = user?.lastName ?? "";
+  const clientName = `${firstName} ${lastName}`.trim() || "cliente";
 
   const storageKey = useMemo(
     () => (userId ? `google_sync_prompt_seen_${userId}` : null),
@@ -28,7 +33,6 @@ export default function PopSyncCalendarDrive() {
     if (!userId) return;
     if (storageKey) localStorage.setItem(storageKey, "1");
 
-    const clientName = `${firstName} ${lastName}`.trim() || "cliente";
     const url =
       `https://salon.fabrisportalhub.com.br/oauth/google/start` +
       `?userId=${encodeURIComponent(userId)}` +
