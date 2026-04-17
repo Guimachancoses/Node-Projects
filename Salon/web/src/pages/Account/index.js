@@ -190,6 +190,21 @@ export default function Account() {
     return () => clearInterval(id);
   }, [waDialogOpen, userId, waStatus, checkWhatsAppStatus]);
 
+  // Fechar o modal após conectar o whatsapp e limpar o qrcode
+  useEffect(() => {
+    // só fecha automaticamente quando estiver conectado
+    if (!waDialogOpen || waStatus !== "connected") return;
+  
+    const timeoutId = setTimeout(() => {
+      setWaDialogOpen(false);
+      setWaQrImage(null);
+      setWaQrCodeText(null);
+      setWaInfo("");
+    }, 5000);
+  
+    return () => clearTimeout(timeoutId);
+  }, [waDialogOpen, waStatus]);
+
   const waFriendly = getWaFriendly(waStatus);
   const isWaConnected = waStatus === "connected";
 
