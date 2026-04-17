@@ -1,4 +1,4 @@
-import { useMemo, useState, useEffect } from "react";
+import { useMemo, useState, useEffect, useCallback } from "react";
 import {
   Box,
   TextField,
@@ -73,7 +73,7 @@ export default function Account() {
     }
   };
 
-  const checkWhatsAppStatus = async () => {
+  const checkWhatsAppStatus = useCallback(async () => {
     if (!userId) return;
 
     try {
@@ -91,7 +91,7 @@ export default function Account() {
     } catch (_) {
       // silencioso
     }
-  };
+  }, [userId]);
 
   const handleConnectWhatsApp = async () => {
     if (!isLoaded || !isSignedIn || !userId) return;
@@ -176,7 +176,18 @@ export default function Account() {
   useEffect(() => {
     if (!userId) return;
     checkWhatsAppStatus();
-  }, [userId]);
+  }, [userId, checkWhatsAppStatus]);
+
+  useEffect(() => {
+    if (!waDialogOpen || !userId || waStatus === "connected") return;
+
+    const id = setInterval(() => {
+      checkWhatsAppStatus();
+    }, 4000);
+
+    checkWhatsAppStatus();
+    return () => clearInterval(id);
+  }, [waDialogOpen, userId, waStatus, checkWhatsAppStatus]);
 
   // Polling enquanto modal está aberto e ainda não conectou
   useEffect(() => {

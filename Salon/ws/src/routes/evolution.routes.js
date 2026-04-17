@@ -97,19 +97,47 @@ async function fetchConnectionState(instanceName) {
   return { status: "unknown", raw: null };
 }
 
-async function saveInstanceEvo({ email, instanceName }) {
-  if (!email) return null;
-
+async function saveInstanceEvo({ email, userId, instanceName }) {
   try {
+    const emailNorm = String(email || "").trim().toLowerCase();
+    const userNorm = String(userId || "").trim();
+
+    if (!emailNorm && !userNorm) {
+      console.warn("[WA] saveInstanceEvo sem email e sem userId.");
+      return null;
+    }
+
+    const query = {
+      $or: [
+        ...(userNorm ? [{ recipientId: userNorm }] : []),
+        ...(emailNorm ? [{ email: emailNorm }] : []),
+      ],
+    };
+
     const updated = await Colaborador.findOneAndUpdate(
-      { email },
-      { $set: { instanceEvo: instanceName } },
+      query,
+      {
+        $set: {
+          instanceEvo: instanceName,
+          ...(userNorm ? { recipientId: userNorm } : {}),
+          ...(emailNorm ? { email: emailNorm } : {}),
+        },
+      },
       { new: true }
     );
 
     if (!updated) {
-      console.warn("[WA] Colaborador não encontrado para salvar instanceEvo:", email);
+      console.warn("[WA] Colaborador não encontrado para salvar instanceEvo:", {
+        email: emailNorm || null,
+        userId: userNorm || null,
+      });
+      return null;
     }
+
+    console.log("[WA] instanceEvo salvo com sucesso:", {
+      colaboradorId: updated._id?.toString(),
+      instanceEvo: updated.instanceEvo,
+    });
 
     return updated;
   } catch (e) {
@@ -140,7 +168,7 @@ router.post("/whatsapp/connect", async (req, res) => {
     }
 
     // salva nome da instância no Mongo
-    await saveInstanceEvo({ email, instanceName });
+    await saveInstanceEvo({ email, userId, instanceName });
 
     // polling QR ~10s
     const MAX_TRIES = 10;
