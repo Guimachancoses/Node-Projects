@@ -103,6 +103,9 @@ const colaborador = new Schema({
   idRagFolder: { 
     type: String 
   },
+  instanceEvo: {
+    type: String
+  },
   dataCadastro: {
     type: Date,
     default: Date.now,

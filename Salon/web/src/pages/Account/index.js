@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useMemo, useState, useEffect } from "react";
 import {
   Box,
   TextField,
@@ -20,6 +20,8 @@ import { DatePicker } from "@mui/x-date-pickers/DatePicker";
 import { useAuth, useUser } from "@clerk/clerk-react";
 import { useLocation } from "react-router-dom";
 
+const API_BASE = "https://salon.fabrisportalhub.com.br";
+
 export default function Account() {
   const [birthDate, setBirthDate] = useState(null);
 
@@ -30,6 +32,7 @@ export default function Account() {
   const [waQrImage, setWaQrImage] = useState(null);
   const [waQrCodeText, setWaQrCodeText] = useState(null);
   const [waDialogOpen, setWaDialogOpen] = useState(false);
+  const [waStatus, setWaStatus] = useState("idle"); // idle | connecting | connected | disconnected | unknown
 
   const { user } = useUser();
   const { userId, isLoaded, isSignedIn } = useAuth();
@@ -47,12 +50,47 @@ export default function Account() {
 
     const clientName = `${firstName} ${lastName}`.trim() || "cliente";
     const url =
-      `https://salon.fabrisportalhub.com.br/oauth/google/start` +
+      `${API_BASE}/oauth/google/start` +
       `?userId=${encodeURIComponent(userId)}` +
       `&clientName=${encodeURIComponent(clientName)}` +
       `&returnTo=${encodeURIComponent("/account")}`;
 
     window.location.href = url;
+  };
+
+  const getWaFriendly = (status) => {
+    switch (status) {
+      case "connected":
+        return { severity: "success", text: "WhatsApp conectado com sucesso." };
+      case "connecting":
+        return { severity: "info", text: "Aguardando leitura do QR Code no WhatsApp..." };
+      case "disconnected":
+        return { severity: "warning", text: "WhatsApp desconectado." };
+      case "unknown":
+        return { severity: "info", text: "Verificando status do WhatsApp..." };
+      default:
+        return null;
+    }
+  };
+
+  const checkWhatsAppStatus = async () => {
+    if (!userId) return;
+
+    try {
+      const resp = await fetch(
+        `${API_BASE}/evolution/whatsapp/status?userId=${encodeURIComponent(userId)}`
+      );
+      const data = await resp.json();
+      if (!resp.ok) return;
+
+      const status = data?.status || "unknown";
+      setWaStatus(status);
+
+      if (data?.qrImage) setWaQrImage(data.qrImage);
+      if (data?.qrCodeText) setWaQrCodeText(data.qrCodeText);
+    } catch (_) {
+      // silencioso
+    }
   };
 
   const handleConnectWhatsApp = async () => {
@@ -65,17 +103,18 @@ export default function Account() {
     setWaQrCodeText(null);
 
     try {
-      const resp = await fetch("https://salon.fabrisportalhub.com.br/evolution/whatsapp/connect", {
+      const resp = await fetch(`${API_BASE}/evolution/whatsapp/connect`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ userId }),
+        body: JSON.stringify({ userId, email }),
       });
 
       const data = await resp.json();
 
-      // 202 = instância criada, QR ainda não pronto
       if (resp.status === 202) {
-        setWaInfo(data?.message || "Instância em conexão. Tente novamente em alguns segundos.");
+        setWaStatus("connecting");
+        setWaInfo(data?.message || "Instância criada. Aguarde alguns segundos e escaneie o QR.");
+        setWaDialogOpen(true);
         return;
       }
 
@@ -83,7 +122,6 @@ export default function Account() {
         throw new Error(data?.error || "Erro ao conectar WhatsApp");
       }
 
-      // Compatível com retorno novo e antigo
       const qrImage =
         data?.qrImage ||
         (data?.qrBase64
@@ -92,6 +130,7 @@ export default function Account() {
             : `data:image/png;base64,${data.qrBase64}`
           : null);
 
+      setWaStatus(data?.status || "connecting");
       setWaQrImage(qrImage);
       setWaQrCodeText(data?.qrCodeText || null);
       setWaDialogOpen(true);
@@ -101,6 +140,58 @@ export default function Account() {
       setWaLoading(false);
     }
   };
+
+  const handleDisconnectWhatsApp = async () => {
+    if (!userId) return;
+
+    setWaLoading(true);
+    setWaError("");
+    setWaInfo("");
+
+    try {
+      const resp = await fetch(`${API_BASE}/evolution/whatsapp/disconnect`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ userId, email }),
+      });
+
+      const data = await resp.json();
+      if (!resp.ok) {
+        throw new Error(data?.error || "Erro ao desconectar WhatsApp");
+      }
+
+      setWaStatus("disconnected");
+      setWaQrImage(null);
+      setWaQrCodeText(null);
+      setWaDialogOpen(false);
+      setWaInfo("WhatsApp desconectado com sucesso.");
+    } catch (err) {
+      setWaError(err.message || "Não foi possível desconectar o WhatsApp.");
+    } finally {
+      setWaLoading(false);
+    }
+  };
+
+  // Verifica status inicial ao entrar na página
+  useEffect(() => {
+    if (!userId) return;
+    checkWhatsAppStatus();
+  }, [userId]);
+
+  // Polling enquanto modal está aberto e ainda não conectou
+  useEffect(() => {
+    if (!waDialogOpen || !userId || waStatus === "connected") return;
+
+    const id = setInterval(() => {
+      checkWhatsAppStatus();
+    }, 4000);
+
+    checkWhatsAppStatus();
+    return () => clearInterval(id);
+  }, [waDialogOpen, userId, waStatus]);
+
+  const waFriendly = getWaFriendly(waStatus);
+  const isWaConnected = waStatus === "connected";
 
   return (
     <Container component="main" maxWidth="sm">
@@ -171,6 +262,8 @@ export default function Account() {
           </Alert>
         )}
 
+        {waFriendly && <Alert severity={waFriendly.severity} sx={{ mb: 2 }}>{waFriendly.text}</Alert>}
+
         {waInfo && (
           <Alert severity="info" sx={{ mb: 2 }}>
             {waInfo}
@@ -193,11 +286,18 @@ export default function Account() {
           </Button>
 
           <Button
-            variant="outlined"
-            onClick={handleConnectWhatsApp}
+            variant={isWaConnected ? "contained" : "outlined"}
+            color={isWaConnected ? "error" : "primary"}
+            onClick={isWaConnected ? handleDisconnectWhatsApp : handleConnectWhatsApp}
             disabled={!isLoaded || !isSignedIn || !userId || waLoading}
           >
-            {waLoading ? <CircularProgress size={20} /> : "Sincronizar com WhatsApp"}
+            {waLoading ? (
+              <CircularProgress size={20} />
+            ) : isWaConnected ? (
+              "Desconectar WhatsApp"
+            ) : (
+              "Sincronizar com WhatsApp"
+            )}
           </Button>
         </Box>
       </Paper>
@@ -205,6 +305,12 @@ export default function Account() {
       <Dialog open={waDialogOpen} onClose={() => setWaDialogOpen(false)} maxWidth="xs" fullWidth>
         <DialogTitle>Conectar WhatsApp</DialogTitle>
         <DialogContent sx={{ textAlign: "center" }}>
+          {waFriendly && (
+            <Alert severity={waFriendly.severity} sx={{ mb: 2, mt: 1, textAlign: "left" }}>
+              {waFriendly.text}
+            </Alert>
+          )}
+
           {waQrImage ? (
             <img
               src={waQrImage}
@@ -213,7 +319,7 @@ export default function Account() {
             />
           ) : waQrCodeText ? (
             <Typography variant="body2" sx={{ mt: 1 }}>
-              QR textual recebido (sem imagem). Posso te passar fallback com gerador visual.
+              QR textual recebido (sem imagem).
             </Typography>
           ) : (
             <Typography variant="body2" sx={{ mt: 1 }}>
