@@ -10,6 +10,7 @@ const busboyBodyParser = require("busboy-body-parser");
 const cors = require("cors");
 const crypto = require("crypto");
 const { google } = require("googleapis");
+const Colaborador = require("./src/models/colaborador");
 
 require("./database");
 
@@ -141,8 +142,12 @@ app.get("/oauth/google/start", (req, res) => {
     prompt: "consent",
     include_granted_scopes: true,
     scope: [
+      "openid",
+      "https://www.googleapis.com/auth/userinfo.email",
+      "https://www.googleapis.com/auth/userinfo.profile",
       "https://www.googleapis.com/auth/calendar.events",
       "https://www.googleapis.com/auth/drive.file",
+      "https://www.googleapis.com/auth/drive.metadata.readonly",
     ],
     state,
   });
@@ -151,15 +156,14 @@ app.get("/oauth/google/start", (req, res) => {
 });
 
 // 2) Callback OAuth
+// 2) Callback OAuth
 app.get("/oauth/google/callback", async (req, res) => {
   try {
     const { code, state, error } = req.query;
 
     if (error) {
       return res.redirect(
-        `${process.env.FRONTEND_URL}/integracoes?google=error&reason=${encodeURIComponent(
-          error
-        )}`
+        `${process.env.FRONTEND_URL}/integracoes?google=error&reason=${encodeURIComponent(error)}`
       );
     }
 
@@ -170,18 +174,77 @@ app.get("/oauth/google/callback", async (req, res) => {
 
     const { userId, returnTo } = stateData;
 
+    // 1) Troca code por tokens
     const { tokens } = await oauth2Client.getToken(String(code));
+    if (!tokens?.access_token) {
+      throw new Error("Google não retornou access_token no callback.");
+    }
 
-    // Salva tokens do usuário (trocar por banco real)
+    oauth2Client.setCredentials(tokens);
+
+    // 2) Pega e-mail da conta autorizada
+    const oauth2 = google.oauth2({ version: "v2", auth: oauth2Client });
+    const me = await oauth2.userinfo.get();
+    const googleEmail = me?.data?.email || null;
+
+    if (!googleEmail) {
+      throw new Error("Não foi possível obter o e-mail da conta Google.");
+    }
+
+    // 3) Pega ID do calendário principal
+    const calendarApi = google.calendar({ version: "v3", auth: oauth2Client });
+    const calList = await calendarApi.calendarList.list();
+    const primaryCalendar = (calList.data.items || []).find((c) => c.primary) || null;
+    const idCalendar = primaryCalendar?.id || "primary";
+
+    // 4) Pega ID do Drive (root folder id)
+    const driveApi = google.drive({ version: "v3", auth: oauth2Client });
+    const about = await driveApi.about.get({
+      fields: "user(emailAddress,displayName),rootFolderId",
+    });
+    const idDrive = about?.data?.rootFolderId || null;
+
+    console.log("[OAUTH CALLBACK] googleEmail:", googleEmail);
+    console.log("[OAUTH CALLBACK] idCalendar:", idCalendar);
+    console.log("[OAUTH CALLBACK] idDrive(root):", idDrive);
+
+    // 5) Mantém store temporário
     const prev = tokenStore.get(userId) || {};
     tokenStore.set(userId, {
       ...prev,
       ...tokens,
+      googleEmail,
+      idCalendar,
+      idDrive,
       updatedAt: new Date().toISOString(),
     });
 
+    // 6) Salva no Mongo (Colaborador)
+    const updated = await Colaborador.findOneAndUpdate(
+      { email: googleEmail }, // se tiver clerkUserId no schema, melhor usar ele
+      {
+        $set: {
+          idCalendar,
+          idDrive,
+        },
+      },
+      { new: true }
+    );
+
+    if (!updated) {
+      console.warn("[OAUTH CALLBACK] Colaborador não encontrado por email:", googleEmail);
+    } else {
+      console.log("[OAUTH CALLBACK] Colaborador atualizado:", updated._id?.toString());
+    }
+
     const safeReturn = String(returnTo).startsWith("/") ? returnTo : "/integracoes";
-    return res.redirect(`${process.env.FRONTEND_URL}${safeReturn}?google=success`);
+    return res.redirect(
+      `${process.env.FRONTEND_URL}${safeReturn}` +
+        `?google=success` +
+        `&email=${encodeURIComponent(googleEmail)}` +
+        `&idCalendar=${encodeURIComponent(idCalendar)}` +
+        `&idDrive=${encodeURIComponent(idDrive || "")}`
+    );
   } catch (err) {
     console.error("OAuth callback error:", err?.response?.data || err.message);
     return res.redirect(`${process.env.FRONTEND_URL}/integracoes?google=error`);
