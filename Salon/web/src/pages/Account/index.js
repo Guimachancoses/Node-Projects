@@ -15,8 +15,6 @@ import { DatePicker } from "@mui/x-date-pickers/DatePicker";
 import { useAuth, useUser } from "@clerk/clerk-react";
 import { useLocation } from "react-router-dom";
 
-const BACKEND_URL = "https://salon.fabrisportalhub.com.br";
-
 export default function Account() {
   const [birthDate, setBirthDate] = useState(null);
   const { user } = useUser();
@@ -33,12 +31,12 @@ export default function Account() {
   const handleConnectGoogle = () => {
     if (!isLoaded || !isSignedIn || !userId) return;
 
-    const returnTo = "/account";
+    const clientName = `${firstName} ${lastName}`.trim() || "cliente";
     const url =
-      `${BACKEND_URL}/oauth/google/start` +
+      `https://salon.fabrisportalhub.com.br/oauth/google/start` +
       `?userId=${encodeURIComponent(userId)}` +
-      `&returnTo=${encodeURIComponent(returnTo)}`;
-
+      `&clientName=${encodeURIComponent(clientName)}` +
+      `&returnTo=${encodeURIComponent("/account")}`;
     window.location.href = url;
   };
 

@@ -2,7 +2,6 @@ import { useEffect, useMemo, useState } from "react";
 import { createPortal } from "react-dom";
 import { useAuth } from "@clerk/clerk-react";
 
-const BACKEND_URL = "https://salon.fabrisportalhub.com.br";
 const MAX_Z = 2147483647;
 
 export default function PopSyncCalendarDrive() {
@@ -29,12 +28,12 @@ export default function PopSyncCalendarDrive() {
     if (!userId) return;
     if (storageKey) localStorage.setItem(storageKey, "1");
 
-    const returnTo = window.location.pathname || "/agendamentos";
+    const clientName = `${firstName} ${lastName}`.trim() || "cliente";
     const url =
-      `${BACKEND_URL}/oauth/google/start` +
+      `https://salon.fabrisportalhub.com.br/oauth/google/start` +
       `?userId=${encodeURIComponent(userId)}` +
-      `&returnTo=${encodeURIComponent(returnTo)}`;
-
+      `&clientName=${encodeURIComponent(clientName)}` +
+      `&returnTo=${encodeURIComponent("/agendamentos")}`;
     window.location.href = url;
   };
 

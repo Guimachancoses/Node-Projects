@@ -10,6 +10,7 @@ const busboyBodyParser = require("busboy-body-parser");
 const cors = require("cors");
 const crypto = require("crypto");
 const { google } = require("googleapis");
+const { onboardingGoogleN8n } = require("./src/services/onboardingGoogleN8n");
 
 require("./database");
 
@@ -123,7 +124,7 @@ app.use(
 // 1) Início do OAuth
 // Exemplo: /oauth/google/start?userId=123&returnTo=/integracoes
 app.get("/oauth/google/start", (req, res) => {
-  const { userId, returnTo = "/integracoes" } = req.query;
+  const { userId, returnTo = "/account", clientName = "cliente" } = req.query;
 
   if (!userId) {
     return res.status(400).send("Faltou userId");
@@ -132,6 +133,7 @@ app.get("/oauth/google/start", (req, res) => {
   const state = signState({
     userId: String(userId),
     returnTo: String(returnTo),
+    clientName: String(clientName),
     ts: Date.now(),
     nonce: crypto.randomUUID(),
   });
@@ -157,9 +159,7 @@ app.get("/oauth/google/callback", async (req, res) => {
 
     if (error) {
       return res.redirect(
-        `${process.env.FRONTEND_URL}/integracoes?google=error&reason=${encodeURIComponent(
-          error
-        )}`
+        `${process.env.FRONTEND_URL}/account?google=error&reason=${encodeURIComponent(error)}`
       );
     }
 
@@ -168,23 +168,52 @@ app.get("/oauth/google/callback", async (req, res) => {
       return res.status(400).send("State inválido ou expirado.");
     }
 
-    const { userId, returnTo } = stateData;
+    const { userId, returnTo = "/account", clientName = "cliente" } = stateData;
 
+    // 1) troca code por tokens
     const { tokens } = await oauth2Client.getToken(String(code));
 
-    // Salva tokens do usuário (trocar por banco real)
+    // 2) pega email real da conta autorizada
+    oauth2Client.setCredentials(tokens);
+    const oauth2 = google.oauth2({ version: "v2", auth: oauth2Client });
+    const me = await oauth2.userinfo.get();
+    const googleEmail = me?.data?.email || "";
+
+    if (!googleEmail) {
+      throw new Error("Não foi possível obter o e-mail da conta Google autorizada.");
+    }
+
+    // 3) mantém seu store atual (não quebra nada)
     const prev = tokenStore.get(userId) || {};
     tokenStore.set(userId, {
       ...prev,
       ...tokens,
+      googleEmail,
       updatedAt: new Date().toISOString(),
     });
 
-    const safeReturn = String(returnTo).startsWith("/") ? returnTo : "/integracoes";
-    return res.redirect(`${process.env.FRONTEND_URL}${safeReturn}?google=success`);
+    // 4) onboarding n8n (cria credencial + clona wf + injeta cred + ativa)
+    const result = await onboardingGoogleN8n({
+      appUserId: String(userId),
+      clientName: String(clientName),
+      googleEmail,
+      googleTokens: tokens,
+    });
+
+    // opcional: guardar ids n8n no mesmo store temporário
+    tokenStore.set(userId, {
+      ...(tokenStore.get(userId) || {}),
+      n8nCredentialId: result.credentialId,
+      n8nWorkflowId: result.workflowId,
+    });
+
+    const safeReturn = String(returnTo).startsWith("/") ? returnTo : "/account";
+    return res.redirect(
+      `${process.env.FRONTEND_URL}${safeReturn}?google=success&email=${encodeURIComponent(googleEmail)}`
+    );
   } catch (err) {
     console.error("OAuth callback error:", err?.response?.data || err.message);
-    return res.redirect(`${process.env.FRONTEND_URL}/integracoes?google=error`);
+    return res.redirect(`${process.env.FRONTEND_URL}/account?google=error`);
   }
 });
 
