@@ -1,59 +1,75 @@
 const axios = require("axios");
 
-const N8N_BASE_URL = process.env.N8N_BASE_URL;
-const N8N_API_KEY = process.env.N8N_API_KEY;
-const TEMPLATE_WORKFLOW_ID = process.env.N8N_TEMPLATE_WORKFLOW_ID;
-
-if (!N8N_BASE_URL || !N8N_API_KEY || !TEMPLATE_WORKFLOW_ID) {
-  throw new Error("Faltam variáveis de ambiente do n8n");
-}
-
 const n8n = axios.create({
-  baseURL: `${N8N_BASE_URL}/api/v1`,
+  baseURL: `${process.env.N8N_BASE_URL}/api/v1`,
   headers: {
-    "X-N8N-API-KEY": N8N_API_KEY,
+    "X-N8N-API-KEY": process.env.N8N_API_KEY,
     "Content-Type": "application/json",
   },
   timeout: 30000,
 });
 
-/**
- * googleTokens esperado:
- * {
- *   access_token,
- *   refresh_token,
- *   token_type,
- *   expiry_date,   // number (ms)
- *   scope
- * }
- */
-async function createGoogleCredential({ clientName, googleEmail, googleTokens }) {
-  const credentialName = `google_${clientName}_${googleEmail}`.replace(/\s+/g, "_");
+const TEMPLATE_WORKFLOW_ID = process.env.N8N_TEMPLATE_WORKFLOW_ID;
 
-  // Tipo pode variar conforme node/versão:
-  // normalmente googleCalendarOAuth2Api para Google Calendar node.
-  // Se seu fluxo tiver Google Drive node separado, pode precisar googleDriveOAuth2Api.
-  const payload = {
-    name: credentialName,
-    type: "googleCalendarOAuth2Api",
-    data: {
-      clientId: process.env.GOOGLE_CLIENT_ID,
-      clientSecret: process.env.GOOGLE_CLIENT_SECRET,
-      // escopos que seu fluxo precisa
-      scope:
-        "https://www.googleapis.com/auth/calendar.events https://www.googleapis.com/auth/drive.file",
-      oauthTokenData: {
-        access_token: googleTokens.access_token,
-        refresh_token: googleTokens.refresh_token,
-        token_type: googleTokens.token_type || "Bearer",
-        expiry_date: googleTokens.expiry_date,
-        scope: googleTokens.scope,
-      },
-    },
+// -------- Helpers --------
+function credentialDataVariants(tokens) {
+  const baseToken = {
+    access_token: tokens.access_token,
+    refresh_token: tokens.refresh_token,
+    token_type: tokens.token_type || "Bearer",
+    expiry_date: tokens.expiry_date,
+    scope: tokens.scope,
   };
 
-  const { data } = await n8n.post("/credentials", payload);
-  return data; // { id, name, ... }
+  return [
+    // Variante A (mais comum)
+    {
+      clientId: process.env.GOOGLE_CLIENT_ID,
+      clientSecret: process.env.GOOGLE_CLIENT_SECRET,
+      oauthTokenData: baseToken,
+    },
+    // Variante B (n8n pedindo campos extras)
+    {
+      clientId: process.env.GOOGLE_CLIENT_ID,
+      clientSecret: process.env.GOOGLE_CLIENT_SECRET,
+      serverUrl: "https://www.googleapis.com/",
+      sendAdditionalBodyProperties: false,
+      additionalBodyProperties: "",
+      oauthTokenData: baseToken,
+    },
+    // Variante C (algumas instalações exigem additionalBodyProperties em JSON)
+    {
+      clientId: process.env.GOOGLE_CLIENT_ID,
+      clientSecret: process.env.GOOGLE_CLIENT_SECRET,
+      serverUrl: "https://www.googleapis.com/",
+      sendAdditionalBodyProperties: true,
+      additionalBodyProperties: "{}",
+      oauthTokenData: baseToken,
+    },
+  ];
+}
+
+async function createCredentialWithFallback({ type, name, tokens }) {
+  const variants = credentialDataVariants(tokens);
+  let lastErr = null;
+
+  for (let i = 0; i < variants.length; i++) {
+    try {
+      const payload = { name, type, data: variants[i] };
+      console.log(`[N8N] Tentando credencial ${type} variante ${i + 1}...`);
+      const { data } = await n8n.post("/credentials", payload);
+      console.log(`[N8N] Credencial criada (${type}) variante ${i + 1}:`, data?.id);
+      return data;
+    } catch (err) {
+      lastErr = err;
+      console.log(
+        `[N8N] Falha variante ${i + 1} (${type}):`,
+        err?.response?.data?.message || err.message
+      );
+    }
+  }
+
+  throw lastErr;
 }
 
 async function getTemplateWorkflow() {
@@ -61,140 +77,131 @@ async function getTemplateWorkflow() {
   return data;
 }
 
-function injectCredentialIntoNodes(workflow, credential) {
-  const targetNodeNames = new Set(["criar_eventos", "buscar_eventos", "deletar_eventos"]);
+function sanitizeWorkflowForCreate(workflow, newName) {
+  const { id, createdAt, updatedAt, versionId, active, shared, tags, ...rest } = workflow;
+  return { ...rest, name: newName, active: false };
+}
 
-  const updatedNodes = workflow.nodes.map((node) => {
-    if (!targetNodeNames.has(node.name)) return node;
+function injectCredentials(workflow, calendarCred, driveCred) {
+  const calendarNodes = new Set(["criar_eventos", "buscar_eventos", "deletar_eventos"]);
+  const driveNodes = new Set(["Arquivo Criado", "Arquivo Alterado", "Download File"]);
 
-    return {
-      ...node,
-      credentials: {
-        ...(node.credentials || {}),
-        googleCalendarOAuth2Api: {
-          id: String(credential.id),
-          name: credential.name,
+  const nodes = workflow.nodes.map((node) => {
+    if (calendarNodes.has(node.name)) {
+      return {
+        ...node,
+        credentials: {
+          ...(node.credentials || {}),
+          googleCalendarOAuth2Api: {
+            id: String(calendarCred.id),
+            name: calendarCred.name,
+          },
         },
-      },
-    };
+      };
+    }
+
+    if (driveNodes.has(node.name)) {
+      return {
+        ...node,
+        credentials: {
+          ...(node.credentials || {}),
+          googleDriveOAuth2Api: {
+            id: String(driveCred.id),
+            name: driveCred.name,
+          },
+        },
+      };
+    }
+
+    return node;
   });
 
-  return {
-    ...workflow,
-    nodes: updatedNodes,
-  };
+  return { ...workflow, nodes };
 }
 
-function sanitizeWorkflowForCreate(workflow, newName) {
-  // remove campos que não devem ser enviados no create
-  const {
-    id,
-    createdAt,
-    updatedAt,
-    versionId,
-    active,
-    shared,
-    tags,
-    ...rest
-  } = workflow;
-
-  return {
-    ...rest,
-    name: newName,
-    active: false,
-  };
-}
-
-async function createWorkflow(workflowPayload) {
-  const { data } = await n8n.post("/workflows", workflowPayload);
+async function createWorkflow(payload) {
+  const { data } = await n8n.post("/workflows", payload);
   return data;
 }
 
 async function activateWorkflow(workflowId) {
-  // Em versões recentes funciona PATCH com active: true
   const { data } = await n8n.patch(`/workflows/${workflowId}`, { active: true });
   return data;
 }
 
-async function deleteCredential(credentialId) {
+async function safeDeleteCredential(id) {
+  if (!id) return;
   try {
-    await n8n.delete(`/credentials/${credentialId}`);
+    await n8n.delete(`/credentials/${id}`);
   } catch (e) {
-    console.error("Rollback: falha ao deletar credencial", e?.response?.data || e.message);
+    console.error("[ROLLBACK] Falha ao deletar credencial:", id, e?.response?.data || e.message);
   }
 }
 
-async function deleteWorkflow(workflowId) {
+async function safeDeleteWorkflow(id) {
+  if (!id) return;
   try {
-    await n8n.delete(`/workflows/${workflowId}`);
+    await n8n.delete(`/workflows/${id}`);
   } catch (e) {
-    console.error("Rollback: falha ao deletar workflow", e?.response?.data || e.message);
+    console.error("[ROLLBACK] Falha ao deletar workflow:", id, e?.response?.data || e.message);
   }
 }
 
-/**
- * Orquestra onboarding completo:
- * 1) cria credencial
- * 2) clona template
- * 3) injeta credencial nos 3 nodes
- * 4) cria workflow
- * 5) ativa workflow
- */
-async function onboardingGoogleN8n({
-  appUserId,
-  clientName,
-  googleEmail,
-  googleTokens,
-}) {
-  let createdCredential = null;
-  let createdWorkflow = null;
+// -------- Orquestração --------
+async function onboardingGoogleN8n({ appUserId, clientName, googleEmail, googleTokens }) {
+  let calendarCred = null;
+  let driveCred = null;
+  let workflow = null;
 
   try {
     if (!googleTokens?.refresh_token) {
-      throw new Error("refresh_token ausente. Garanta access_type=offline + prompt=consent.");
+      throw new Error("refresh_token ausente (use access_type=offline + prompt=consent).");
     }
 
-    // 1) Credencial
-    createdCredential = await createGoogleCredential({
-      clientName,
-      googleEmail,
-      googleTokens,
+    // 1) cria credenciais
+    calendarCred = await createCredentialWithFallback({
+      type: "googleCalendarOAuth2Api",
+      name: `google_calendar_${clientName}_${googleEmail}`.replace(/\s+/g, "_"),
+      tokens: googleTokens,
     });
 
-    // 2) Template
+    driveCred = await createCredentialWithFallback({
+      type: "googleDriveOAuth2Api",
+      name: `google_drive_${clientName}_${googleEmail}`.replace(/\s+/g, "_"),
+      tokens: googleTokens,
+    });
+
+    // 2) clona template e injeta credenciais
     const template = await getTemplateWorkflow();
+    const withCreds = injectCredentials(template, calendarCred, driveCred);
+    const payload = sanitizeWorkflowForCreate(
+      withCreds,
+      `cliente_${clientName}_${appUserId}`.replace(/\s+/g, "_")
+    );
 
-    // 3) Inject cred nos nodes alvo
-    const withCred = injectCredentialIntoNodes(template, createdCredential);
+    // 3) cria workflow
+    workflow = await createWorkflow(payload);
 
-    // 4) Payload final
-    const workflowName = `cliente_${clientName}_${appUserId}`.replace(/\s+/g, "_");
-    const createPayload = sanitizeWorkflowForCreate(withCred, workflowName);
-
-    // 5) Criar workflow
-    createdWorkflow = await createWorkflow(createPayload);
-
-    // 6) Ativar workflow
-    await activateWorkflow(createdWorkflow.id);
+    // 4) ativa
+    await activateWorkflow(workflow.id);
 
     return {
       ok: true,
-      credentialId: createdCredential.id,
-      credentialName: createdCredential.name,
-      workflowId: createdWorkflow.id,
-      workflowName: createdWorkflow.name,
+      workflowId: workflow.id,
+      workflowName: workflow.name,
+      calendarCredentialId: calendarCred.id,
+      driveCredentialId: driveCred.id,
     };
   } catch (err) {
-    console.error("Erro onboarding n8n:", err?.response?.data || err.message);
+    console.error("[ONBOARDING] Erro:", err?.response?.data || err.message);
 
     // rollback
-    if (createdWorkflow?.id) await deleteWorkflow(createdWorkflow.id);
-    if (createdCredential?.id) await deleteCredential(createdCredential.id);
+    await safeDeleteWorkflow(workflow?.id);
+    await safeDeleteCredential(calendarCred?.id);
+    await safeDeleteCredential(driveCred?.id);
 
     throw err;
   }
 }
 
-module.exports = {
-  onboardingGoogleN8n,
-};
+module.exports = { onboardingGoogleN8n };
