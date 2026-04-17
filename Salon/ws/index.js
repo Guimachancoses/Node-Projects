@@ -202,16 +202,24 @@ app.get("/oauth/google/callback", async (req, res) => {
       console.warn("[OAUTH CALLBACK] Não conseguiu listar calendarList, usando primary.");
     }
 
-    // 4) Pega ID do Drive (root folder id)
-    let idDrive = null;
+    // 4) Pega ID do Drive (root) com fallback
+    let idDrive = "root"; // fallback seguro (alias válido no Google Drive)
     try {
       const driveApi = google.drive({ version: "v3", auth: oauth2Client });
-      const about = await driveApi.about.get({
-        fields: "user(emailAddress,displayName),rootFolderId",
+
+      // método mais estável no v3
+      const root = await driveApi.files.get({
+        fileId: "root",
+        fields: "id,name",
+        supportsAllDrives: true,
       });
-      idDrive = about?.data?.rootFolderId || null;
+
+      idDrive = root?.data?.id || "root";
     } catch (e) {
-      console.warn("[OAUTH CALLBACK] Não conseguiu obter rootFolderId do Drive.");
+      console.warn(
+        "[OAUTH CALLBACK] Não conseguiu obter ID real do Drive. Usando 'root'. Detalhe:",
+        e?.response?.data || e.message
+      );
     }
 
     console.log("[OAUTH CALLBACK] googleEmail:", googleEmail);
@@ -250,10 +258,10 @@ app.get("/oauth/google/callback", async (req, res) => {
     const safeReturn = String(returnTo).startsWith("/") ? returnTo : "/account";
     return res.redirect(
       `${process.env.FRONTEND_URL}${safeReturn}` +
-        `?google=success` +
-        `&email=${encodeURIComponent(googleEmail)}` +
-        `&idCalendar=${encodeURIComponent(idCalendar)}` +
-        `&idDrive=${encodeURIComponent(idDrive || "")}`
+      `?google=success` +
+      `&email=${encodeURIComponent(googleEmail)}` +
+      `&idCalendar=${encodeURIComponent(idCalendar)}` +
+      `&idDrive=${encodeURIComponent(idDrive || "")}`
     );
   } catch (err) {
     console.error("OAuth callback error:", err?.response?.data || err.message);
