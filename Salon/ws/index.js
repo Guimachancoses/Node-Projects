@@ -122,32 +122,47 @@ app.use(
 // ----------------------
 
 // 1) Início do OAuth
-// Exemplo: /oauth/google/start?userId=123&returnTo=/integracoes
 app.get("/oauth/google/start", (req, res) => {
   const { userId, returnTo = "/account", clientName = "cliente" } = req.query;
 
+  console.log("[OAUTH START] query:", { userId, returnTo, clientName });
+
   if (!userId) {
+    console.log("[OAUTH START] ERRO: faltou userId");
     return res.status(400).send("Faltou userId");
   }
 
-  const state = signState({
+  const statePayload = {
     userId: String(userId),
     returnTo: String(returnTo),
     clientName: String(clientName),
     ts: Date.now(),
     nonce: crypto.randomUUID(),
-  });
+  };
+
+  const state = signState(statePayload);
+
+  console.log("[OAUTH START] statePayload:", statePayload);
+
+  const scopes = [
+    "openid",
+    "https://www.googleapis.com/auth/userinfo.email",
+    "https://www.googleapis.com/auth/userinfo.profile",
+    "https://www.googleapis.com/auth/calendar.events",
+    "https://www.googleapis.com/auth/drive.file",
+  ];
 
   const authUrl = oauth2Client.generateAuthUrl({
     access_type: "offline",
     prompt: "consent",
     include_granted_scopes: true,
-    scope: [
-      "https://www.googleapis.com/auth/calendar.events",
-      "https://www.googleapis.com/auth/drive.file",
-    ],
+    scope: scopes,
     state,
   });
+
+  console.log("[OAUTH START] scopes:", scopes);
+  console.log("[OAUTH START] redirect_uri:", process.env.GOOGLE_REDIRECT_URI);
+  console.log("[OAUTH START] authUrl gerada com sucesso");
 
   return res.redirect(authUrl);
 });
@@ -155,35 +170,73 @@ app.get("/oauth/google/start", (req, res) => {
 // 2) Callback OAuth
 app.get("/oauth/google/callback", async (req, res) => {
   try {
-    const { code, state, error } = req.query;
+    const { code, state, error, scope } = req.query;
+
+    console.log("[OAUTH CALLBACK] query recebida:", {
+      hasCode: !!code,
+      hasState: !!state,
+      error: error || null,
+      scope: scope || null,
+    });
 
     if (error) {
+      console.log("[OAUTH CALLBACK] erro vindo do Google:", error);
       return res.redirect(
         `${process.env.FRONTEND_URL}/account?google=error&reason=${encodeURIComponent(error)}`
       );
     }
 
     const stateData = verifyState(state);
+    console.log("[OAUTH CALLBACK] stateData:", stateData);
+
     if (!stateData) {
+      console.log("[OAUTH CALLBACK] ERRO: state inválido/expirado");
       return res.status(400).send("State inválido ou expirado.");
     }
 
     const { userId, returnTo = "/account", clientName = "cliente" } = stateData;
+    console.log("[OAUTH CALLBACK] userId/returnTo/clientName:", {
+      userId,
+      returnTo,
+      clientName,
+    });
 
     // 1) troca code por tokens
-    const { tokens } = await oauth2Client.getToken(String(code));
+    console.log("[OAUTH CALLBACK] trocando code por tokens...");
+    const tokenResponse = await oauth2Client.getToken(String(code));
+    const tokens = tokenResponse?.tokens || {};
 
-    // 2) pega email real da conta autorizada
-    oauth2Client.setCredentials(tokens);
-    const oauth2 = google.oauth2({ version: "v2", auth: oauth2Client });
-    const me = await oauth2.userinfo.get();
-    const googleEmail = me?.data?.email || "";
+    console.log("[OAUTH CALLBACK] tokens recebidos:", {
+      hasAccessToken: !!tokens.access_token,
+      hasRefreshToken: !!tokens.refresh_token,
+      tokenType: tokens.token_type || null,
+      expiryDate: tokens.expiry_date || null,
+      scope: tokens.scope || null,
+      hasIdToken: !!tokens.id_token,
+    });
 
-    if (!googleEmail) {
-      throw new Error("Não foi possível obter o e-mail da conta Google autorizada.");
+    if (!tokens?.access_token) {
+      throw new Error("Google não retornou access_token no callback.");
     }
 
-    // 3) mantém seu store atual (não quebra nada)
+    oauth2Client.setCredentials(tokens);
+    console.log("[OAUTH CALLBACK] oauth2Client credentials setadas");
+
+    // 2) buscar email da conta autorizada
+    console.log("[OAUTH CALLBACK] buscando userinfo...");
+    const oauth2 = google.oauth2({ version: "v2", auth: oauth2Client });
+    const me = await oauth2.userinfo.get();
+
+    console.log("[OAUTH CALLBACK] userinfo bruto:", me?.data);
+
+    const googleEmail = me?.data?.email;
+    if (!googleEmail) {
+      throw new Error("Não foi possível obter o e-mail da conta Google.");
+    }
+
+    console.log("[OAUTH CALLBACK] googleEmail:", googleEmail);
+
+    // 3) mantém seu store atual
     const prev = tokenStore.get(userId) || {};
     tokenStore.set(userId, {
       ...prev,
@@ -192,7 +245,10 @@ app.get("/oauth/google/callback", async (req, res) => {
       updatedAt: new Date().toISOString(),
     });
 
-    // 4) onboarding n8n (cria credencial + clona wf + injeta cred + ativa)
+    console.log("[OAUTH CALLBACK] tokenStore atualizado para userId:", userId);
+
+    // 4) onboarding n8n
+    console.log("[OAUTH CALLBACK] iniciando onboardingGoogleN8n...");
     const result = await onboardingGoogleN8n({
       appUserId: String(userId),
       clientName: String(clientName),
@@ -200,7 +256,9 @@ app.get("/oauth/google/callback", async (req, res) => {
       googleTokens: tokens,
     });
 
-    // opcional: guardar ids n8n no mesmo store temporário
+    console.log("[OAUTH CALLBACK] onboarding n8n OK:", result);
+
+    // opcional: guardar ids n8n no store temporário
     tokenStore.set(userId, {
       ...(tokenStore.get(userId) || {}),
       n8nCredentialId: result.credentialId,
@@ -208,11 +266,18 @@ app.get("/oauth/google/callback", async (req, res) => {
     });
 
     const safeReturn = String(returnTo).startsWith("/") ? returnTo : "/account";
-    return res.redirect(
-      `${process.env.FRONTEND_URL}${safeReturn}?google=success&email=${encodeURIComponent(googleEmail)}`
-    );
+    const redirectUrl = `${process.env.FRONTEND_URL}${safeReturn}?google=success&email=${encodeURIComponent(
+      googleEmail
+    )}`;
+
+    console.log("[OAUTH CALLBACK] redirect sucesso:", redirectUrl);
+
+    return res.redirect(redirectUrl);
   } catch (err) {
-    console.error("OAuth callback error:", err?.response?.data || err.message);
+    console.error("[OAUTH CALLBACK] ERRO message:", err?.message);
+    console.error("[OAUTH CALLBACK] ERRO response.data:", err?.response?.data);
+    console.error("[OAUTH CALLBACK] ERRO stack:", err?.stack);
+
     return res.redirect(`${process.env.FRONTEND_URL}/account?google=error`);
   }
 });
