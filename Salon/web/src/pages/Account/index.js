@@ -172,12 +172,13 @@ export default function Account() {
     }
   };
 
-  // Verifica status inicial ao entrar na página
+  // Status inicial ao entrar na página
   useEffect(() => {
     if (!userId) return;
     checkWhatsAppStatus();
   }, [userId, checkWhatsAppStatus]);
 
+  // Polling enquanto modal aberto e ainda não conectado
   useEffect(() => {
     if (!waDialogOpen || !userId || waStatus === "connected") return;
 
@@ -188,18 +189,6 @@ export default function Account() {
     checkWhatsAppStatus();
     return () => clearInterval(id);
   }, [waDialogOpen, userId, waStatus, checkWhatsAppStatus]);
-
-  // Polling enquanto modal está aberto e ainda não conectou
-  useEffect(() => {
-    if (!waDialogOpen || !userId || waStatus === "connected") return;
-
-    const id = setInterval(() => {
-      checkWhatsAppStatus();
-    }, 4000);
-
-    checkWhatsAppStatus();
-    return () => clearInterval(id);
-  }, [waDialogOpen, userId, waStatus]);
 
   const waFriendly = getWaFriendly(waStatus);
   const isWaConnected = waStatus === "connected";
@@ -248,7 +237,9 @@ export default function Account() {
               label="Data de Nascimento"
               value={birthDate}
               onChange={(newValue) => setBirthDate(newValue)}
-              renderInput={(params) => <TextField {...params} fullWidth margin="normal" required />}
+              renderInput={(params) => (
+                <TextField {...params} fullWidth margin="normal" required />
+              )}
             />
           </LocalizationProvider>
         </Box>
@@ -273,7 +264,11 @@ export default function Account() {
           </Alert>
         )}
 
-        {waFriendly && <Alert severity={waFriendly.severity} sx={{ mb: 2 }}>{waFriendly.text}</Alert>}
+        {waFriendly && (
+          <Alert severity={waFriendly.severity} sx={{ mb: 2 }}>
+            {waFriendly.text}
+          </Alert>
+        )}
 
         {waInfo && (
           <Alert severity="info" sx={{ mb: 2 }}>
