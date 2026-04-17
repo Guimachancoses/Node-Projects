@@ -3,64 +3,64 @@ const Counter = require("./conterModel");
 const Schema = mongoose.Schema;
 
 const colaborador = new Schema({
-    email: {
-      type: String,
-      required: [true, "E-mail é obrigatório"],
-    },
-    nome: {
-      type: String,
-      required: [true, "Nome é obrigatório"],
-    },
-    sobrenome: {
-      type: String,
-      required: [true, "Sobreome é obrigatório"],
-    },
-    telefone: {
-      area: {
-        type: String,
-      },
-      numero: {
-        type: String,
-      },
-    },
-    senha: {
-      type: String,
-      default: null,
-    },
-    identificacao: {
-      tipoD: String,
-      numero: String,
-    },
-    enderecoPadrao: {
+  email: {
+    type: String,
+    required: [true, "E-mail é obrigatório"],
+  },
+  nome: {
+    type: String,
+    required: [true, "Nome é obrigatório"],
+  },
+  sobrenome: {
+    type: String,
+    required: [true, "Sobreome é obrigatório"],
+  },
+  telefone: {
+    area: {
       type: String,
     },
-    endereco: {
-      id: String,
-      cep: String,
-      logradouro: String,
-      bairro: String,
-      numero: Number,
-      cidade: {
-        nome: String,
-      },
-    },
-    foto: {
+    numero: {
       type: String,
     },
-    dataNascimento: {
-      type: String, // YYYY-MM-dd
-      required: false,
+  },
+  senha: {
+    type: String,
+    default: null,
+  },
+  identificacao: {
+    tipoD: String,
+    numero: String,
+  },
+  enderecoPadrao: {
+    type: String,
+  },
+  endereco: {
+    id: String,
+    cep: String,
+    logradouro: String,
+    bairro: String,
+    numero: Number,
+    cidade: {
+      nome: String,
     },
-    sexo: {
-      type: String,
-      enum: ["M", "F"],
-      required: false,
-    },
-    status: {
-      type: String,
-      enum: ["A", "I"],
-      default: "A",
-    },
+  },
+  foto: {
+    type: String,
+  },
+  dataNascimento: {
+    type: String, // YYYY-MM-dd
+    required: false,
+  },
+  sexo: {
+    type: String,
+    enum: ["M", "F"],
+    required: false,
+  },
+  status: {
+    type: String,
+    enum: ["A", "I"],
+    default: "A",
+  },
   contaBancaria: {
     titular: {
       type: String,
@@ -99,6 +99,9 @@ const colaborador = new Schema({
   },
   idDrive: {
     type: String,
+  },
+  idRagFolder: { 
+    type: String 
   },
   dataCadastro: {
     type: Date,

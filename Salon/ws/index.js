@@ -79,6 +79,41 @@ function verifyState(state) {
   return data;
 }
 
+async function ensureRagFolder(driveApi, parentId) {
+  // 1) tenta encontrar
+  const query = [
+    "mimeType = 'application/vnd.google-apps.folder'",
+    "name = 'RAG'",
+    "trashed = false",
+    `'${parentId}' in parents`,
+  ].join(" and ");
+
+  const existing = await driveApi.files.list({
+    q: query,
+    fields: "files(id,name)",
+    includeItemsFromAllDrives: true,
+    supportsAllDrives: true,
+    pageSize: 1,
+  });
+
+  if (existing.data.files?.length) {
+    return existing.data.files[0].id;
+  }
+
+  // 2) cria se não existir
+  const created = await driveApi.files.create({
+    requestBody: {
+      name: "RAG",
+      mimeType: "application/vnd.google-apps.folder",
+      parents: [parentId],
+    },
+    fields: "id,name",
+    supportsAllDrives: true,
+  });
+
+  return created.data.id;
+}
+
 // Middlewares
 app.use(morgan("dev"));
 app.use(express.json());
@@ -226,6 +261,18 @@ app.get("/oauth/google/callback", async (req, res) => {
     console.log("[OAUTH CALLBACK] idCalendar:", idCalendar);
     console.log("[OAUTH CALLBACK] idDrive(root):", idDrive);
 
+    let idRagFolder = null;
+    try {
+      const driveApi = google.drive({ version: "v3", auth: oauth2Client });
+
+      // se você já tem idDrive real da raiz
+      idRagFolder = await ensureRagFolder(driveApi, idDrive);
+
+      console.log("[OAUTH CALLBACK] idRagFolder:", idRagFolder);
+    } catch (e) {
+      console.warn("[OAUTH CALLBACK] Falha ao garantir pasta RAG:", e?.response?.data || e.message);
+    }
+
     // 5) Mantém store temporário
     const prev = tokenStore.get(userId) || {};
     tokenStore.set(userId, {
@@ -243,8 +290,9 @@ app.get("/oauth/google/callback", async (req, res) => {
       {
         $set: {
           idCalendar,
-          idDrive,
-        },
+          idDrive,       // root
+          idRagFolder,   // pasta RAG
+        }
       },
       { new: true }
     );
