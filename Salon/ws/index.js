@@ -10,7 +10,6 @@ const busboyBodyParser = require("busboy-body-parser");
 const cors = require("cors");
 const crypto = require("crypto");
 const { google } = require("googleapis");
-const Colaborador = require("./src/models/colaborador");
 
 require("./database");
 
@@ -122,47 +121,31 @@ app.use(
 // ----------------------
 
 // 1) Início do OAuth
+// Exemplo: /oauth/google/start?userId=123&returnTo=/integracoes
 app.get("/oauth/google/start", (req, res) => {
-  const { userId, returnTo = "/account", clientName = "cliente" } = req.query;
-
-  console.log("[OAUTH START] query:", { userId, returnTo, clientName });
+  const { userId, returnTo = "/integracoes" } = req.query;
 
   if (!userId) {
-    console.log("[OAUTH START] ERRO: faltou userId");
     return res.status(400).send("Faltou userId");
   }
 
-  const statePayload = {
+  const state = signState({
     userId: String(userId),
     returnTo: String(returnTo),
-    clientName: String(clientName),
     ts: Date.now(),
     nonce: crypto.randomUUID(),
-  };
-
-  const state = signState(statePayload);
-
-  console.log("[OAUTH START] statePayload:", statePayload);
-
-  const scopes = [
-    "openid",
-    "https://www.googleapis.com/auth/userinfo.email",
-    "https://www.googleapis.com/auth/userinfo.profile",
-    "https://www.googleapis.com/auth/calendar.events",
-    "https://www.googleapis.com/auth/drive.metadata.readonly"
-  ];
+  });
 
   const authUrl = oauth2Client.generateAuthUrl({
     access_type: "offline",
     prompt: "consent",
     include_granted_scopes: true,
-    scope: scopes,
+    scope: [
+      "https://www.googleapis.com/auth/calendar.events",
+      "https://www.googleapis.com/auth/drive.file",
+    ],
     state,
   });
-
-  console.log("[OAUTH START] scopes:", scopes);
-  console.log("[OAUTH START] redirect_uri:", process.env.GOOGLE_REDIRECT_URI);
-  console.log("[OAUTH START] authUrl gerada com sucesso");
 
   return res.redirect(authUrl);
 });
@@ -170,135 +153,38 @@ app.get("/oauth/google/start", (req, res) => {
 // 2) Callback OAuth
 app.get("/oauth/google/callback", async (req, res) => {
   try {
-    const { code, state, error, scope } = req.query;
-
-    console.log("[OAUTH CALLBACK] query recebida:", {
-      hasCode: !!code,
-      hasState: !!state,
-      error: error || null,
-      scope: scope || null,
-    });
+    const { code, state, error } = req.query;
 
     if (error) {
-      console.log("[OAUTH CALLBACK] erro vindo do Google:", error);
       return res.redirect(
-        `${process.env.FRONTEND_URL}/account?google=error&reason=${encodeURIComponent(error)}`
+        `${process.env.FRONTEND_URL}/integracoes?google=error&reason=${encodeURIComponent(
+          error
+        )}`
       );
     }
 
     const stateData = verifyState(state);
-    console.log("[OAUTH CALLBACK] stateData:", stateData);
-
     if (!stateData) {
-      console.log("[OAUTH CALLBACK] ERRO: state inválido/expirado");
       return res.status(400).send("State inválido ou expirado.");
     }
 
-    const { userId, returnTo = "/account", clientName = "cliente" } = stateData;
-    console.log("[OAUTH CALLBACK] userId/returnTo/clientName:", {
-      userId,
-      returnTo,
-      clientName,
-    });
+    const { userId, returnTo } = stateData;
 
-    // 1) troca code por tokens
-    console.log("[OAUTH CALLBACK] trocando code por tokens...");
-    const tokenResponse = await oauth2Client.getToken(String(code));
-    const tokens = tokenResponse?.tokens || {};
+    const { tokens } = await oauth2Client.getToken(String(code));
 
-    console.log("[OAUTH CALLBACK] tokens recebidos:", {
-      hasAccessToken: !!tokens.access_token,
-      hasRefreshToken: !!tokens.refresh_token,
-      tokenType: tokens.token_type || null,
-      expiryDate: tokens.expiry_date || null,
-      scope: tokens.scope || null,
-      hasIdToken: !!tokens.id_token,
-    });
-
-    if (!tokens?.access_token) {
-      throw new Error("Google não retornou access_token no callback.");
-    }
-
-    oauth2Client.setCredentials(tokens);
-    console.log("[OAUTH CALLBACK] oauth2Client credentials setadas");
-
-    // 2) buscar email da conta autorizada
-    console.log("[OAUTH CALLBACK] buscando userinfo...");
-    const oauth2 = google.oauth2({ version: "v2", auth: oauth2Client });
-    const me = await oauth2.userinfo.get();
-
-    console.log("[OAUTH CALLBACK] userinfo bruto:", me?.data);
-
-    const googleEmail = me?.data?.email;
-    if (!googleEmail) {
-      throw new Error("Não foi possível obter o e-mail da conta Google.");
-    }
-
-    console.log("[OAUTH CALLBACK] googleEmail:", googleEmail);
-
-    // 3) pegar idCalendar (principal)
-    const calendarApi = google.calendar({ version: "v3", auth: oauth2Client });
-    const calList = await calendarApi.calendarList.list();
-    const primaryCalendar = (calList.data.items || []).find((c) => c.primary) || null;
-    const idCalendar = primaryCalendar?.id || "primary";
-
-    // 4) pegar idDrive (root folder id)
-    const driveApi = google.drive({ version: "v3", auth: oauth2Client });
-    const about = await driveApi.about.get({
-      fields: "user(emailAddress,displayName),rootFolderId",
-    });
-    const idDrive = about?.data?.rootFolderId || null;
-
-    console.log("[OAUTH CALLBACK] idCalendar:", idCalendar);
-    console.log("[OAUTH CALLBACK] idDrive(root):", idDrive);
-
-    // 5) salva no tokenStore (temporário)
+    // Salva tokens do usuário (trocar por banco real)
     const prev = tokenStore.get(userId) || {};
     tokenStore.set(userId, {
       ...prev,
       ...tokens,
-      googleEmail,
-      idCalendar,
-      idDrive,
       updatedAt: new Date().toISOString(),
     });
 
-    console.log("[OAUTH CALLBACK] tokenStore atualizado para userId:", userId);
-
-    // 6) persistir no Mongo (Colaborador)
-    const updated = await Colaborador.findOneAndUpdate(
-      { email: googleEmail }, // ideal: no futuro usar clerkUserId
-      {
-        $set: {
-          idCalendar,
-          idDrive,
-        },
-      },
-      { new: true }
-    );
-
-    if (!updated) {
-      console.warn("[OAUTH CALLBACK] Colaborador não encontrado por email:", googleEmail);
-    } else {
-      console.log("[OAUTH CALLBACK] Colaborador atualizado:", updated._id?.toString());
-    }
-
-    const safeReturn = String(returnTo).startsWith("/") ? returnTo : "/account";
-    const redirectUrl =
-      `${process.env.FRONTEND_URL}${safeReturn}` +
-      `?google=success` +
-      `&email=${encodeURIComponent(googleEmail)}` +
-      `&idCalendar=${encodeURIComponent(idCalendar)}` +
-      `&idDrive=${encodeURIComponent(idDrive || "")}`;
-
-    console.log("[OAUTH CALLBACK] redirect sucesso:", redirectUrl);
-    return res.redirect(redirectUrl);
+    const safeReturn = String(returnTo).startsWith("/") ? returnTo : "/integracoes";
+    return res.redirect(`${process.env.FRONTEND_URL}${safeReturn}?google=success`);
   } catch (err) {
-    console.error("[OAUTH CALLBACK] ERRO message:", err?.message);
-    console.error("[OAUTH CALLBACK] ERRO response.data:", err?.response?.data);
-    console.error("[OAUTH CALLBACK] ERRO stack:", err?.stack);
-
-    return res.redirect(`${process.env.FRONTEND_URL}/account?google=error`);
+    console.error("OAuth callback error:", err?.response?.data || err.message);
+    return res.redirect(`${process.env.FRONTEND_URL}/integracoes?google=error`);
   }
 });
 
