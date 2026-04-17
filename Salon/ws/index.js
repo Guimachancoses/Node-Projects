@@ -122,9 +122,9 @@ app.use(
 // ----------------------
 
 // 1) Início do OAuth
-// Exemplo: /oauth/google/start?userId=123&returnTo=/integracoes
+// Exemplo: /oauth/google/start?userId=123&returnTo=/account
 app.get("/oauth/google/start", (req, res) => {
-  const { userId, returnTo = "/integracoes" } = req.query;
+  const { userId, returnTo = "/account" } = req.query;
 
   if (!userId) {
     return res.status(400).send("Faltou userId");
@@ -146,6 +146,7 @@ app.get("/oauth/google/start", (req, res) => {
       "https://www.googleapis.com/auth/userinfo.email",
       "https://www.googleapis.com/auth/userinfo.profile",
       "https://www.googleapis.com/auth/calendar.events",
+      "https://www.googleapis.com/auth/calendar.calendarlist.readonly",
       "https://www.googleapis.com/auth/drive.file",
       "https://www.googleapis.com/auth/drive.metadata.readonly",
     ],
@@ -156,14 +157,13 @@ app.get("/oauth/google/start", (req, res) => {
 });
 
 // 2) Callback OAuth
-// 2) Callback OAuth
 app.get("/oauth/google/callback", async (req, res) => {
   try {
     const { code, state, error } = req.query;
 
     if (error) {
       return res.redirect(
-        `${process.env.FRONTEND_URL}/integracoes?google=error&reason=${encodeURIComponent(error)}`
+        `${process.env.FRONTEND_URL}/account?google=error&reason=${encodeURIComponent(error)}`
       );
     }
 
@@ -191,18 +191,28 @@ app.get("/oauth/google/callback", async (req, res) => {
       throw new Error("Não foi possível obter o e-mail da conta Google.");
     }
 
-    // 3) Pega ID do calendário principal
-    const calendarApi = google.calendar({ version: "v3", auth: oauth2Client });
-    const calList = await calendarApi.calendarList.list();
-    const primaryCalendar = (calList.data.items || []).find((c) => c.primary) || null;
-    const idCalendar = primaryCalendar?.id || "primary";
+    // 3) Pega ID do calendário principal com fallback
+    let idCalendar = "primary";
+    try {
+      const calendarApi = google.calendar({ version: "v3", auth: oauth2Client });
+      const calList = await calendarApi.calendarList.list();
+      const primaryCalendar = (calList.data.items || []).find((c) => c.primary) || null;
+      idCalendar = primaryCalendar?.id || "primary";
+    } catch (e) {
+      console.warn("[OAUTH CALLBACK] Não conseguiu listar calendarList, usando primary.");
+    }
 
     // 4) Pega ID do Drive (root folder id)
-    const driveApi = google.drive({ version: "v3", auth: oauth2Client });
-    const about = await driveApi.about.get({
-      fields: "user(emailAddress,displayName),rootFolderId",
-    });
-    const idDrive = about?.data?.rootFolderId || null;
+    let idDrive = null;
+    try {
+      const driveApi = google.drive({ version: "v3", auth: oauth2Client });
+      const about = await driveApi.about.get({
+        fields: "user(emailAddress,displayName),rootFolderId",
+      });
+      idDrive = about?.data?.rootFolderId || null;
+    } catch (e) {
+      console.warn("[OAUTH CALLBACK] Não conseguiu obter rootFolderId do Drive.");
+    }
 
     console.log("[OAUTH CALLBACK] googleEmail:", googleEmail);
     console.log("[OAUTH CALLBACK] idCalendar:", idCalendar);
@@ -221,7 +231,7 @@ app.get("/oauth/google/callback", async (req, res) => {
 
     // 6) Salva no Mongo (Colaborador)
     const updated = await Colaborador.findOneAndUpdate(
-      { email: googleEmail }, // se tiver clerkUserId no schema, melhor usar ele
+      { email: googleEmail }, // ideal futuro: usar clerkUserId
       {
         $set: {
           idCalendar,
@@ -237,7 +247,7 @@ app.get("/oauth/google/callback", async (req, res) => {
       console.log("[OAUTH CALLBACK] Colaborador atualizado:", updated._id?.toString());
     }
 
-    const safeReturn = String(returnTo).startsWith("/") ? returnTo : "/integracoes";
+    const safeReturn = String(returnTo).startsWith("/") ? returnTo : "/account";
     return res.redirect(
       `${process.env.FRONTEND_URL}${safeReturn}` +
         `?google=success` +
@@ -247,7 +257,7 @@ app.get("/oauth/google/callback", async (req, res) => {
     );
   } catch (err) {
     console.error("OAuth callback error:", err?.response?.data || err.message);
-    return res.redirect(`${process.env.FRONTEND_URL}/integracoes?google=error`);
+    return res.redirect(`${process.env.FRONTEND_URL}/account?google=error`);
   }
 });
 
