@@ -151,6 +151,7 @@ app.use(
   "/mercado-pago/webhook",
   require("./src/routes/api/mercado-pago/webhook/webhook-mpg.routes")
 );
+app.use("/evolution", require("./src/routes/evolution.routes"));
 
 // ----------------------
 // NOVAS ROTAS OAUTH GOOGLE

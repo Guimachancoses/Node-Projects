@@ -8,6 +8,11 @@ import {
   Button,
   Divider,
   Alert,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  CircularProgress,
 } from "@mui/material";
 import { AdapterMoment } from "@mui/x-date-pickers/AdapterMoment";
 import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
@@ -17,6 +22,14 @@ import { useLocation } from "react-router-dom";
 
 export default function Account() {
   const [birthDate, setBirthDate] = useState(null);
+
+  // WhatsApp states
+  const [waLoading, setWaLoading] = useState(false);
+  const [waError, setWaError] = useState("");
+  const [waQrBase64, setWaQrBase64] = useState(null);
+  const [waQrCodeText, setWaQrCodeText] = useState(null);
+  const [waDialogOpen, setWaDialogOpen] = useState(false);
+
   const { user } = useUser();
   const { userId, isLoaded, isSignedIn } = useAuth();
   const location = useLocation();
@@ -37,7 +50,41 @@ export default function Account() {
       `?userId=${encodeURIComponent(userId)}` +
       `&clientName=${encodeURIComponent(clientName)}` +
       `&returnTo=${encodeURIComponent("/account")}`;
+
     window.location.href = url;
+  };
+
+  const handleConnectWhatsApp = async () => {
+    if (!isLoaded || !isSignedIn || !userId) return;
+
+    setWaLoading(true);
+    setWaError("");
+    setWaQrBase64(null);
+    setWaQrCodeText(null);
+
+    try {
+      const resp = await fetch("https://salon.fabrisportalhub.com.br/evolution/whatsapp/connect", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ userId }),
+      });
+
+      const data = await resp.json();
+
+      if (!resp.ok) {
+        throw new Error(data?.error || "Erro ao conectar WhatsApp");
+      }
+
+      setWaQrBase64(data?.qrBase64 || null);
+      setWaQrCodeText(data?.qrCodeText || null);
+      setWaDialogOpen(true);
+    } catch (err) {
+      setWaError(err.message || "Não foi possível gerar o QR Code do WhatsApp.");
+    } finally {
+      setWaLoading(false);
+    }
   };
 
   return (
@@ -94,11 +141,10 @@ export default function Account() {
         <Divider sx={{ my: 3 }} />
 
         <Typography variant="h6" sx={{ mb: 1 }}>
-          Integração Google
+          Integrações
         </Typography>
         <Typography variant="body2" sx={{ mb: 2, opacity: 0.85 }}>
-          Conecte sua conta para sincronizar <strong>Google Agenda</strong> e{" "}
-          <strong>Google Drive</strong>.
+          Conecte Google Agenda/Drive e WhatsApp.
         </Typography>
 
         {googleStatus === "success" && (
@@ -112,14 +158,54 @@ export default function Account() {
           </Alert>
         )}
 
-        <Button
-          variant="contained"
-          onClick={handleConnectGoogle}
-          disabled={!isLoaded || !isSignedIn || !userId}
-        >
-          Sincronizar Google Agenda e Drive
-        </Button>
+        {waError && (
+          <Alert severity="error" sx={{ mb: 2 }}>
+            {waError}
+          </Alert>
+        )}
+
+        <Box sx={{ display: "flex", flexDirection: "column", gap: 1.5 }}>
+          <Button
+            variant="contained"
+            onClick={handleConnectGoogle}
+            disabled={!isLoaded || !isSignedIn || !userId}
+          >
+            Sincronizar Google Agenda e Drive
+          </Button>
+
+          <Button
+            variant="outlined"
+            onClick={handleConnectWhatsApp}
+            disabled={!isLoaded || !isSignedIn || !userId || waLoading}
+          >
+            {waLoading ? <CircularProgress size={20} /> : "Sincronizar com WhatsApp"}
+          </Button>
+        </Box>
       </Paper>
+
+      <Dialog open={waDialogOpen} onClose={() => setWaDialogOpen(false)} maxWidth="xs" fullWidth>
+        <DialogTitle>Conectar WhatsApp</DialogTitle>
+        <DialogContent sx={{ textAlign: "center" }}>
+          {waQrBase64 ? (
+            <img
+              src={`data:image/png;base64,${waQrBase64}`}
+              alt="QR Code WhatsApp"
+              style={{ width: 280, maxWidth: "100%", marginTop: 8 }}
+            />
+          ) : waQrCodeText ? (
+            <Typography variant="body2" sx={{ mt: 1 }}>
+              Código recebido, mas sem imagem de QR. (Retorno textual disponível)
+            </Typography>
+          ) : (
+            <Typography variant="body2" sx={{ mt: 1 }}>
+              QR Code indisponível no momento.
+            </Typography>
+          )}
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setWaDialogOpen(false)}>Fechar</Button>
+        </DialogActions>
+      </Dialog>
     </Container>
   );
 }
