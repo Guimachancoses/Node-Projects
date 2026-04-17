@@ -10,7 +10,7 @@ const busboyBodyParser = require("busboy-body-parser");
 const cors = require("cors");
 const crypto = require("crypto");
 const { google } = require("googleapis");
-const Colaborador = require("./src/models/colaboradorModel"); // ajuste o caminho se necessário
+const Colaborador = require("./src/models/colaborador");
 
 require("./database");
 
