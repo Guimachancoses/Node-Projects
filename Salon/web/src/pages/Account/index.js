@@ -26,7 +26,8 @@ export default function Account() {
   // WhatsApp states
   const [waLoading, setWaLoading] = useState(false);
   const [waError, setWaError] = useState("");
-  const [waQrBase64, setWaQrBase64] = useState(null);
+  const [waInfo, setWaInfo] = useState("");
+  const [waQrImage, setWaQrImage] = useState(null);
   const [waQrCodeText, setWaQrCodeText] = useState(null);
   const [waDialogOpen, setWaDialogOpen] = useState(false);
 
@@ -39,7 +40,7 @@ export default function Account() {
   const lastName = user?.lastName ?? "";
 
   const query = useMemo(() => new URLSearchParams(location.search), [location.search]);
-  const googleStatus = query.get("google"); // success | error | null
+  const googleStatus = query.get("google");
 
   const handleConnectGoogle = () => {
     if (!isLoaded || !isSignedIn || !userId) return;
@@ -59,25 +60,39 @@ export default function Account() {
 
     setWaLoading(true);
     setWaError("");
-    setWaQrBase64(null);
+    setWaInfo("");
+    setWaQrImage(null);
     setWaQrCodeText(null);
 
     try {
       const resp = await fetch("https://salon.fabrisportalhub.com.br/evolution/whatsapp/connect", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ userId }),
       });
 
       const data = await resp.json();
 
+      // 202 = instância criada, QR ainda não pronto
+      if (resp.status === 202) {
+        setWaInfo(data?.message || "Instância em conexão. Tente novamente em alguns segundos.");
+        return;
+      }
+
       if (!resp.ok) {
         throw new Error(data?.error || "Erro ao conectar WhatsApp");
       }
 
-      setWaQrBase64(data?.qrBase64 || null);
+      // Compatível com retorno novo e antigo
+      const qrImage =
+        data?.qrImage ||
+        (data?.qrBase64
+          ? data.qrBase64.startsWith("data:image")
+            ? data.qrBase64
+            : `data:image/png;base64,${data.qrBase64}`
+          : null);
+
+      setWaQrImage(qrImage);
       setWaQrCodeText(data?.qrCodeText || null);
       setWaDialogOpen(true);
     } catch (err) {
@@ -131,9 +146,7 @@ export default function Account() {
               label="Data de Nascimento"
               value={birthDate}
               onChange={(newValue) => setBirthDate(newValue)}
-              renderInput={(params) => (
-                <TextField {...params} fullWidth margin="normal" required />
-              )}
+              renderInput={(params) => <TextField {...params} fullWidth margin="normal" required />}
             />
           </LocalizationProvider>
         </Box>
@@ -155,6 +168,12 @@ export default function Account() {
         {googleStatus === "error" && (
           <Alert severity="error" sx={{ mb: 2 }}>
             Não foi possível conectar sua conta Google.
+          </Alert>
+        )}
+
+        {waInfo && (
+          <Alert severity="info" sx={{ mb: 2 }}>
+            {waInfo}
           </Alert>
         )}
 
@@ -186,15 +205,15 @@ export default function Account() {
       <Dialog open={waDialogOpen} onClose={() => setWaDialogOpen(false)} maxWidth="xs" fullWidth>
         <DialogTitle>Conectar WhatsApp</DialogTitle>
         <DialogContent sx={{ textAlign: "center" }}>
-          {waQrBase64 ? (
+          {waQrImage ? (
             <img
-              src={`data:image/png;base64,${waQrBase64}`}
+              src={waQrImage}
               alt="QR Code WhatsApp"
               style={{ width: 280, maxWidth: "100%", marginTop: 8 }}
             />
           ) : waQrCodeText ? (
             <Typography variant="body2" sx={{ mt: 1 }}>
-              Código recebido, mas sem imagem de QR. (Retorno textual disponível)
+              QR textual recebido (sem imagem). Posso te passar fallback com gerador visual.
             </Typography>
           ) : (
             <Typography variant="body2" sx={{ mt: 1 }}>
