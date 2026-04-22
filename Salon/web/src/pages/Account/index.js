@@ -33,6 +33,7 @@ export default function Account() {
   const [waQrCodeText, setWaQrCodeText] = useState(null);
   const [waDialogOpen, setWaDialogOpen] = useState(false);
   const [waStatus, setWaStatus] = useState("idle"); // idle | connecting | connected | disconnected | unknown
+  const [showWaConnectedMsg, setShowWaConnectedMsg] = useState(true);
 
   const [googleLoading, setGoogleLoading] = useState(false);
   const [isGoogleConnected, setIsGoogleConnected] = useState(false);
@@ -274,6 +275,20 @@ export default function Account() {
     }
   }, [googleStatus, checkGoogleStatus]);
 
+  // Oculta mensagem "WhatsApp conectado com sucesso." após 5s
+  useEffect(() => {
+    if (waStatus !== "connected") {
+      setShowWaConnectedMsg(true); // reseta para próximas conexões
+      return;
+    }
+
+    const timeoutId = setTimeout(() => {
+      setShowWaConnectedMsg(false);
+    }, 5000);
+
+    return () => clearTimeout(timeoutId);
+  }, [waStatus]);
+
   return (
     <Container component="main" maxWidth="sm">
       <Paper elevation={3} sx={{ p: 4, mt: 8 }}>
@@ -334,7 +349,7 @@ export default function Account() {
           Conecte Google Agenda/Drive e WhatsApp.
         </Typography>
 
-        {waFriendly && (
+        {waFriendly && (waStatus !== "connected" || showWaConnectedMsg) && (
           <Alert severity={waFriendly.severity} sx={{ mb: 2 }}>
             {waFriendly.text}
           </Alert>

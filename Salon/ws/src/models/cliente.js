@@ -75,6 +75,10 @@ const cliente = new Schema({
     enum: ["M", "L"],
     default: "L",
   },
+  idChatBot: {
+    type: String,
+    index: true, // opcional, mas ajuda na busca/delete
+  },
   dataCadastro: {
     type: Date,
     default: Date.now,

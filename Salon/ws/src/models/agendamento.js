@@ -22,6 +22,10 @@ const agendamento = new Schema({
     ref: "Servico",
     required: true,
   },
+  sessionid: {
+    type: String,
+    index: true, // opcional, mas ajuda na busca/delete
+  },
   data: {
     type: Date,
     required: true,
@@ -39,12 +43,12 @@ const agendamento = new Schema({
   },
   statusPagamento: {
     type: String,
-    enum: ["P","S","E","C"],
+    enum: ["P", "S", "E", "C"],
     default: "P"
   },
   status: {
     type: String,
-    enum: ["P","C","A","F"],
+    enum: ["P", "C", "A", "F"],
     default: "P"
   },
   dataCadastro: {
