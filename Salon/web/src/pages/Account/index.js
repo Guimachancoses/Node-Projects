@@ -34,6 +34,11 @@ export default function Account() {
   const [waDialogOpen, setWaDialogOpen] = useState(false);
   const [waStatus, setWaStatus] = useState("idle"); // idle | connecting | connected | disconnected | unknown
 
+  const [googleLoading, setGoogleLoading] = useState(false);
+  const [isGoogleConnected, setIsGoogleConnected] = useState(false);
+  const [googleErrorMsg, setGoogleErrorMsg] = useState("");
+  const [googleInfoMsg, setGoogleInfoMsg] = useState("");
+
   const { user } = useUser();
   const { userId, isLoaded, isSignedIn } = useAuth();
   const location = useLocation();
@@ -45,8 +50,27 @@ export default function Account() {
   const query = useMemo(() => new URLSearchParams(location.search), [location.search]);
   const googleStatus = query.get("google");
 
+  const checkGoogleStatus = useCallback(async () => {
+    if (!userId && !email) return;
+
+    try {
+      const resp = await fetch(
+        `${API_BASE}/oauth/google/status?userId=${encodeURIComponent(userId || "")}&email=${encodeURIComponent(email || "")}`
+      );
+      const data = await resp.json();
+      if (!resp.ok) return;
+
+      setIsGoogleConnected(Boolean(data?.connected));
+    } catch (_) {
+      // silencioso
+    }
+  }, [userId, email]);
+
   const handleConnectGoogle = () => {
     if (!isLoaded || !isSignedIn || !userId) return;
+
+    setGoogleErrorMsg("");
+    setGoogleInfoMsg("");
 
     const clientName = `${firstName} ${lastName}`.trim() || "cliente";
     const url =
@@ -194,19 +218,61 @@ export default function Account() {
   useEffect(() => {
     // só fecha automaticamente quando estiver conectado
     if (!waDialogOpen || waStatus !== "connected") return;
-  
+
     const timeoutId = setTimeout(() => {
       setWaDialogOpen(false);
       setWaQrImage(null);
       setWaQrCodeText(null);
       setWaInfo("");
     }, 5000);
-  
+
     return () => clearTimeout(timeoutId);
   }, [waDialogOpen, waStatus]);
 
   const waFriendly = getWaFriendly(waStatus);
   const isWaConnected = waStatus === "connected";
+
+  useEffect(() => {
+    checkGoogleStatus();
+  }, [checkGoogleStatus]);
+
+  const handleDisconnectGoogle = async () => {
+    if (!userId && !email) return;
+
+    setGoogleLoading(true);
+    setGoogleErrorMsg("");
+    setGoogleInfoMsg("");
+
+    try {
+      const resp = await fetch(`${API_BASE}/oauth/google/disconnect`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ userId, email }),
+      });
+
+      const data = await resp.json();
+      if (!resp.ok) {
+        throw new Error(data?.error || "Erro ao desconectar Google");
+      }
+
+      setIsGoogleConnected(false);
+      setGoogleInfoMsg("Google Agenda e Drive desconectados com sucesso.");
+    } catch (err) {
+      setGoogleErrorMsg(err.message || "Não foi possível desconectar Google.");
+    } finally {
+      setGoogleLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    if (googleStatus === "success") {
+      setGoogleInfoMsg("Conta Google conectada com sucesso.");
+      checkGoogleStatus();
+    }
+    if (googleStatus === "error") {
+      setGoogleErrorMsg("Não foi possível conectar sua conta Google.");
+    }
+  }, [googleStatus, checkGoogleStatus]);
 
   return (
     <Container component="main" maxWidth="sm">
@@ -268,17 +334,6 @@ export default function Account() {
           Conecte Google Agenda/Drive e WhatsApp.
         </Typography>
 
-        {googleStatus === "success" && (
-          <Alert severity="success" sx={{ mb: 2 }}>
-            Conta Google conectada com sucesso.
-          </Alert>
-        )}
-        {googleStatus === "error" && (
-          <Alert severity="error" sx={{ mb: 2 }}>
-            Não foi possível conectar sua conta Google.
-          </Alert>
-        )}
-
         {waFriendly && (
           <Alert severity={waFriendly.severity} sx={{ mb: 2 }}>
             {waFriendly.text}
@@ -297,13 +352,32 @@ export default function Account() {
           </Alert>
         )}
 
+        {googleInfoMsg && (
+          <Alert severity="success" sx={{ mb: 2 }}>
+            {googleInfoMsg}
+          </Alert>
+        )}
+
+        {googleErrorMsg && (
+          <Alert severity="error" sx={{ mb: 2 }}>
+            {googleErrorMsg}
+          </Alert>
+        )}
+
         <Box sx={{ display: "flex", flexDirection: "column", gap: 1.5 }}>
           <Button
             variant="contained"
-            onClick={handleConnectGoogle}
-            disabled={!isLoaded || !isSignedIn || !userId}
+            color={isGoogleConnected ? "error" : "primary"}
+            onClick={isGoogleConnected ? handleDisconnectGoogle : handleConnectGoogle}
+            disabled={!isLoaded || !isSignedIn || !userId || googleLoading}
           >
-            Sincronizar Google Agenda e Drive
+            {googleLoading ? (
+              <CircularProgress size={20} />
+            ) : isGoogleConnected ? (
+              "Desconectar Google Agenda e Drive"
+            ) : (
+              "Sincronizar Google Agenda e Drive"
+            )}
           </Button>
 
           <Button

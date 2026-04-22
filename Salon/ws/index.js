@@ -345,6 +345,100 @@ app.get("/google/events", async (req, res) => {
   }
 });
 
+// STATUS da integração Google
+app.get("/oauth/google/status", async (req, res) => {
+  try {
+    const { userId, email } = req.query;
+
+    if (!userId && !email) {
+      return res.status(400).json({ error: "Informe userId ou email" });
+    }
+
+    const filters = [];
+    if (userId) filters.push({ recipientId: String(userId) });
+    if (email) filters.push({ email: String(email) });
+
+    const colaborador = await Colaborador.findOne({ $or: filters }).select(
+      "email recipientId idCalendar idDrive idRagFolder"
+    );
+
+    if (!colaborador) {
+      return res.json({
+        connected: false,
+        idCalendar: null,
+        idDrive: null,
+        idRagFolder: null,
+      });
+    }
+
+    const connected = Boolean(colaborador.idCalendar && colaborador.idDrive);
+
+    return res.json({
+      connected,
+      idCalendar: colaborador.idCalendar || null,
+      idDrive: colaborador.idDrive || null,
+      idRagFolder: colaborador.idRagFolder || null,
+    });
+  } catch (err) {
+    console.error("[GOOGLE STATUS] erro:", err.message);
+    return res.status(500).json({ error: "Erro ao consultar status Google" });
+  }
+});
+
+// DESCONECTAR Google (sem apagar colaborador)
+app.post("/oauth/google/disconnect", async (req, res) => {
+  try {
+    const { userId, email } = req.body;
+
+    if (!userId && !email) {
+      return res.status(400).json({ error: "Informe userId ou email" });
+    }
+
+    const filters = [];
+    if (userId) filters.push({ recipientId: String(userId) });
+    if (email) filters.push({ email: String(email) });
+
+    // limpa IDs da integração no Mongo
+    const updated = await Colaborador.findOneAndUpdate(
+      { $or: filters },
+      {
+        $set: {
+          idCalendar: null,
+          idDrive: null,
+          idRagFolder: null,
+        },
+      },
+      { new: true }
+    );
+
+    if (!updated) {
+      return res.status(404).json({ error: "Colaborador não encontrado" });
+    }
+
+    // limpa tokens temporários em memória (se existir)
+    if (userId) {
+      const tk = tokenStore.get(String(userId));
+      if (tk?.access_token) {
+        try {
+          await oauth2Client.revokeToken(tk.access_token);
+        } catch (e) {
+          console.warn("[GOOGLE DISCONNECT] falha ao revogar token:", e.message);
+        }
+      }
+      tokenStore.delete(String(userId));
+    }
+
+    return res.json({
+      ok: true,
+      connected: false,
+      message: "Google Agenda e Drive desconectados com sucesso.",
+    });
+  } catch (err) {
+    console.error("[GOOGLE DISCONNECT] erro:", err.message);
+    return res.status(500).json({ error: "Erro ao desconectar Google" });
+  }
+});
+
 // index.js (após app.listen)
 const iniciarAgendamentoScheduler = require("./src/lib/agendamento-update-lib");
 
