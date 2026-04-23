@@ -152,10 +152,10 @@ router.get("/salao/:salaoId", async (req, res) => {
     });
 
     // 2. Coletar todos os serviços (especialidades) usados nesses horários
-    // const servicoIds = new Set();
-    // horarios.forEach((horario) => {
-    //   horario.especialidades.forEach((id) => servicoIds.add(id.toString()));
-    // });
+    const servicoIds = new Set();
+    horarios.forEach((horario) => {
+      horario.especialidades.forEach((id) => servicoIds.add(id.toString()));
+    });
 
     // 3. Buscar os serviços válidos com esses IDs
     const servicos = await Servico.find({

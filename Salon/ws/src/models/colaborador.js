@@ -100,9 +100,15 @@ const colaborador = new Schema({
   idDrive: {
     type: String,
   },
-  idRagFolder: { 
-    type: String 
+  idRagFolder: {
+    type: String
   },
+  googleEmail: { type: String },
+  googleAccessToken: { type: String },
+  googleRefreshToken: { type: String },
+  googleScope: { type: String },
+  googleTokenType: { type: String },
+  googleExpiryDate: { type: Number },
   instanceEvo: {
     type: String
   },
