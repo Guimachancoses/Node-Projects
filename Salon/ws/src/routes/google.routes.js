@@ -240,7 +240,7 @@ router.get("/oauth/google/start", (req, res) => {
 });
 
 // Callback OAuth
-router.get("/oauth/google/callback", async (req, res) => {
+router.get("/oauth/google/call-back", async (req, res) => {
   try {
     const { code, state, error } = req.query;
 
