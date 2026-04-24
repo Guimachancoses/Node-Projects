@@ -122,7 +122,6 @@ const Agendamentos = () => {
         agendamento: {
           colaboradorId: "",
           clienteId: "",
-          colaboradorId: null,
           servicoId: null,
           data: moment().format("YYYY-MM-DDTHH:mm"),
           status: "pendente",
@@ -150,8 +149,8 @@ const Agendamentos = () => {
         behavior: "update",
         agendamento: {
           ...agendamento,
-          servicoId: servicoSelecionadoId,
-          colaboradorId: colaboradorSelecionadoId,
+          servicoId: getId(agendamento?.servicoId),
+          colaboradorId: getId(agendamento?.colaboradorId),
         },
         form: { ...form, disabled: false },
       })
