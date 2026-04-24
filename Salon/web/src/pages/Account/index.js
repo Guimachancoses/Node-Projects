@@ -14,9 +14,6 @@ import {
   DialogActions,
   CircularProgress,
 } from "@mui/material";
-import { AdapterMoment } from "@mui/x-date-pickers/AdapterMoment";
-import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
-import { DatePicker } from "@mui/x-date-pickers/DatePicker";
 import { useAuth, useUser } from "@clerk/clerk-react";
 import { useLocation } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
@@ -46,7 +43,6 @@ export default function Account() {
 
   const [fotoFile, setFotoFile] = useState(null);
   const [fotoPreview, setFotoPreview] = useState("");
-  const [birthDate, setBirthDate] = useState(null);
 
   // WhatsApp states
   const [waLoading, setWaLoading] = useState(false);
