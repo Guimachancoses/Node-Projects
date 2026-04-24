@@ -324,7 +324,7 @@ const Agendamentos = () => {
                 const found = servicosOptions.find(
                   (s) => String(s.value) === String(selected)
                 );
-                return found?.label || servicoSelecionadoTitulo || "Selecione um serviço";
+                return found?.label || servicoSelecionadoTitulo || "";
               }}
             >
               {servicosOptions.map((s) => (
@@ -364,39 +364,28 @@ const Agendamentos = () => {
             disabled
           />
         )}
-        {(behavior === "create" || behavior === "update") ? (
-          <FormControl fullWidth margin="normal">
-            <InputLabel id="colaborador-label">Colaborador</InputLabel>
-            <Select
-              labelId="colaborador-label"
-              label="Colaborador"
-              value={colaboradorSelecionadoId}
-              onChange={(e) => setAgendamento("colaboradorId", e.target.value)}
-              displayEmpty
-              renderValue={(selected) => {
-                const found = colaboradoresOptions.find(
-                  (c) => String(c.value) === String(selected)
-                );
-                return found?.label || colaboradorNomeExibicao || "Selecione um colaborador";
-              }}
-            >
-              {colaboradoresOptions.map((c) => (
-                <MenuItem key={c.value} value={c.value}>
-                  {c.label}
-                </MenuItem>
-              ))}
-            </Select>
-          </FormControl>
-        ) : (
-          <TextField
+        <FormControl fullWidth margin="normal">
+          <InputLabel id="colaborador-label">Colaborador</InputLabel>
+          <Select
+            labelId="colaborador-label"
             label="Colaborador"
-            fullWidth
-            margin="normal"
-            value={colaboradorNomeExibicao || "-"}
-            disabled
-          />
-        )}
-
+            value={colaboradorSelecionadoId}
+            onChange={(e) => setAgendamento("colaboradorId", e.target.value)}
+            displayEmpty
+            renderValue={(selected) => {
+              const found = colaboradoresOptions.find(
+                (c) => String(c.value) === String(selected)
+              );
+              return found?.label || colaboradorNomeExibicao || "";
+            }}
+          >
+            {colaboradoresOptions.map((c) => (
+              <MenuItem key={c.value} value={c.value}>
+                {c.label}
+              </MenuItem>
+            ))}
+          </Select>
+        </FormControl>
         <div className="d-flex gap-2 mt-4">
           {behavior === "view" && (
             <Button variant="outlined" onClick={handleEditar}>
