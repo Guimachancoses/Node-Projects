@@ -17,7 +17,6 @@ import {
   DialogActions,
   CircularProgress,
   Avatar,
-  Stack,
   Grid,
   FormControl,
   InputLabel,
@@ -365,7 +364,7 @@ export default function Account() {
       user?.imageUrl ||
       ""
     );
-  }, [userStore?._id, userStore?.vinculoId, user]);
+  }, [userStore, user]);
 
   const setCampo = (key, value) => {
     setAccountForm((prev) => ({ ...prev, [key]: value }));
