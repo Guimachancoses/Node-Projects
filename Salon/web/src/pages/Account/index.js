@@ -87,7 +87,7 @@ export default function Account() {
     if (userStore?._id || userStore?.vinculoId) return;
 
     dispatch(updateUser({ user: { email } }));
-    dispatch(checkUser());
+    dispatch(checkUser({ silent: true, preventLogout: true }));
   }, [dispatch, email, userStore?._id, userStore?.vinculoId]);
 
 
@@ -359,9 +359,9 @@ export default function Account() {
     });
 
     setFotoPreview(
+      user?.imageUrl ||   // Clerk primeiro
       userStore?.foto ||
       userStore?.fotoUrl ||
-      user?.imageUrl ||
       ""
     );
   }, [userStore, user]);

@@ -255,55 +255,62 @@ export function* allServicos() {
   }
 }
 
-export function* checkUser() {
+export function* checkUser({ silent = false, preventLogout = false } = {}) {
   const { user } = yield select((state) => state.colaborador);
 
   try {
-    console.log("userSagas: ", user);
     const { data: res } = yield call(api.get, `/colaborador/check/${user.email}`);
 
     if (res.error) {
-      yield put(
-        setAlerta({
+      if (!silent) {
+        yield put(setAlerta({
           open: true,
           severity: "error",
           title: "Erro",
           message: res.message,
-        })
-      );
-      return false;
+        }));
+      }
+      return;
     }
-
-    //console.log("res API: ", res);
 
     if (res.colaborador) {
       yield put(updateUser({ user: res.colaborador }));
-      history.push("/agendamentos");
-    } else {
-      yield put(
-        setAlerta({
-          open: true,
-          severity: "error",
-          title: "Erro",
-          message: "Colaborador não cadastrado no sistema! Fale com o administrador!",
-        })
-      );
-
-      yield delay(5000); // espera 2 segundos para o usuário ver o alerta
-
-      yield call(signOutClerk);
-      history.push("/");
+      return;
     }
+
+    // NÃO desloga se veio da Account com preventLogout
+    if (preventLogout) {
+      if (!silent) {
+        yield put(setAlerta({
+          open: true,
+          severity: "warning",
+          title: "Aviso",
+          message: "Colaborador não encontrado no sistema.",
+        }));
+      }
+      return;
+    }
+
+    // comportamento antigo (ex: login)
+    yield put(setAlerta({
+      open: true,
+      severity: "error",
+      title: "Erro",
+      message: "Colaborador não cadastrado no sistema! Fale com o administrador!",
+    }));
+
+    yield delay(5000);
+    yield call(signOutClerk);
+    history.push("/");
   } catch (err) {
-    // dispara o alerta de erro:
-    yield put(
-      setAlerta({
+    if (!silent) {
+      yield put(setAlerta({
         open: true,
         severity: "error",
         title: "Erro",
         message: err.message,
-      })
-    );
+      }));
+    }
   }
 }
 
