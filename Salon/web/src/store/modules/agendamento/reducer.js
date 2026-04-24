@@ -3,12 +3,14 @@ import { produce } from "immer";
 
 const INITIAL_STATE = {
   components: {
-    modal: false,         // legado
-    drawer: false,        // novo
-    confirmDelete: false, // novo
+    modal: false,
+    drawer: false,
+    confirmDelete: false,
   },
   agendamento: {},
   agendamentos: [],
+  servicos: [],
+  clientes: [], // NOVO
   behavior: "view",
   form: {
     loading: false,
@@ -33,7 +35,6 @@ function agendamento(state = INITIAL_STATE, action) {
       return produce(state, (draft) => {
         const payload = action.payload || {};
 
-        // Usa !== undefined para permitir valores falsy sem ignorar update
         if (payload.agendamento !== undefined) draft.agendamento = payload.agendamento;
         if (payload.agendamentos !== undefined) draft.agendamentos = payload.agendamentos;
         if (payload.behavior !== undefined) draft.behavior = payload.behavior;
@@ -54,6 +55,17 @@ function agendamento(state = INITIAL_STATE, action) {
     case types.SET_ALERTA_AGENDAMENTO:
       return produce(state, (draft) => {
         draft.alerta = { ...draft.alerta, ...action.alerta };
+      });
+
+    case types.UPDATE_SERVICOS_AGENDAMENTO:
+      return produce(state, (draft) => {
+        draft.servicos = action.servicos || [];
+      });
+
+    // NOVO
+    case types.UPDATE_CLIENTES_AGENDAMENTO:
+      return produce(state, (draft) => {
+        draft.clientes = action.clientes || [];
       });
 
     default:

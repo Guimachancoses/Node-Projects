@@ -27,3 +27,20 @@ export function deleteAgendamentoRequest(id) {
 export function setAlerta(alerta) {
   return { type: types.SET_ALERTA_AGENDAMENTO, alerta };
 }
+
+export function allServicos() {
+  return { type: types.ALL_SERVICOS_REQUEST };
+}
+
+export function updateServicosAgendamento(servicos) {
+  return { type: types.UPDATE_SERVICOS_AGENDAMENTO, servicos };
+}
+
+// NOVO
+export function allClientes() {
+  return { type: types.ALL_CLIENTES_REQUEST };
+}
+
+export function updateClientesAgendamento(clientes) {
+  return { type: types.UPDATE_CLIENTES_AGENDAMENTO, clientes };
+}

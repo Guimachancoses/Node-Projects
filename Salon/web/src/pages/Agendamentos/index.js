@@ -6,7 +6,17 @@ import moment from "moment";
 import "moment/locale/pt-br";
 import util from "../../util";
 
-import { Button, Typography, TextField, Snackbar, Slide } from "@mui/material";
+import {
+  Button,
+  Typography,
+  TextField,
+  Snackbar,
+  Slide,
+  FormControl,
+  InputLabel,
+  Select,
+  MenuItem,
+} from "@mui/material";
 import MuiAlert from "@mui/material/Alert";
 import { useTheme } from "@mui/material/styles";
 
@@ -14,14 +24,15 @@ import CustomDrawer from "../../components/Drawer";
 import CustomDialog from "../../components/DialogAlert";
 import PopSyncCalendarDrive from "../../components/pop-sync-calendarDrive";
 
-// actions (ajuste nomes conforme seu módulo)
 import {
   filterAgendamentos,
-  updateAgendamentoState,     // action genérica para atualizar pedaços do state
-  createAgendamentoRequest,   // criar
-  editAgendamentoRequest,     // editar
-  deleteAgendamentoRequest,   // excluir
+  updateAgendamentoState,
+  createAgendamentoRequest,
+  editAgendamentoRequest,
+  deleteAgendamentoRequest,
   setAlerta,
+  allServicos,
+  allClientes, // novo
 } from "../../store/modules/agendamento/actions";
 
 moment.locale("pt-br");
@@ -39,9 +50,16 @@ const Agendamentos = () => {
   const dispatch = useDispatch();
   const theme = useTheme();
 
-  const { agendamentos, agendamento, behavior, components, form, alerta } = useSelector(
-    (state) => state.agendamento
-  );
+  const {
+    agendamentos,
+    agendamento,
+    behavior,
+    components,
+    form,
+    alerta,
+    servicos,
+    clientes, // novo
+  } = useSelector((state) => state.agendamento);
 
   useEffect(() => {
     dispatch(
@@ -50,6 +68,8 @@ const Agendamentos = () => {
         moment().weekday(6).format("YYYY-MM-DD")
       )
     );
+    dispatch(allServicos());
+    dispatch(allClientes()); // novo
   }, [dispatch]);
 
   const formatEventos = useMemo(() => {
@@ -97,7 +117,7 @@ const Agendamentos = () => {
       updateAgendamentoState({
         behavior: "create",
         agendamento: {
-          clienteId: null,
+          clienteId: "",
           colaboradorId: null,
           servicoId: null,
           data: moment().format("YYYY-MM-DDTHH:mm"),
@@ -129,11 +149,21 @@ const Agendamentos = () => {
     );
   };
 
+  const normalizeId = (field) =>
+    typeof field === "object" ? field?._id : field;
+
   const handleSalvar = () => {
+    const payload = {
+      ...agendamento,
+      clienteId: normalizeId(agendamento.clienteId),
+      servicoId: normalizeId(agendamento.servicoId),
+      colaboradorId: normalizeId(agendamento.colaboradorId),
+    };
+
     if (behavior === "create") {
-      dispatch(createAgendamentoRequest(agendamento));
+      dispatch(createAgendamentoRequest(payload));
     } else {
-      dispatch(editAgendamentoRequest(agendamento));
+      dispatch(editAgendamentoRequest(payload));
     }
   };
 
@@ -164,6 +194,26 @@ const Agendamentos = () => {
     borderRadius: 2,
     boxShadow: theme.shadows[3],
   };
+
+  const servicoSelecionadoId =
+    typeof agendamento?.servicoId === "object"
+      ? agendamento?.servicoId?._id || ""
+      : agendamento?.servicoId || "";
+
+  const servicoSelecionadoTitulo =
+    typeof agendamento?.servicoId === "object"
+      ? agendamento?.servicoId?.titulo
+      : servicos?.find((s) => s.value === agendamento?.servicoId)?.label;
+
+  const clientesOptions = (clientes || []).map((c) => ({
+    value: c.value || c._id,
+    label: c.label || `${c.nome || ""} ${c.sobrenome || ""}`.trim(),
+  }));
+
+  const clienteSelecionadoId =
+    typeof agendamento?.clienteId === "object"
+      ? agendamento?.clienteId?._id || ""
+      : agendamento?.clienteId || "";
 
   return (
     <div className="col p-5 overflow-auto h-100">
@@ -224,12 +274,44 @@ const Agendamentos = () => {
           disabled={form.disabled}
         />
 
-        <Typography variant="body2" sx={{ mt: 1 }}>
-          <strong>Serviço:</strong> {agendamento?.servicoId?.titulo || "-"}
-        </Typography>
-        <Typography variant="body2">
-          <strong>Cliente:</strong> {agendamento?.clienteId?.nome || "-"} {agendamento?.clienteId?.sobrenome || ""}
-        </Typography>
+        {(behavior === "create" || behavior === "update") ? (
+          <FormControl fullWidth margin="normal">
+            <InputLabel id="servico-label">Serviço</InputLabel>
+            <Select
+              labelId="servico-label"
+              label="Serviço"
+              value={servicoSelecionadoId}
+              onChange={(e) => setAgendamento("servicoId", e.target.value)}
+              disabled={form.disabled}
+            >
+              {servicos?.map((s) => (
+                <MenuItem key={s.value} value={s.value}>
+                  {s.label}
+                </MenuItem>
+              ))}
+            </Select>
+          </FormControl>
+        ) : (
+          <Typography variant="body2" sx={{ mt: 1 }}>
+            <strong>Serviço:</strong> {servicoSelecionadoTitulo || "-"}
+          </Typography>
+        )}
+        <FormControl fullWidth margin="normal">
+          <InputLabel id="cliente-label">Cliente</InputLabel>
+          <Select
+            labelId="cliente-label"
+            label="Cliente"
+            value={clienteSelecionadoId}
+            onChange={(e) => setAgendamento("clienteId", e.target.value)}
+            disabled={behavior !== "create"} // <- só permite escolher no + Agendamento
+          >
+            {clientesOptions.map((c) => (
+              <MenuItem key={c.value} value={c.value}>
+                {c.label}
+              </MenuItem>
+            ))}
+          </Select>
+        </FormControl>
         <Typography variant="body2">
           <strong>Colaborador:</strong> {agendamento?.colaboradorId?.nome || "-"} {agendamento?.colaboradorId?.sobrenome || ""}
         </Typography>
