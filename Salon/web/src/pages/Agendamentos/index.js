@@ -309,36 +309,29 @@ const Agendamentos = () => {
           onChange={(e) => setAgendamento("data", e.target.value)}
           disabled={form.disabled}
         />
-
-        {(behavior === "create" || behavior === "update") ? (
-          <FormControl fullWidth margin="normal">
-            <InputLabel id="servico-label">Serviço</InputLabel>
-            <Select
-              labelId="servico-label"
-              label="Serviço"
-              value={servicoSelecionadoId}
-              onChange={(e) => setAgendamento("servicoId", e.target.value)}
-              disabled={form.disabled}
-              displayEmpty
-              renderValue={(selected) => {
-                const found = servicosOptions.find(
-                  (s) => String(s.value) === String(selected)
-                );
-                return found?.label || servicoSelecionadoTitulo || "";
-              }}
-            >
-              {servicosOptions.map((s) => (
-                <MenuItem key={s.value} value={s.value}>
-                  {s.label}
-                </MenuItem>
-              ))}
-            </Select>
-          </FormControl>
-        ) : (
-          <Typography variant="body2" sx={{ mt: 1 }}>
-            <strong>Serviço:</strong> {servicoSelecionadoTitulo || "-"}
-          </Typography>
-        )}
+        <FormControl fullWidth margin="normal">
+          <InputLabel id="servico-label">Serviço</InputLabel>
+          <Select
+            labelId="servico-label"
+            label="Serviço"
+            value={servicoSelecionadoId}
+            onChange={(e) => setAgendamento("servicoId", e.target.value)}
+            disabled={form.disabled}
+            displayEmpty
+            renderValue={(selected) => {
+              const found = servicosOptions.find(
+                (s) => String(s.value) === String(selected)
+              );
+              return found?.label || servicoSelecionadoTitulo || "";
+            }}
+          >
+            {servicosOptions.map((s) => (
+              <MenuItem key={s.value} value={s.value}>
+                {s.label}
+              </MenuItem>
+            ))}
+          </Select>
+        </FormControl>
         <FormControl fullWidth margin="normal">
           <InputLabel id="cliente-label">Cliente</InputLabel>
           <Select
