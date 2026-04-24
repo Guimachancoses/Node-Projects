@@ -316,7 +316,6 @@ const Agendamentos = () => {
             label="Serviço"
             value={servicoSelecionadoId}
             onChange={(e) => setAgendamento("servicoId", e.target.value)}
-            disabled={form.disabled}
             displayEmpty
             renderValue={(selected) => {
               const found = servicosOptions.find(
