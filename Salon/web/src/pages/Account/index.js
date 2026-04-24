@@ -19,10 +19,33 @@ import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
 import { DatePicker } from "@mui/x-date-pickers/DatePicker";
 import { useAuth, useUser } from "@clerk/clerk-react";
 import { useLocation } from "react-router-dom";
+import { useDispatch, useSelector } from "react-redux";
+import {
+  Avatar,
+  Stack,
+  Grid,
+  FormControl,
+  InputLabel,
+  Select,
+  MenuItem,
+  InputAdornment,
+} from "@mui/material";
+import PhotoCamera from "@mui/icons-material/PhotoCamera";
+import LocalPhoneIcon from "@mui/icons-material/LocalPhone";
+import PhoneAndroidIcon from "@mui/icons-material/PhoneAndroid";
+import RecentActorsIcon from "@mui/icons-material/RecentActors";
+import SignpostIcon from "@mui/icons-material/Signpost";
+
+import { updateMyAccountRequest } from "../../store/modules/colaborador/actions";
 
 const API_BASE = "https://salon.fabrisportalhub.com.br";
 
 export default function Account() {
+  const dispatch = useDispatch();
+  const { user: userStore, form } = useSelector((state) => state.colaborador);
+
+  const [fotoFile, setFotoFile] = useState(null);
+  const [fotoPreview, setFotoPreview] = useState("");
   const [birthDate, setBirthDate] = useState(null);
 
   // WhatsApp states
@@ -50,6 +73,22 @@ export default function Account() {
 
   const query = useMemo(() => new URLSearchParams(location.search), [location.search]);
   const googleStatus = query.get("google");
+
+  const [accountForm, setAccountForm] = useState({
+    nome: "",
+    sobrenome: "",
+    email: "",
+    sexo: "",
+    telefone: { area: "", numero: "" },
+    identificacao: { tipoD: "", numero: "" },
+    endereco: {
+      cep: "",
+      logradouro: "",
+      numero: "",
+      bairro: "",
+      cidade: { nome: "" },
+    },
+  });
 
   const checkGoogleStatus = useCallback(async () => {
     if (!userId && !email) return;
@@ -289,6 +328,96 @@ export default function Account() {
     return () => clearTimeout(timeoutId);
   }, [waStatus]);
 
+
+  useEffect(() => {
+    const merged = {
+      nome: userStore?.nome || user?.firstName || "",
+      sobrenome: userStore?.sobrenome || user?.lastName || "",
+      email: userStore?.email || user?.emailAddresses?.[0]?.emailAddress || "",
+      sexo: userStore?.sexo || "",
+      telefone: {
+        area: userStore?.telefone?.area || "",
+        numero: userStore?.telefone?.numero || "",
+      },
+      identificacao: {
+        tipoD: userStore?.identificacao?.tipoD || "",
+        numero: userStore?.identificacao?.numero || "",
+      },
+      endereco: {
+        cep: userStore?.endereco?.cep || "",
+        logradouro: userStore?.endereco?.logradouro || "",
+        numero: userStore?.endereco?.numero || "",
+        bairro: userStore?.endereco?.bairro || "",
+        cidade: {
+          nome: userStore?.endereco?.cidade?.nome || "",
+        },
+      },
+    };
+
+    setAccountForm(merged);
+
+    setFotoPreview(
+      userStore?.foto ||
+      userStore?.fotoUrl ||
+      user?.imageUrl ||
+      ""
+    );
+  }, [userStore, user]);
+
+  const setCampo = (key, value) => {
+    setAccountForm((prev) => ({ ...prev, [key]: value }));
+  };
+
+  const setTelefone = (key, value) => {
+    setAccountForm((prev) => ({
+      ...prev,
+      telefone: { ...prev.telefone, [key]: value },
+    }));
+  };
+
+  const setIdentificacao = (key, value) => {
+    setAccountForm((prev) => ({
+      ...prev,
+      identificacao: { ...prev.identificacao, [key]: value },
+    }));
+  };
+
+  const setEndereco = (key, value) => {
+    setAccountForm((prev) => ({
+      ...prev,
+      endereco: { ...prev.endereco, [key]: value },
+    }));
+  };
+
+  const setCidade = (value) => {
+    setAccountForm((prev) => ({
+      ...prev,
+      endereco: {
+        ...prev.endereco,
+        cidade: { ...prev.endereco.cidade, nome: value },
+      },
+    }));
+  };
+
+  const handleFotoChange = (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setFotoFile(file);
+    setFotoPreview(URL.createObjectURL(file));
+  };
+
+  const handleSalvarConta = () => {
+    dispatch(updateMyAccountRequest(accountForm, fotoFile));
+  };
+
+  useEffect(() => {
+    return () => {
+      if (fotoPreview?.startsWith("blob:")) {
+        URL.revokeObjectURL(fotoPreview);
+      }
+    };
+  }, [fotoPreview]);
+
   return (
     <Container component="main" maxWidth="sm">
       <Paper elevation={3} sx={{ p: 4, mt: 8 }}>
@@ -303,42 +432,186 @@ export default function Account() {
           </Typography>
         </Box>
 
-        <Box component="form" noValidate sx={{ mt: 1 }}>
-          <TextField
-            margin="normal"
-            required
-            fullWidth
-            id="firstName"
-            label="Nome"
-            name="firstName"
-            autoComplete="given-name"
-            value={firstName}
-            InputProps={{ readOnly: true }}
-          />
+        <Divider sx={{ my: 3 }} />
 
-          <TextField
-            margin="normal"
-            required
-            fullWidth
-            id="lastName"
-            label="Sobrenome"
-            name="lastName"
-            autoComplete="family-name"
-            value={lastName}
-            InputProps={{ readOnly: true }}
-          />
+        <Typography variant="h6" sx={{ mb: 2 }}>
+          Minha Conta
+        </Typography>
 
-          <LocalizationProvider dateAdapter={AdapterMoment}>
-            <DatePicker
-              label="Data de Nascimento"
-              value={birthDate}
-              onChange={(newValue) => setBirthDate(newValue)}
-              renderInput={(params) => (
-                <TextField {...params} fullWidth margin="normal" required />
-              )}
+        <Stack spacing={2} alignItems="center" sx={{ mb: 2 }}>
+          <Avatar src={fotoPreview} sx={{ width: 96, height: 96 }} />
+          <Button variant="outlined" component="label" startIcon={<PhotoCamera />}>
+            Alterar foto
+            <input hidden type="file" accept="image/*" onChange={handleFotoChange} />
+          </Button>
+        </Stack>
+
+        <TextField
+          margin="normal"
+          fullWidth
+          label="E-mail"
+          value={accountForm.email}
+          disabled
+        />
+
+        <Grid container spacing={2}>
+          <Grid item xs={12} sm={6}>
+            <TextField
+              fullWidth
+              label="Nome"
+              value={accountForm.nome}
+              onChange={(e) => setCampo("nome", e.target.value)}
             />
-          </LocalizationProvider>
-        </Box>
+          </Grid>
+
+          <Grid item xs={12} sm={6}>
+            <TextField
+              fullWidth
+              label="Sobrenome"
+              value={accountForm.sobrenome}
+              onChange={(e) => setCampo("sobrenome", e.target.value)}
+            />
+          </Grid>
+
+          <Grid item xs={12} sm={4}>
+            <TextField
+              fullWidth
+              label="Área"
+              value={accountForm.telefone.area}
+              onChange={(e) => setTelefone("area", e.target.value)}
+              InputProps={{
+                startAdornment: (
+                  <InputAdornment position="start">
+                    <LocalPhoneIcon />
+                  </InputAdornment>
+                ),
+              }}
+            />
+          </Grid>
+
+          <Grid item xs={12} sm={8}>
+            <TextField
+              fullWidth
+              label="Telefone"
+              value={accountForm.telefone.numero}
+              onChange={(e) => setTelefone("numero", e.target.value)}
+              InputProps={{
+                startAdornment: (
+                  <InputAdornment position="start">
+                    <PhoneAndroidIcon />
+                  </InputAdornment>
+                ),
+              }}
+            />
+          </Grid>
+
+          <Grid item xs={12} sm={4}>
+            <FormControl fullWidth>
+              <InputLabel>Sexo</InputLabel>
+              <Select
+                value={accountForm.sexo || ""}
+                label="Sexo"
+                onChange={(e) => setCampo("sexo", e.target.value)}
+              >
+                <MenuItem value="M">Masculino</MenuItem>
+                <MenuItem value="F">Feminino</MenuItem>
+                <MenuItem value="O">Outro</MenuItem>
+              </Select>
+            </FormControl>
+          </Grid>
+
+          <Grid item xs={12} sm={4}>
+            <FormControl fullWidth>
+              <InputLabel>Tipo doc</InputLabel>
+              <Select
+                value={accountForm.identificacao.tipoD || ""}
+                label="Tipo doc"
+                onChange={(e) => setIdentificacao("tipoD", e.target.value)}
+              >
+                <MenuItem value="CPF">CPF</MenuItem>
+                <MenuItem value="CNPJ">CNPJ</MenuItem>
+              </Select>
+            </FormControl>
+          </Grid>
+
+          <Grid item xs={12} sm={4}>
+            <TextField
+              fullWidth
+              label="Documento"
+              value={accountForm.identificacao.numero}
+              onChange={(e) => setIdentificacao("numero", e.target.value)}
+              InputProps={{
+                startAdornment: (
+                  <InputAdornment position="start">
+                    <RecentActorsIcon />
+                  </InputAdornment>
+                ),
+              }}
+            />
+          </Grid>
+
+          <Grid item xs={12} sm={4}>
+            <TextField
+              fullWidth
+              label="CEP"
+              value={accountForm.endereco.cep}
+              onChange={(e) => setEndereco("cep", e.target.value)}
+              InputProps={{
+                startAdornment: (
+                  <InputAdornment position="start">
+                    <SignpostIcon />
+                  </InputAdornment>
+                ),
+              }}
+            />
+          </Grid>
+
+          <Grid item xs={12} sm={8}>
+            <TextField
+              fullWidth
+              label="Rua"
+              value={accountForm.endereco.logradouro}
+              onChange={(e) => setEndereco("logradouro", e.target.value)}
+            />
+          </Grid>
+
+          <Grid item xs={12} sm={4}>
+            <TextField
+              fullWidth
+              label="Número"
+              value={accountForm.endereco.numero}
+              onChange={(e) => setEndereco("numero", e.target.value)}
+            />
+          </Grid>
+
+          <Grid item xs={12} sm={4}>
+            <TextField
+              fullWidth
+              label="Bairro"
+              value={accountForm.endereco.bairro}
+              onChange={(e) => setEndereco("bairro", e.target.value)}
+            />
+          </Grid>
+
+          <Grid item xs={12} sm={4}>
+            <TextField
+              fullWidth
+              label="Cidade"
+              value={accountForm.endereco.cidade.nome}
+              onChange={(e) => setCidade(e.target.value)}
+            />
+          </Grid>
+        </Grid>
+
+        <Button
+          sx={{ mt: 2 }}
+          fullWidth
+          variant="contained"
+          onClick={handleSalvarConta}
+          disabled={form?.saving}
+        >
+          {form?.saving ? <CircularProgress size={20} /> : "Salvar dados da conta"}
+        </Button>
 
         <Divider sx={{ my: 3 }} />
 

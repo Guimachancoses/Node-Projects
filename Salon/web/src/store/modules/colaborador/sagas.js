@@ -5,6 +5,7 @@ import {
   resetColaborador,
   setAlerta,
   updateUser,
+  updateMyAccountSuccess
 } from "./actions";
 import types from "./types";
 import api from "../../../services/api";
@@ -100,7 +101,7 @@ export function* addColaborador() {
       res = response.data;
     }
 
-    
+
     yield put(updateColaborador({ form: { ...form, saving: false } }));
 
     //console.log("Resposta da API:", res);
@@ -273,10 +274,22 @@ export function* checkUser() {
       return false;
     }
 
-    console.log("res API: ", res);
+    //console.log("res API: ", res);
 
     if (res.colaborador) {
-      yield put(updateUser({ user: res.colaborador }));
+      const clerkUser = user; // user atual do estado
+      const mergedUser = {
+        ...clerkUser,
+        ...res.colaborador,
+        foto:
+          res?.colaborador?.foto ||
+          res?.colaborador?.fotoUrl ||
+          clerkUser?.foto ||
+          clerkUser?.imageUrl ||
+          "",
+      };
+
+      yield put(updateUser({ user: mergedUser }));
       history.push("/agendamentos");
     } else {
       yield put(
@@ -287,15 +300,15 @@ export function* checkUser() {
           message: "Colaborador não cadastrado no sistema! Fale com o administrador!",
         })
       );
-      
+
       yield delay(5000); // espera 2 segundos para o usuário ver o alerta
-      
+
       yield call(signOutClerk);
       history.push("/");
     }
   } catch (err) {
-     // dispara o alerta de erro:
-     yield put(
+    // dispara o alerta de erro:
+    yield put(
       setAlerta({
         open: true,
         severity: "error",
@@ -306,6 +319,95 @@ export function* checkUser() {
   }
 }
 
+export function* updateMyAccount({ payload, fotoFile }) {
+  const { form, user } = yield select((state) => state.colaborador);
+
+  try {
+    yield put(updateColaborador({ form: { ...form, saving: true } }));
+
+    let res = {};
+
+    // corpo base (sem email)
+    const colaboradorPayload = {
+      nome: payload.nome,
+      sobrenome: payload.sobrenome,
+      sexo: payload.sexo || "",
+      telefone: {
+        area: payload?.telefone?.area || "",
+        numero: payload?.telefone?.numero || "",
+      },
+      identificacao: {
+        tipoD: payload?.identificacao?.tipoD || "",
+        numero: payload?.identificacao?.numero || "",
+      },
+      endereco: {
+        cep: payload?.endereco?.cep || "",
+        logradouro: payload?.endereco?.logradouro || "",
+        numero: payload?.endereco?.numero || "",
+        bairro: payload?.endereco?.bairro || "",
+        cidade: {
+          nome: payload?.endereco?.cidade?.nome || "",
+        },
+      },
+    };
+
+    if (fotoFile) {
+      // mesmo padrão do serviço (FormData)
+      const formData = new FormData();
+      formData.append("salaoId", SALAOID);
+      formData.append("colaborador", JSON.stringify(colaboradorPayload));
+      formData.append("arquivo_0", fotoFile);
+
+      const response = yield call(api.put, `/colaborador/${user._id}`, formData);
+      res = response.data;
+    } else {
+      const response = yield call(api.put, `/colaborador/${user._id}`, colaboradorPayload);
+      res = response.data;
+    }
+
+    yield put(updateColaborador({ form: { ...form, saving: false } }));
+
+    if (res.error) {
+      yield put(setAlerta({
+        open: true,
+        severity: "error",
+        title: "Erro",
+        message: res.message,
+      }));
+      return;
+    }
+
+    // preserva foto do clerk como fallback
+    const updatedUser = {
+      ...user,
+      ...res.colaborador,
+      foto:
+        res?.colaborador?.foto ||
+        res?.colaborador?.fotoUrl ||
+        user?.foto ||
+        user?.imageUrl ||
+        "",
+    };
+
+    yield put(updateUser({ user: updatedUser }));
+    yield put(updateMyAccountSuccess(updatedUser));
+
+    yield put(setAlerta({
+      open: true,
+      severity: "success",
+      title: "Sucesso",
+      message: "Conta atualizada com sucesso!",
+    }));
+  } catch (err) {
+    yield put(updateColaborador({ form: { ...form, saving: false } }));
+    yield put(setAlerta({
+      open: true,
+      severity: "error",
+      title: "Erro",
+      message: err.message,
+    }));
+  }
+}
 
 export default all([
   takeLatest(types.ALL_COLABORADORES, allColaboradores),
@@ -314,4 +416,5 @@ export default all([
   takeLatest(types.UNLINK_COLABORADOR, unlinkColaborador),
   takeLatest(types.ALL_SERVICOS, allServicos),
   takeLatest(types.CHECK_USER, checkUser),
+  takeLatest(types.UPDATE_MY_ACCOUNT_REQUEST, updateMyAccount),
 ]);

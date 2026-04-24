@@ -80,6 +80,11 @@ function colaborador(state = INITIAL_STATE, action) {
       });
     }
 
+    case types.UPDATE_MY_ACCOUNT_SUCCESS:
+      return produce(state, (draft) => {
+        draft.user = { ...draft.user, ...action.user };
+      });
+
     //console.log('Estado após a ação UPDATE_COLABORAR:', newState); // Verificando o estado após a atualização
 
     default:

@@ -39,3 +39,11 @@ export function updateUser(user) {
   return { type: types.UPDATE_USER, user };
 }
 
+export function updateMyAccountRequest(payload, fotoFile = null) {
+  return { type: types.UPDATE_MY_ACCOUNT_REQUEST, payload, fotoFile };
+}
+
+export function updateMyAccountSuccess(user) {
+  return { type: types.UPDATE_MY_ACCOUNT_SUCCESS, user };
+}
+

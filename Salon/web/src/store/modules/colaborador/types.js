@@ -9,6 +9,8 @@ const types = {
   UNLINK_COLABORADOR: "@colaborador/UNLINK",
   CHECK_USER: "@colaborador/CHECK_USER",
   UPDATE_USER: "@colaborador/UPDATE_USER",
+  UPDATE_MY_ACCOUNT_REQUEST: "@colaborador/UPDATE_MY_ACCOUNT_REQUEST",
+  UPDATE_MY_ACCOUNT_SUCCESS: "@colaborador/UPDATE_MY_ACCOUNT_SUCCESS",
 };
 
 export default types;

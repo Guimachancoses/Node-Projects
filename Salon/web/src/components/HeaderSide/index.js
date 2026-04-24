@@ -201,17 +201,14 @@ export default function Layout({ toggleTheme }) {
               open={Boolean(anchorElUser)}
               onClose={handleCloseUserMenu}
             >
-              <MenuItem onClick={handleCloseUserMenu}>
-                <Typography sx={{ textAlign: "center" }}>Perfil</Typography>
-              </MenuItem>
               <MenuItem onClick={handleCloseUserMenu} component={Link} to="/account">
                 <Typography sx={{ textAlign: "center" }}>
                   Minha Conta
                 </Typography>
               </MenuItem>
-              <MenuItem onClick={handleCloseUserMenu}>
+              {/* <MenuItem onClick={handleCloseUserMenu}>
                 <Typography sx={{ textAlign: "center" }}>Dashboard</Typography>
-              </MenuItem>
+              </MenuItem> */}
               <MenuItem
                 onClick={() => {
                   handleCloseUserMenu();
