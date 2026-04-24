@@ -36,11 +36,18 @@ export function updateServicosAgendamento(servicos) {
   return { type: types.UPDATE_SERVICOS_AGENDAMENTO, servicos };
 }
 
-// NOVO
 export function allClientes() {
   return { type: types.ALL_CLIENTES_REQUEST };
 }
 
 export function updateClientesAgendamento(clientes) {
   return { type: types.UPDATE_CLIENTES_AGENDAMENTO, clientes };
+}
+
+export function allColaboradores() {
+  return { type: types.ALL_COLABORADORES_REQUEST };
+}
+
+export function updateColaboradoresAgendamento(colaboradores) {
+  return { type: types.UPDATE_COLABORADORES_AGENDAMENTO, colaboradores };
 }

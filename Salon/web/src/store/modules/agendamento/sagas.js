@@ -9,6 +9,7 @@ import {
   updateClientesAgendamento,
   setAlerta,
   filterAgendamentos as filterAgendamentosAction,
+  updateColaboradoresAgendamento
 } from "./actions";
 
 const SALAOID = `${process.env.REACT_APP_SALAO_ID}`;
@@ -328,6 +329,34 @@ export function* deleteAgendamento({ id }) {
   }
 }
 
+/**
+ * Lista colaboradores
+ */
+export function* allColaboradoresAgendamento() {
+  try {
+    const { data: res } = yield call(api.get, `/colaborador/salao/${SALAOID}`);
+    if (res.error) return;
+
+    const colaboradores = (res.colaboradores || []).map((c) => ({
+      value: c._id,
+      label: `${c.nome || ""} ${c.sobrenome || ""}`.trim(),
+      ...c,
+    }));
+
+    yield put(updateColaboradoresAgendamento(colaboradores));
+  } catch (err) {
+    yield* setLoading(false);
+    yield put(
+      setAlerta({
+        open: true,
+        severity: "error",
+        title: "Erro",
+        message: err.message,
+      })
+    );
+  }
+}
+
 export default all([
   takeLatest(types.FILTER_AGENDAMENTOS, filterAgendamentos),
   takeLatest(types.ALL_SERVICOS_REQUEST, allServicosAgendamento),
@@ -335,4 +364,5 @@ export default all([
   takeLatest(types.CREATE_AGENDAMENTO_REQUEST, createAgendamento),
   takeLatest(types.EDIT_AGENDAMENTO_REQUEST, editAgendamento),
   takeLatest(types.DELETE_AGENDAMENTO_REQUEST, deleteAgendamento),
+  takeLatest(types.ALL_COLABORADORES_REQUEST, allColaboradoresAgendamento),
 ]);

@@ -10,7 +10,8 @@ const INITIAL_STATE = {
   agendamento: {},
   agendamentos: [],
   servicos: [],
-  clientes: [], // NOVO
+  clientes: [],
+  colaboradores: [],
   behavior: "view",
   form: {
     loading: false,
@@ -62,10 +63,14 @@ function agendamento(state = INITIAL_STATE, action) {
         draft.servicos = action.servicos || [];
       });
 
-    // NOVO
     case types.UPDATE_CLIENTES_AGENDAMENTO:
       return produce(state, (draft) => {
         draft.clientes = action.clientes || [];
+      });
+
+    case types.UPDATE_COLABORADORES_AGENDAMENTO:
+      return produce(state, (draft) => {
+        draft.colaboradores = action.colaboradores || [];
       });
 
     default:

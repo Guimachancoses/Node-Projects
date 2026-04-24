@@ -32,7 +32,8 @@ import {
   deleteAgendamentoRequest,
   setAlerta,
   allServicos,
-  allClientes, // novo
+  allClientes,
+  allColaboradores,
 } from "../../store/modules/agendamento/actions";
 
 moment.locale("pt-br");
@@ -58,7 +59,8 @@ const Agendamentos = () => {
     form,
     alerta,
     servicos,
-    clientes, // novo
+    clientes,
+    colaboradores
   } = useSelector((state) => state.agendamento);
 
   useEffect(() => {
@@ -69,7 +71,8 @@ const Agendamentos = () => {
       )
     );
     dispatch(allServicos());
-    dispatch(allClientes()); // novo
+    dispatch(allClientes());
+    dispatch(allColaboradores());
   }, [dispatch]);
 
   const formatEventos = useMemo(() => {
@@ -117,6 +120,7 @@ const Agendamentos = () => {
       updateAgendamentoState({
         behavior: "create",
         agendamento: {
+          colaboradorId: "",
           clienteId: "",
           colaboradorId: null,
           servicoId: null,
@@ -144,6 +148,11 @@ const Agendamentos = () => {
     dispatch(
       updateAgendamentoState({
         behavior: "update",
+        agendamento: {
+          ...agendamento,
+          servicoId: servicoSelecionadoId,
+          colaboradorId: colaboradorSelecionadoId,
+        },
         form: { ...form, disabled: false },
       })
     );
@@ -195,15 +204,23 @@ const Agendamentos = () => {
     boxShadow: theme.shadows[3],
   };
 
-  const servicoSelecionadoId =
-    typeof agendamento?.servicoId === "object"
-      ? agendamento?.servicoId?._id || ""
-      : agendamento?.servicoId || "";
+  const getId = (field) => {
+    if (!field) return "";
+    if (typeof field === "string") return field;
+    return field._id || field.id || field.value || "";
+  };
+
+  const servicosOptions = (servicos || []).map((s) => ({
+    value: s.value || s._id || s.id,
+    label: s.label || s.titulo || s.nome || "Sem nome",
+  }));
+
+  const servicoSelecionadoId = getId(agendamento?.servicoId);
 
   const servicoSelecionadoTitulo =
     typeof agendamento?.servicoId === "object"
-      ? agendamento?.servicoId?.titulo
-      : servicos?.find((s) => s.value === agendamento?.servicoId)?.label;
+      ? agendamento?.servicoId?.titulo || agendamento?.servicoId?.label
+      : servicosOptions.find((s) => String(s.value) === String(agendamento?.servicoId))?.label;
 
   const clientesOptions = (clientes || []).map((c) => ({
     value: c.value || c._id,
@@ -214,6 +231,26 @@ const Agendamentos = () => {
     typeof agendamento?.clienteId === "object"
       ? agendamento?.clienteId?._id || ""
       : agendamento?.clienteId || "";
+
+  const clienteNomeExibicao =
+    typeof agendamento?.clienteId === "object"
+      ? `${agendamento?.clienteId?.nome || ""} ${agendamento?.clienteId?.sobrenome || ""}`.trim()
+      : clientesOptions.find((c) => c.value === agendamento?.clienteId)?.label || "";
+
+  const colaboradoresOptions = (colaboradores || []).map((c) => ({
+    value: c.value || c._id,
+    label: c.label || `${c.nome || ""} ${c.sobrenome || ""}`.trim(),
+  }));
+
+  const colaboradorSelecionadoId =
+    typeof agendamento?.colaboradorId === "object"
+      ? agendamento?.colaboradorId?._id || ""
+      : agendamento?.colaboradorId || "";
+
+  const colaboradorNomeExibicao =
+    typeof agendamento?.colaboradorId === "object"
+      ? `${agendamento?.colaboradorId?.nome || ""} ${agendamento?.colaboradorId?.sobrenome || ""}`.trim()
+      : colaboradoresOptions.find((c) => String(c.value) === String(agendamento?.colaboradorId))?.label || "";
 
   return (
     <div className="col p-5 overflow-auto h-100">
@@ -283,8 +320,15 @@ const Agendamentos = () => {
               value={servicoSelecionadoId}
               onChange={(e) => setAgendamento("servicoId", e.target.value)}
               disabled={form.disabled}
+              displayEmpty
+              renderValue={(selected) => {
+                const found = servicosOptions.find(
+                  (s) => String(s.value) === String(selected)
+                );
+                return found?.label || servicoSelecionadoTitulo || "Selecione um serviço";
+              }}
             >
-              {servicos?.map((s) => (
+              {servicosOptions.map((s) => (
                 <MenuItem key={s.value} value={s.value}>
                   {s.label}
                 </MenuItem>
@@ -296,25 +340,63 @@ const Agendamentos = () => {
             <strong>Serviço:</strong> {servicoSelecionadoTitulo || "-"}
           </Typography>
         )}
-        <FormControl fullWidth margin="normal">
-          <InputLabel id="cliente-label">Cliente</InputLabel>
-          <Select
-            labelId="cliente-label"
+        {behavior === "create" ? (
+          <FormControl fullWidth margin="normal">
+            <InputLabel id="cliente-label">Cliente</InputLabel>
+            <Select
+              labelId="cliente-label"
+              label="Cliente"
+              value={clienteSelecionadoId}
+              onChange={(e) => setAgendamento("clienteId", e.target.value)}
+            >
+              {clientesOptions.map((c) => (
+                <MenuItem key={c.value} value={c.value}>
+                  {c.label}
+                </MenuItem>
+              ))}
+            </Select>
+          </FormControl>
+        ) : (
+          <TextField
             label="Cliente"
-            value={clienteSelecionadoId}
-            onChange={(e) => setAgendamento("clienteId", e.target.value)}
-            disabled={behavior !== "create"} // <- só permite escolher no + Agendamento
-          >
-            {clientesOptions.map((c) => (
-              <MenuItem key={c.value} value={c.value}>
-                {c.label}
-              </MenuItem>
-            ))}
-          </Select>
-        </FormControl>
-        <Typography variant="body2">
-          <strong>Colaborador:</strong> {agendamento?.colaboradorId?.nome || "-"} {agendamento?.colaboradorId?.sobrenome || ""}
-        </Typography>
+            fullWidth
+            margin="normal"
+            value={clienteNomeExibicao || "-"}
+            disabled
+          />
+        )}
+        {(behavior === "create" || behavior === "update") ? (
+          <FormControl fullWidth margin="normal">
+            <InputLabel id="colaborador-label">Colaborador</InputLabel>
+            <Select
+              labelId="colaborador-label"
+              label="Colaborador"
+              value={colaboradorSelecionadoId}
+              onChange={(e) => setAgendamento("colaboradorId", e.target.value)}
+              displayEmpty
+              renderValue={(selected) => {
+                const found = colaboradoresOptions.find(
+                  (c) => String(c.value) === String(selected)
+                );
+                return found?.label || colaboradorNomeExibicao || "Selecione um colaborador";
+              }}
+            >
+              {colaboradoresOptions.map((c) => (
+                <MenuItem key={c.value} value={c.value}>
+                  {c.label}
+                </MenuItem>
+              ))}
+            </Select>
+          </FormControl>
+        ) : (
+          <TextField
+            label="Colaborador"
+            fullWidth
+            margin="normal"
+            value={colaboradorNomeExibicao || "-"}
+            disabled
+          />
+        )}
 
         <div className="d-flex gap-2 mt-4">
           {behavior === "view" && (
