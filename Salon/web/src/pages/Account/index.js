@@ -1,4 +1,7 @@
 import { useMemo, useState, useEffect, useCallback } from "react";
+import { useAuth, useUser } from "@clerk/clerk-react";
+import { useLocation } from "react-router-dom";
+import { useDispatch, useSelector } from "react-redux";
 import {
   Box,
   TextField,
@@ -13,11 +16,6 @@ import {
   DialogContent,
   DialogActions,
   CircularProgress,
-} from "@mui/material";
-import { useAuth, useUser } from "@clerk/clerk-react";
-import { useLocation } from "react-router-dom";
-import { useDispatch, useSelector } from "react-redux";
-import {
   Avatar,
   Stack,
   Grid,
@@ -26,6 +24,7 @@ import {
   Select,
   MenuItem,
   InputAdornment,
+  Chip,
 } from "@mui/material";
 import PhotoCamera from "@mui/icons-material/PhotoCamera";
 import LocalPhoneIcon from "@mui/icons-material/LocalPhone";
@@ -33,7 +32,7 @@ import PhoneAndroidIcon from "@mui/icons-material/PhoneAndroid";
 import RecentActorsIcon from "@mui/icons-material/RecentActors";
 import SignpostIcon from "@mui/icons-material/Signpost";
 
-import { updateMyAccountRequest } from "../../store/modules/colaborador/actions";
+import { updateMyAccountRequest, checkUser, updateUser } from "../../store/modules/colaborador/actions";
 
 const API_BASE = "https://salon.fabrisportalhub.com.br";
 
@@ -64,8 +63,6 @@ export default function Account() {
   const location = useLocation();
 
   const email = user?.emailAddresses?.[0]?.emailAddress ?? "";
-  const firstName = user?.firstName ?? "";
-  const lastName = user?.lastName ?? "";
 
   const query = useMemo(() => new URLSearchParams(location.search), [location.search]);
   const googleStatus = query.get("google");
@@ -85,6 +82,15 @@ export default function Account() {
       cidade: { nome: "" },
     },
   });
+
+  useEffect(() => {
+    if (!email) return;
+    if (userStore?._id || userStore?.vinculoId) return;
+
+    dispatch(updateUser({ user: { email } }));
+    dispatch(checkUser());
+  }, [dispatch, email, userStore?._id, userStore?.vinculoId]);
+
 
   const checkGoogleStatus = useCallback(async () => {
     if (!userId && !email) return;
@@ -108,7 +114,7 @@ export default function Account() {
     setGoogleErrorMsg("");
     setGoogleInfoMsg("");
 
-    const clientName = `${firstName} ${lastName}`.trim() || "cliente";
+    const clientName = `${accountForm.nome} ${accountForm.sobrenome}`.trim() || "cliente";
     const url =
       `${API_BASE}/oauth/google/start` +
       `?userId=${encodeURIComponent(userId)}` +
@@ -326,31 +332,32 @@ export default function Account() {
 
 
   useEffect(() => {
-    const merged = {
-      nome: userStore?.nome || user?.firstName || "",
-      sobrenome: userStore?.sobrenome || user?.lastName || "",
-      email: userStore?.email || user?.emailAddresses?.[0]?.emailAddress || "",
-      sexo: userStore?.sexo || "",
+    // só hidrata quando houver dados reais do colaborador
+    if (!userStore || (!userStore._id && !userStore.vinculoId)) return;
+
+    setAccountForm({
+      nome: userStore?.nome ?? "",
+      sobrenome: userStore?.sobrenome ?? "",
+      email: userStore?.email ?? (user?.emailAddresses?.[0]?.emailAddress ?? ""),
+      sexo: userStore?.sexo ?? "",
       telefone: {
-        area: userStore?.telefone?.area || "",
-        numero: userStore?.telefone?.numero || "",
+        area: userStore?.telefone?.area ?? "",
+        numero: userStore?.telefone?.numero ?? "",
       },
       identificacao: {
-        tipoD: userStore?.identificacao?.tipoD || "",
-        numero: userStore?.identificacao?.numero || "",
+        tipoD: userStore?.identificacao?.tipoD ?? "",
+        numero: userStore?.identificacao?.numero ?? "",
       },
       endereco: {
-        cep: userStore?.endereco?.cep || "",
-        logradouro: userStore?.endereco?.logradouro || "",
-        numero: userStore?.endereco?.numero || "",
-        bairro: userStore?.endereco?.bairro || "",
+        cep: userStore?.endereco?.cep ?? "",
+        logradouro: userStore?.endereco?.logradouro ?? "",
+        numero: userStore?.endereco?.numero ?? "",
+        bairro: userStore?.endereco?.bairro ?? "",
         cidade: {
-          nome: userStore?.endereco?.cidade?.nome || "",
+          nome: userStore?.endereco?.cidade?.nome ?? "",
         },
       },
-    };
-
-    setAccountForm(merged);
+    });
 
     setFotoPreview(
       userStore?.foto ||
@@ -358,7 +365,7 @@ export default function Account() {
       user?.imageUrl ||
       ""
     );
-  }, [userStore, user]);
+  }, [userStore?._id, userStore?.vinculoId, user]);
 
   const setCampo = (key, value) => {
     setAccountForm((prev) => ({ ...prev, [key]: value }));
@@ -415,202 +422,268 @@ export default function Account() {
   }, [fotoPreview]);
 
   return (
-    <Container component="main" maxWidth="sm">
-      <Paper elevation={3} sx={{ p: 4, mt: 8 }}>
-        <Typography component="h1" variant="h5" sx={{ mb: 3 }}>
-          Olá, {firstName} {lastName}
-        </Typography>
+    <Container component="main" maxWidth="lg" sx={{ py: 4 }}>
+      {/* CARD PRINCIPAL - CONTA */}
+      <Paper
+        elevation={0}
+        sx={{
+          p: { xs: 2.5, md: 4 },
+          borderRadius: 4,
+          border: "1px solid",
+          borderColor: "divider",
+          mb: 3,
+        }}
+      >
+        <Box
+          sx={{
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: { xs: "flex-start", md: "center" },
+            flexDirection: { xs: "column", md: "row" },
+            gap: 1,
+            mb: 2,
+          }}
+        >
+          <Box>
+            <Typography component="h1" variant="h5" fontWeight={700}>
+              Olá, {accountForm.nome} {accountForm.sobrenome}
+            </Typography>
+            <Typography variant="body2" color="text.secondary">
+              Gerencie seus dados de perfil e contato.
+            </Typography>
+          </Box>
 
-        <Box sx={{ mb: 3, display: "flex", alignItems: "center" }}>
-          <Typography variant="body2">Você está logado como:</Typography>
-          <Typography variant="body2" sx={{ color: "var(--primary)", ml: 1 }}>
-            {email}
-          </Typography>
+          <Chip
+            label={accountForm.email || email}
+            color="primary"
+            variant="outlined"
+            sx={{ maxWidth: "100%" }}
+          />
         </Box>
 
-        <Divider sx={{ my: 3 }} />
+        <Divider sx={{ mb: 3 }} />
 
-        <Typography variant="h6" sx={{ mb: 2 }}>
-          Minha Conta
-        </Typography>
-
-        <Stack spacing={2} alignItems="center" sx={{ mb: 2 }}>
-          <Avatar src={fotoPreview} sx={{ width: 96, height: 96 }} />
-          <Button variant="outlined" component="label" startIcon={<PhotoCamera />}>
-            Alterar foto
-            <input hidden type="file" accept="image/*" onChange={handleFotoChange} />
-          </Button>
-        </Stack>
-
-        <TextField
-          margin="normal"
-          fullWidth
-          label="E-mail"
-          value={accountForm.email}
-          disabled
-        />
-
-        <Grid container spacing={2}>
-          <Grid item xs={12} sm={6}>
-            <TextField
-              fullWidth
-              label="Nome"
-              value={accountForm.nome}
-              onChange={(e) => setCampo("nome", e.target.value)}
-            />
-          </Grid>
-
-          <Grid item xs={12} sm={6}>
-            <TextField
-              fullWidth
-              label="Sobrenome"
-              value={accountForm.sobrenome}
-              onChange={(e) => setCampo("sobrenome", e.target.value)}
-            />
-          </Grid>
-
-          <Grid item xs={12} sm={4}>
-            <TextField
-              fullWidth
-              label="Área"
-              value={accountForm.telefone.area}
-              onChange={(e) => setTelefone("area", e.target.value)}
-              InputProps={{
-                startAdornment: (
-                  <InputAdornment position="start">
-                    <LocalPhoneIcon />
-                  </InputAdornment>
-                ),
+        <Box sx={{ position: "relative" }}>
+          {/* Avatar no canto superior direito */}
+          <Box
+            sx={{
+              position: { xs: "static", md: "absolute" },
+              top: 0,
+              right: 0,
+              display: "flex",
+              flexDirection: "column",
+              alignItems: "center",
+              gap: 1,
+              mb: { xs: 2, md: 0 },
+            }}
+          >
+            <Avatar
+              src={fotoPreview}
+              sx={{
+                width: 110,
+                height: 110,
+                border: "3px solid",
+                borderColor: "divider",
               }}
             />
-          </Grid>
+            <Button
+              size="small"
+              variant="outlined"
+              component="label"
+              startIcon={<PhotoCamera />}
+            >
+              Editar foto
+              <input hidden type="file" accept="image/*" onChange={handleFotoChange} />
+            </Button>
+          </Box>
 
-          <Grid item xs={12} sm={8}>
+          {/* Espaço à direita no desktop para não colidir com avatar */}
+          <Box sx={{ pr: { xs: 0, md: 22 } }}>
+            <Typography variant="h6" sx={{ mb: 2 }}>
+              Minha Conta
+            </Typography>
+
             <TextField
+              margin="normal"
               fullWidth
-              label="Telefone"
-              value={accountForm.telefone.numero}
-              onChange={(e) => setTelefone("numero", e.target.value)}
-              InputProps={{
-                startAdornment: (
-                  <InputAdornment position="start">
-                    <PhoneAndroidIcon />
-                  </InputAdornment>
-                ),
-              }}
+              label="E-mail"
+              value={accountForm.email}
+              disabled
             />
-          </Grid>
 
-          <Grid item xs={12} sm={4}>
-            <FormControl fullWidth>
-              <InputLabel>Sexo</InputLabel>
-              <Select
-                value={accountForm.sexo || ""}
-                label="Sexo"
-                onChange={(e) => setCampo("sexo", e.target.value)}
+            <Grid container spacing={2} sx={{ mt: 0.5 }}>
+              <Grid item xs={12} md={6}>
+                <TextField
+                  fullWidth
+                  label="Nome"
+                  value={accountForm.nome}
+                  onChange={(e) => setCampo("nome", e.target.value)}
+                />
+              </Grid>
+
+              <Grid item xs={12} md={6}>
+                <TextField
+                  fullWidth
+                  label="Sobrenome"
+                  value={accountForm.sobrenome}
+                  onChange={(e) => setCampo("sobrenome", e.target.value)}
+                />
+              </Grid>
+
+              <Grid item xs={12} md={4}>
+                <TextField
+                  fullWidth
+                  label="Área"
+                  value={accountForm.telefone.area}
+                  onChange={(e) => setTelefone("area", e.target.value)}
+                  InputProps={{
+                    startAdornment: (
+                      <InputAdornment position="start">
+                        <LocalPhoneIcon />
+                      </InputAdornment>
+                    ),
+                  }}
+                />
+              </Grid>
+
+              <Grid item xs={12} md={8}>
+                <TextField
+                  fullWidth
+                  label="Telefone"
+                  value={accountForm.telefone.numero}
+                  onChange={(e) => setTelefone("numero", e.target.value)}
+                  InputProps={{
+                    startAdornment: (
+                      <InputAdornment position="start">
+                        <PhoneAndroidIcon />
+                      </InputAdornment>
+                    ),
+                  }}
+                />
+              </Grid>
+
+              <Grid item xs={12} md={4}>
+                <FormControl fullWidth>
+                  <InputLabel>Sexo</InputLabel>
+                  <Select
+                    value={accountForm.sexo || ""}
+                    label="Sexo"
+                    onChange={(e) => setCampo("sexo", e.target.value)}
+                  >
+                    <MenuItem value="M">Masculino</MenuItem>
+                    <MenuItem value="F">Feminino</MenuItem>
+                    <MenuItem value="O">Outro</MenuItem>
+                  </Select>
+                </FormControl>
+              </Grid>
+
+              <Grid item xs={12} md={4}>
+                <FormControl fullWidth>
+                  <InputLabel>Tipo doc</InputLabel>
+                  <Select
+                    value={accountForm.identificacao.tipoD || ""}
+                    label="Tipo doc"
+                    onChange={(e) => setIdentificacao("tipoD", e.target.value)}
+                  >
+                    <MenuItem value="CPF">CPF</MenuItem>
+                    <MenuItem value="CNPJ">CNPJ</MenuItem>
+                  </Select>
+                </FormControl>
+              </Grid>
+
+              <Grid item xs={12} md={4}>
+                <TextField
+                  fullWidth
+                  label="Documento"
+                  value={accountForm.identificacao.numero}
+                  onChange={(e) => setIdentificacao("numero", e.target.value)}
+                  InputProps={{
+                    startAdornment: (
+                      <InputAdornment position="start">
+                        <RecentActorsIcon />
+                      </InputAdornment>
+                    ),
+                  }}
+                />
+              </Grid>
+
+              <Grid item xs={12} md={4}>
+                <TextField
+                  fullWidth
+                  label="CEP"
+                  value={accountForm.endereco.cep}
+                  onChange={(e) => setEndereco("cep", e.target.value)}
+                  InputProps={{
+                    startAdornment: (
+                      <InputAdornment position="start">
+                        <SignpostIcon />
+                      </InputAdornment>
+                    ),
+                  }}
+                />
+              </Grid>
+
+              <Grid item xs={12} md={8}>
+                <TextField
+                  fullWidth
+                  label="Rua"
+                  value={accountForm.endereco.logradouro}
+                  onChange={(e) => setEndereco("logradouro", e.target.value)}
+                />
+              </Grid>
+
+              <Grid item xs={12} md={3}>
+                <TextField
+                  fullWidth
+                  label="Número"
+                  value={accountForm.endereco.numero}
+                  onChange={(e) => setEndereco("numero", e.target.value)}
+                />
+              </Grid>
+
+              <Grid item xs={12} md={4}>
+                <TextField
+                  fullWidth
+                  label="Bairro"
+                  value={accountForm.endereco.bairro}
+                  onChange={(e) => setEndereco("bairro", e.target.value)}
+                />
+              </Grid>
+
+              <Grid item xs={12} md={5}>
+                <TextField
+                  fullWidth
+                  label="Cidade"
+                  value={accountForm.endereco.cidade.nome}
+                  onChange={(e) => setCidade(e.target.value)}
+                />
+              </Grid>
+            </Grid>
+
+            <Box sx={{ mt: 3, display: "flex", justifyContent: "flex-end" }}>
+              <Button
+                variant="contained"
+                onClick={handleSalvarConta}
+                disabled={form?.saving}
+                sx={{ minWidth: 220, borderRadius: 2 }}
               >
-                <MenuItem value="M">Masculino</MenuItem>
-                <MenuItem value="F">Feminino</MenuItem>
-                <MenuItem value="O">Outro</MenuItem>
-              </Select>
-            </FormControl>
-          </Grid>
+                {form?.saving ? <CircularProgress size={20} /> : "Salvar dados da conta"}
+              </Button>
+            </Box>
+          </Box>
+        </Box>
+      </Paper>
 
-          <Grid item xs={12} sm={4}>
-            <FormControl fullWidth>
-              <InputLabel>Tipo doc</InputLabel>
-              <Select
-                value={accountForm.identificacao.tipoD || ""}
-                label="Tipo doc"
-                onChange={(e) => setIdentificacao("tipoD", e.target.value)}
-              >
-                <MenuItem value="CPF">CPF</MenuItem>
-                <MenuItem value="CNPJ">CNPJ</MenuItem>
-              </Select>
-            </FormControl>
-          </Grid>
-
-          <Grid item xs={12} sm={4}>
-            <TextField
-              fullWidth
-              label="Documento"
-              value={accountForm.identificacao.numero}
-              onChange={(e) => setIdentificacao("numero", e.target.value)}
-              InputProps={{
-                startAdornment: (
-                  <InputAdornment position="start">
-                    <RecentActorsIcon />
-                  </InputAdornment>
-                ),
-              }}
-            />
-          </Grid>
-
-          <Grid item xs={12} sm={4}>
-            <TextField
-              fullWidth
-              label="CEP"
-              value={accountForm.endereco.cep}
-              onChange={(e) => setEndereco("cep", e.target.value)}
-              InputProps={{
-                startAdornment: (
-                  <InputAdornment position="start">
-                    <SignpostIcon />
-                  </InputAdornment>
-                ),
-              }}
-            />
-          </Grid>
-
-          <Grid item xs={12} sm={8}>
-            <TextField
-              fullWidth
-              label="Rua"
-              value={accountForm.endereco.logradouro}
-              onChange={(e) => setEndereco("logradouro", e.target.value)}
-            />
-          </Grid>
-
-          <Grid item xs={12} sm={4}>
-            <TextField
-              fullWidth
-              label="Número"
-              value={accountForm.endereco.numero}
-              onChange={(e) => setEndereco("numero", e.target.value)}
-            />
-          </Grid>
-
-          <Grid item xs={12} sm={4}>
-            <TextField
-              fullWidth
-              label="Bairro"
-              value={accountForm.endereco.bairro}
-              onChange={(e) => setEndereco("bairro", e.target.value)}
-            />
-          </Grid>
-
-          <Grid item xs={12} sm={4}>
-            <TextField
-              fullWidth
-              label="Cidade"
-              value={accountForm.endereco.cidade.nome}
-              onChange={(e) => setCidade(e.target.value)}
-            />
-          </Grid>
-        </Grid>
-
-        <Button
-          sx={{ mt: 2 }}
-          fullWidth
-          variant="contained"
-          onClick={handleSalvarConta}
-          disabled={form?.saving}
-        >
-          {form?.saving ? <CircularProgress size={20} /> : "Salvar dados da conta"}
-        </Button>
-
-        <Divider sx={{ my: 3 }} />
-
+      {/* CARD INTEGRAÇÕES */}
+      <Paper
+        elevation={0}
+        sx={{
+          p: { xs: 2.5, md: 4 },
+          borderRadius: 4,
+          border: "1px solid",
+          borderColor: "divider",
+        }}
+      >
         <Typography variant="h6" sx={{ mb: 1 }}>
           Integrações
         </Typography>
@@ -623,62 +696,40 @@ export default function Account() {
             {waFriendly.text}
           </Alert>
         )}
+        {waInfo && <Alert severity="info" sx={{ mb: 2 }}>{waInfo}</Alert>}
+        {waError && <Alert severity="error" sx={{ mb: 2 }}>{waError}</Alert>}
+        {googleInfoMsg && <Alert severity="success" sx={{ mb: 2 }}>{googleInfoMsg}</Alert>}
+        {googleErrorMsg && <Alert severity="error" sx={{ mb: 2 }}>{googleErrorMsg}</Alert>}
 
-        {waInfo && (
-          <Alert severity="info" sx={{ mb: 2 }}>
-            {waInfo}
-          </Alert>
-        )}
+        <Grid container spacing={1.5}>
+          <Grid item xs={12} md={6}>
+            <Button
+              fullWidth
+              variant="contained"
+              color={isGoogleConnected ? "error" : "primary"}
+              onClick={isGoogleConnected ? handleDisconnectGoogle : handleConnectGoogle}
+              disabled={!isLoaded || !isSignedIn || !userId || googleLoading}
+            >
+              {googleLoading ? <CircularProgress size={20} /> : isGoogleConnected
+                ? "Desconectar Google Agenda e Drive"
+                : "Sincronizar Google Agenda e Drive"}
+            </Button>
+          </Grid>
 
-        {waError && (
-          <Alert severity="error" sx={{ mb: 2 }}>
-            {waError}
-          </Alert>
-        )}
-
-        {googleInfoMsg && (
-          <Alert severity="success" sx={{ mb: 2 }}>
-            {googleInfoMsg}
-          </Alert>
-        )}
-
-        {googleErrorMsg && (
-          <Alert severity="error" sx={{ mb: 2 }}>
-            {googleErrorMsg}
-          </Alert>
-        )}
-
-        <Box sx={{ display: "flex", flexDirection: "column", gap: 1.5 }}>
-          <Button
-            variant="contained"
-            color={isGoogleConnected ? "error" : "primary"}
-            onClick={isGoogleConnected ? handleDisconnectGoogle : handleConnectGoogle}
-            disabled={!isLoaded || !isSignedIn || !userId || googleLoading}
-          >
-            {googleLoading ? (
-              <CircularProgress size={20} />
-            ) : isGoogleConnected ? (
-              "Desconectar Google Agenda e Drive"
-            ) : (
-              "Sincronizar Google Agenda e Drive"
-            )}
-          </Button>
-
-          <Button
-            variant={isWaConnected ? "contained" : "outlined"}
-            color={isWaConnected ? "error" : "primary"}
-            onClick={isWaConnected ? handleDisconnectWhatsApp : handleConnectWhatsApp}
-            disabled={!isLoaded || !isSignedIn || !userId || waLoading}
-          >
-            {waLoading ? (
-              <CircularProgress size={20} />
-            ) : isWaConnected ? (
-              "Desconectar WhatsApp"
-            ) : (
-              "Sincronizar com WhatsApp"
-            )}
-          </Button>
-        </Box>
+          <Grid item xs={12} md={6}>
+            <Button
+              fullWidth
+              variant={isWaConnected ? "contained" : "outlined"}
+              color={isWaConnected ? "error" : "primary"}
+              onClick={isWaConnected ? handleDisconnectWhatsApp : handleConnectWhatsApp}
+              disabled={!isLoaded || !isSignedIn || !userId || waLoading}
+            >
+              {waLoading ? <CircularProgress size={20} /> : isWaConnected
+                ? "Desconectar WhatsApp"
+                : "Sincronizar com WhatsApp"}
+            </Button>
+          </Grid>
+        </Grid>
       </Paper>
 
       <Dialog open={waDialogOpen} onClose={() => setWaDialogOpen(false)} maxWidth="xs" fullWidth>
