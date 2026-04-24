@@ -339,31 +339,28 @@ const Agendamentos = () => {
             <strong>Serviço:</strong> {servicoSelecionadoTitulo || "-"}
           </Typography>
         )}
-        {behavior === "create" ? (
-          <FormControl fullWidth margin="normal">
-            <InputLabel id="cliente-label">Cliente</InputLabel>
-            <Select
-              labelId="cliente-label"
-              label="Cliente"
-              value={clienteSelecionadoId}
-              onChange={(e) => setAgendamento("clienteId", e.target.value)}
-            >
-              {clientesOptions.map((c) => (
-                <MenuItem key={c.value} value={c.value}>
-                  {c.label}
-                </MenuItem>
-              ))}
-            </Select>
-          </FormControl>
-        ) : (
-          <TextField
+        <FormControl fullWidth margin="normal">
+          <InputLabel id="cliente-label">Cliente</InputLabel>
+          <Select
+            labelId="cliente-label"
             label="Cliente"
-            fullWidth
-            margin="normal"
-            value={clienteNomeExibicao || "-"}
-            disabled
-          />
-        )}
+            value={clienteSelecionadoId}
+            onChange={(e) => setAgendamento("clienteId", e.target.value)}
+            displayEmpty
+            renderValue={(selected) => {
+              const found = clientesOptions.find(
+                (c) => String(c.value) === String(selected)
+              );
+              return found?.label || clienteNomeExibicao || "";
+            }}
+          >
+            {clientesOptions.map((c) => (
+              <MenuItem key={c.value} value={c.value}>
+                {c.label}
+              </MenuItem>
+            ))}
+          </Select>
+        </FormControl>
         <FormControl fullWidth margin="normal">
           <InputLabel id="colaborador-label">Colaborador</InputLabel>
           <Select
