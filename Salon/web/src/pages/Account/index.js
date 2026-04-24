@@ -31,7 +31,7 @@ import PhoneAndroidIcon from "@mui/icons-material/PhoneAndroid";
 import RecentActorsIcon from "@mui/icons-material/RecentActors";
 import SignpostIcon from "@mui/icons-material/Signpost";
 
-import { updateMyAccountRequest, checkUser, updateUser } from "../../store/modules/colaborador/actions";
+import { updateMyAccountRequest } from "../../store/modules/colaborador/actions";
 
 const API_BASE = "https://salon.fabrisportalhub.com.br";
 
@@ -66,6 +66,9 @@ export default function Account() {
   const query = useMemo(() => new URLSearchParams(location.search), [location.search]);
   const googleStatus = query.get("google");
 
+  const fotoDefault = user?.imageUrl || userStore?.foto || userStore?.fotoUrl || "";
+  const fotoExibicao = fotoFile ? fotoPreview : fotoDefault;
+
   const [accountForm, setAccountForm] = useState({
     nome: "",
     sobrenome: "",
@@ -82,13 +85,13 @@ export default function Account() {
     },
   });
 
-  useEffect(() => {
-    if (!email) return;
-    if (userStore?._id || userStore?.vinculoId) return;
+  // useEffect(() => {
+  //   if (!email) return;
+  //   if (userStore?._id || userStore?.vinculoId) return;
 
-    dispatch(updateUser({ user: { email } }));
-    dispatch(checkUser({ silent: true, preventLogout: true }));
-  }, [dispatch, email, userStore?._id, userStore?.vinculoId]);
+  //   dispatch(updateUser({ user: { email } }));
+  //   dispatch(checkUser({ silent: true, preventLogout: true }));
+  // }, [dispatch, email, userStore?._id, userStore?.vinculoId]);
 
 
   const checkGoogleStatus = useCallback(async () => {
@@ -358,12 +361,6 @@ export default function Account() {
       },
     });
 
-    setFotoPreview(
-      user?.imageUrl ||   // Clerk primeiro
-      userStore?.foto ||
-      userStore?.fotoUrl ||
-      ""
-    );
   }, [userStore, user]);
 
   const setCampo = (key, value) => {
@@ -477,7 +474,7 @@ export default function Account() {
             }}
           >
             <Avatar
-              src={fotoPreview}
+              src={fotoExibicao}
               sx={{
                 width: 110,
                 height: 110,
