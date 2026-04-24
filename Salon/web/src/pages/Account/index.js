@@ -417,6 +417,8 @@ export default function Account() {
     };
   }, [fotoPreview]);
 
+  console.log("accountForm", accountForm)
+
   return (
     <Container component="main" maxWidth="lg" sx={{ py: 4 }}>
       {/* CARD PRINCIPAL - CONTA */}
@@ -499,14 +501,6 @@ export default function Account() {
               Minha Conta
             </Typography>
 
-            <TextField
-              margin="normal"
-              fullWidth
-              label="E-mail"
-              value={accountForm.email}
-              disabled
-            />
-
             <Grid container spacing={2} sx={{ mt: 0.5 }}>
               <Grid item xs={12} md={6}>
                 <TextField
@@ -528,7 +522,6 @@ export default function Account() {
 
               <Grid item xs={12} md={4}>
                 <TextField
-                  fullWidth
                   label="Área"
                   value={accountForm.telefone.area}
                   onChange={(e) => setTelefone("area", e.target.value)}
@@ -558,7 +551,7 @@ export default function Account() {
                 />
               </Grid>
 
-              <Grid item xs={12} md={4}>
+              <Grid item xs={12} md={6}>
                 <FormControl fullWidth>
                   <InputLabel>Sexo</InputLabel>
                   <Select
@@ -573,7 +566,7 @@ export default function Account() {
                 </FormControl>
               </Grid>
 
-              <Grid item xs={12} md={4}>
+              <Grid item xs={12} md={6}>
                 <FormControl fullWidth>
                   <InputLabel>Tipo doc</InputLabel>
                   <Select

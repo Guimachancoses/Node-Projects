@@ -348,9 +348,11 @@ export function* updateMyAccount({ payload, fotoFile }) {
 
       const response = yield call(api.put, `/colaborador/${user._id}`, formData);
       res = response.data;
+      console.log("API: ", res)
     } else {
       const response = yield call(api.put, `/colaborador/${user._id}`, colaboradorPayload);
       res = response.data;
+      console.log("API: ", res)
     }
 
     yield put(updateColaborador({ form: { ...form, saving: false } }));
