@@ -277,19 +277,7 @@ export function* checkUser() {
     //console.log("res API: ", res);
 
     if (res.colaborador) {
-      const clerkUser = user; // user atual do estado
-      const mergedUser = {
-        ...clerkUser,
-        ...res.colaborador,
-        foto:
-          res?.colaborador?.foto ||
-          res?.colaborador?.fotoUrl ||
-          clerkUser?.foto ||
-          clerkUser?.imageUrl ||
-          "",
-      };
-
-      yield put(updateUser({ user: mergedUser }));
+      yield put(updateUser({ user: res.colaborador }));
       history.push("/agendamentos");
     } else {
       yield put(
