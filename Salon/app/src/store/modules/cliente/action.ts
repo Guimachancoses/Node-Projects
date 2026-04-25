@@ -49,11 +49,9 @@ export const updateAgendamento = (agendamento: any) => ({
 export const resetAgendamento = () => ({
   type: types.RESET_AGENDAMENTO,
 });
-<<<<<<< HEAD
-=======
 
 export const pushToken = (token: any) => ({
   type: types.PUSH_TOKEN,
   token,
 });
->>>>>>> parent of 10c19fd (Delete Salon/app directory)
+

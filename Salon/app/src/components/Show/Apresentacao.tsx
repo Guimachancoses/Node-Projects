@@ -1,9 +1,5 @@
 import React from "react";
-<<<<<<< HEAD
-import { Cover, Box } from "@/src/styles";
-=======
 import { Cover } from "@/src/styles";
->>>>>>> parent of 10c19fd (Delete Salon/app directory)
 import Gradient from "../Agendamento/Gradient";
 import { useSelector } from "react-redux";
 import consts from "@/src/constants/consts";

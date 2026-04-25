@@ -1,6 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useRef } from "react";
-import { TouchableWithoutFeedback } from "react-native";
-import { Dimensions, StyleSheet, View } from "react-native";
+import { TouchableWithoutFeedback, Dimensions, StyleSheet, View } from "react-native";
 import BottomSheet, {
   BottomSheetView,
   BottomSheetHandleProps,
@@ -18,11 +17,8 @@ import { ActivityIndicator, useTheme } from "react-native-paper";
 import moment from "moment";
 import { initMercadoPago } from "@mercadopago/sdk-react";
 import { openAuthSessionAsync } from "expo-web-browser";
-<<<<<<< HEAD
-import { PUBLIC_MERCADO_PAGO_PUBLIC_KEY } from "@env";
-=======
-//import { PUBLIC_MERCADO_PAGO_PUBLIC_KEY } from "@env";
->>>>>>> parent of 10c19fd (Delete Salon/app directory)
+import Constants from "expo-constants";
+import { useFocusEffect } from "expo-router";
 
 import HeaderModal from "./HeaderModal";
 import Resume from "@/Agendamento/Resume";
@@ -41,13 +37,9 @@ import {
 } from "../../store/modules/salao/actions";
 import theme from "@/src/styles/theme.json";
 import ComoPagar from "./ComoPagar";
-import { useFocusEffect } from "expo-router";
 
-<<<<<<< HEAD
-const mercadoPagoKey = PUBLIC_MERCADO_PAGO_PUBLIC_KEY;
-=======
-const mercadoPagoKey = process.env.PUBLIC_MERCADO_PAGO_PUBLIC_KEY;
->>>>>>> parent of 10c19fd (Delete Salon/app directory)
+const mercadoPagoKey =
+  (Constants.expoConfig?.extra?.PUBLIC_MERCADO_PAGO_PUBLIC_KEY as string) || "";
 
 // Função para manipular a origem da transformação
 export const transformOrigin = (
@@ -103,20 +95,12 @@ const Handle: React.FC<BottomSheetHandleProps> = ({ animatedIndex }) => {
   });
 
   return (
-    <Animated.View style={[styles.header]}>
+    <Animated.View style={styles.header}>
       <Animated.View
-        style={[
-          styles.indicator,
-          styles.leftIndicator,
-          leftIndicatorAnimatedStyle,
-        ]}
+        style={[styles.indicator, styles.leftIndicator, leftIndicatorAnimatedStyle]}
       />
       <Animated.View
-        style={[
-          styles.indicator,
-          styles.rightIndicator,
-          rightIndicatorAnimatedStyle,
-        ]}
+        style={[styles.indicator, styles.rightIndicator, rightIndicatorAnimatedStyle]}
       />
     </Animated.View>
   );
@@ -133,10 +117,10 @@ const styles = StyleSheet.create({
     alignContent: "center",
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: "transparent", // Mantendo o fundo transparente
+    backgroundColor: "transparent",
     paddingVertical: 14,
     borderBottomWidth: 1,
-    borderBottomColor: "transparent", // Mantendo o border-bottom transparente
+    borderBottomColor: "transparent",
     margin: 0,
   },
   indicator: {
@@ -164,8 +148,9 @@ const styles = StyleSheet.create({
 
 export default function AgendamentoBottomS() {
   const dispatch = useDispatch();
-  const { form, agendamento, servicos, agenda, colaboradores, link } =
-    useSelector((state: any) => state.salao);
+  const { form, agendamento, servicos, agenda, colaboradores, link } = useSelector(
+    (state: any) => state.salao
+  );
 
   const { cliente } = useSelector((state: any) => state.cliente);
 
@@ -181,77 +166,62 @@ export default function AgendamentoBottomS() {
   const servico = servicos.find((s: any) => s._id === agendamento?.servicoId);
   const bottomSheetRef = useRef<BottomSheet>(null);
 
-  // SnapPoints dinâmicos: menores se for buttonCard
   const snapPoints = useMemo(() => {
-    if (form.buttonCard) {
-      return [455]; // Apenas um snap menor para ComoPagar
-    }
-    return [94, Dimensions.get("screen").height - 120]; // Tamanho padrão
+    if (form.buttonCard) return [455];
+    return [94, Dimensions.get("screen").height - 120];
   }, [form.buttonCard, form.modalAgendamento]);
 
-  const handleSheetChanges = useCallback((index: number) => {
-    if (index === -1) {
-      dispatch(resetAgendamento());
-      dispatch(updateForm({ modalAgendamento: false, buttonCard: false }));
-    }
-  }, []);
+  const handleSheetChanges = useCallback(
+    (index: number) => {
+      if (index === -1) {
+        dispatch(resetAgendamento());
+        dispatch(updateForm({ modalAgendamento: false, buttonCard: false }));
+      }
+    },
+    [dispatch]
+  );
 
-  
   useFocusEffect(
     React.useCallback(() => {
       if (agendamento?.servicoId) {
-        // abre bottom sheet aqui
-        bottomSheetRef.current?.expand(); // exemplo com ref
+        bottomSheetRef.current?.expand();
       }
     }, [agendamento?.servicoId])
   );
 
   useEffect(() => {
     if (form?.modalAgendamento) {
-      bottomSheetRef.current?.snapToIndex(0); // ou 1 dependendo do snap desejado
+      bottomSheetRef.current?.snapToIndex(0);
     } else {
       bottomSheetRef.current?.close();
     }
   }, [form?.modalAgendamento]);
 
-  ////console.log("ModalAgendamento: ", form?.modalAgendamento);
   const agendamentoInvalido =
-    !agendamento?.data ||
-    !agendamento?.colaboradorId ||
-    !agendamento?.servicoId;
-  //console.log("Inicio da buttonCard: ", form.buttonCard);
+    !agendamento?.data || !agendamento?.colaboradorId || !agendamento?.servicoId;
 
-  // Responsável pelo pagamento:
   useEffect(() => {
-    initMercadoPago(mercadoPagoKey!);
+    if (mercadoPagoKey) {
+      initMercadoPago(mercadoPagoKey);
+    }
   }, []);
 
-  // Abre o Web Checkout
   useEffect(() => {
     const openSession = async () => {
       if (link) {
-        const result = await openAuthSessionAsync(link, "parrudus-app://");
-
-        if (
-          result.type === "success" &&
-          result.url?.includes("pagamento/agendamentos/sucesso")
-        ) {
-          // Isso aqui normalmente não será chamado, pois o deep link cuida
-          //console.log("retornouPagamento sucesso (openAuthSessionAsync)");
-        }
+        await openAuthSessionAsync(link, "parrudus-app://");
       }
     };
-
     openSession();
   }, [link]);
 
   const signIn = async () => {
-    if (link) return; // se já tem link, não chama o createMercadoPagoCheckout
-    if (form.saveAgendamento) return; // se não salvou o agendamento, não chama o createMercadoPagoCheckout
+    if (link) return;
+    if (!form.saveAgendamento) return;
 
     dispatch(
       createMercadoPagoCheckout({
-        id: servico._id,
+        id: servico?._id,
         title: servico?.titulo,
         preco: servico?.preco,
         userEmail: cliente?.email,
@@ -260,115 +230,99 @@ export default function AgendamentoBottomS() {
   };
 
   return (
-    <>
-      <BottomSheet
-        ref={bottomSheetRef}
-        index={-1} // Começa fechado
-        snapPoints={snapPoints}
-        onChange={handleSheetChanges}
-        enablePanDownToClose
-        backgroundStyle={{ backgroundColor: "transparent" }}
-        handleComponent={Handle} // Passando o handle customizado
-      >
-        <HeaderModal />
-        <BottomSheetView
-          style={{ flex: 1, backgroundColor: colors.background }}
-        >
-          <ScrollView>
-            {form.buttonCard === true ? (
-              <ComoPagar />
-            ) : agenda.length === 0 ? (
-              <>
-                <Resume servico={servico} />
-                <Box
-                  height={`${Dimensions.get("window").height - 350}px`}
-                  direction="column"
-                  hasPadding
-                  justify="center"
-                  align="center"
-                >
-                  <ActivityIndicator
-                    size="large"
-                    color={theme.colors.primary}
-                  />
-                  <Title align="center">Só um instante...</Title>
-                  <Text small align="center">
-                    Estamos buscando o melhor horário para você...
-                  </Text>
-                </Box>
-              </>
-            ) : (
-              <>
-                <Resume servico={servico} />
-                <DateTime
-                  servico={servico}
-                  agenda={agenda}
-                  dataSelecionada={dataSelecionada}
-                  horaSelecionada={horaSelecionada}
-                  horarioDisponiveis={horariosDisponiveis}
-                />
-                <Especialistas
-                  colaboradores={colaboradores}
-                  agendamento={agendamento}
-                />
-                <TouchableWithoutFeedback onPress={(e) => e.stopPropagation()}>
-                  <CardComp
-                    preferenciaPagamento={preferenciaPagamento}
-                    onPress={() => {
-                      dispatch(updateForm({ buttonCard: true }));
+    <BottomSheet
+      ref={bottomSheetRef}
+      index={-1}
+      snapPoints={snapPoints}
+      onChange={handleSheetChanges}
+      enablePanDownToClose
+      backgroundStyle={{ backgroundColor: "transparent" }}
+      handleComponent={Handle}
+    >
+      <HeaderModal />
+      <BottomSheetView style={{ flex: 1, backgroundColor: colors.background }}>
+        <ScrollView>
+          {form.buttonCard === true ? (
+            <ComoPagar />
+          ) : agenda.length === 0 ? (
+            <>
+              <Resume servico={servico} />
+              <Box
+                height={`${Dimensions.get("window").height - 350}px`}
+                direction="column"
+                hasPadding
+                justify="center"
+                align="center"
+              >
+                <ActivityIndicator size="large" color={theme.colors.primary} />
+                <Title align="center">Só um instante...</Title>
+                <Text small align="center">
+                  Estamos buscando o melhor horário para você...
+                </Text>
+              </Box>
+            </>
+          ) : (
+            <>
+              <Resume servico={servico} />
+              <DateTime
+                servico={servico}
+                agenda={agenda}
+                dataSelecionada={dataSelecionada}
+                horaSelecionada={horaSelecionada}
+                horarioDisponiveis={horariosDisponiveis}
+              />
+              <Especialistas colaboradores={colaboradores} agendamento={agendamento} />
 
-                      setTimeout(() => {
-                        bottomSheetRef.current?.snapToIndex(1); // Reexpande após resetar
-                      }, 100); // Pequeno delay para garantir que o estado já mudou
-                    }}
-                  />
-                </TouchableWithoutFeedback>
-                <View
-                  style={{
-                    padding: 20,
-                    width: "100%",
-                    height: "auto",
+              <TouchableWithoutFeedback onPress={(e) => e.stopPropagation()}>
+                <CardComp
+                  preferenciaPagamento={preferenciaPagamento}
+                  onPress={() => {
+                    dispatch(updateForm({ buttonCard: true }));
+                    setTimeout(() => {
+                      bottomSheetRef.current?.snapToIndex(1);
+                    }, 100);
                   }}
-                >
-                  <TouchableWithoutFeedback
-                    onPress={(e) => e.stopPropagation()}
+                />
+              </TouchableWithoutFeedback>
+
+              <View style={{ padding: 20, width: "100%", height: "auto" }}>
+                <TouchableWithoutFeedback onPress={(e) => e.stopPropagation()}>
+                  <Button
+                    loading={form.agendamentoLoading}
+                    disabled={agendamentoInvalido}
+                    icon="check"
+                    background="primary"
+                    mode="contained"
+                    block
+                    uppercase={false}
+                    onPress={() => {
+                      dispatch(updateAgendamento({ clienteId: cliente?.clienteId }));
+                      if (preferenciaPagamento === "M") {
+                        dispatch(saveAgendamento());
+                        signIn();
+                      } else {
+                        dispatch(saveAgendamento());
+                      }
+                      dispatch(updateForm({ buttonCard: false }));
+                    }}
                   >
-                    <Button
-                      loading={form.agendamentoLoading}
-                      disabled={agendamentoInvalido}
-                      icon="check"
-                      background="primary"
-                      mode="contained"
-                      block
-                      uppercase={false}
-                      onPress={() => {
-                        dispatch(updateAgendamento({clienteId: cliente.clienteId}));
-                        if (preferenciaPagamento === "M") {
-                          dispatch(saveAgendamento());
-                          signIn();
-                        } else {
-                          dispatch(saveAgendamento());
-                        }
-                        dispatch(updateForm({ buttonCard: false }));
-                      }}
-                    >
-                      Confirmar meu agendamento
-                    </Button>
-                  </TouchableWithoutFeedback>
-                </View>
-              </>
-            )}
-          </ScrollView>
-          <ModalEspci
-            form={form}
-            colaboradores={colaboradores}
-            agendamento={agendamento}
-            servicos={servicos}
-            horaSelecionada={horaSelecionada}
-            colaboradoresDia={colaboradoresDia}
-          />
-        </BottomSheetView>
-      </BottomSheet>
-    </>
+                    Confirmar meu agendamento
+                  </Button>
+                </TouchableWithoutFeedback>
+              </View>
+            </>
+          )}
+        </ScrollView>
+
+        <ModalEspci
+          form={form}
+          colaboradores={colaboradores}
+          agendamento={agendamento}
+          servicos={servicos}
+          horaSelecionada={horaSelecionada}
+          colaboradoresDia={colaboradoresDia}
+        />
+      </BottomSheetView>
+    </BottomSheet>
   );
 }

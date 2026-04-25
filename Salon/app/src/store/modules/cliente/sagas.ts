@@ -1,23 +1,16 @@
 import types from "./types";
 import api from "@/src/services/api";
 import { all, call, takeLatest, select, put } from "redux-saga/effects";
-
 import { updateAgendamentos, updateCliente } from "./action";
 import Toast from "react-native-toast-message";
 import { router } from "expo-router";
-<<<<<<< HEAD
-
-const salaoId = `${process.env.SALAO_ID}`;
-=======
 import Constants from "expo-constants";
 
-const SALAOID = Constants.expoConfig?.extra?.EXPO_SALAO_ID;
-//console.log("SALAOID SAGAS CLIENTE: ", SALAOID);
->>>>>>> parent of 10c19fd (Delete Salon/app directory)
+const SALAO_ID = Constants.expoConfig?.extra?.EXPO_SALAO_ID;
 
 export function* filterCliente() {
   try {
-    const { cliente } = yield select((state) => state.cliente);
+    const { cliente } = yield select((state: any) => state.cliente);
 
     const { data: res } = yield call(api.post, `/cliente/filter`, {
       filters: {
@@ -34,11 +27,10 @@ export function* filterCliente() {
       return false;
     }
 
-    //console.log("Resposta completa da API:", res);
-
-    if (res.clientes.length > 0) {
-      yield put(updateCliente(res.clientes[0]));
-      yield put(updateCliente({ clienteId: res.clientes._id }));
+    if (res?.clientes?.length > 0) {
+      const clienteDb = res.clientes[0];
+      yield put(updateCliente(clienteDb));
+      yield put(updateCliente({ clienteId: clienteDb._id }));
       router.replace("/(home)/home");
     } else {
       router.replace("/completRg");
@@ -50,23 +42,16 @@ export function* filterCliente() {
       text1: "Erro!",
       text2: message,
     });
-    //console.log(message)
   }
 }
 
 export function* addCliente() {
   try {
-    const { cliente } = yield select((state) => state.cliente);
-
-    //console.log("cliente: ", cliente);
+    const { cliente } = yield select((state: any) => state.cliente);
 
     const { data: res } = yield call(api.post, `/cliente`, {
-<<<<<<< HEAD
-      salaoId: salaoId,
-=======
-      salaoId: SALAOID,
->>>>>>> parent of 10c19fd (Delete Salon/app directory)
-      cliente: cliente,
+      salaoId: SALAO_ID,
+      cliente,
     });
 
     if (res.error) {
@@ -78,7 +63,6 @@ export function* addCliente() {
       return false;
     }
 
-    //console.log("Resposta completa da API:", res);
     yield put(updateCliente({ clienteId: res.clienteId }));
     router.replace("/(home)/home");
   } catch (err) {
@@ -93,7 +77,7 @@ export function* addCliente() {
 
 export function* getCliente() {
   try {
-    const { cliente } = yield select((state) => state.cliente);
+    const { cliente } = yield select((state: any) => state.cliente);
 
     const { data: res } = yield call(api.post, `/cliente/filter`, {
       filters: {
@@ -110,7 +94,9 @@ export function* getCliente() {
       return false;
     }
 
-    yield put(updateCliente({ clienteId: res.clientes[0]._id }));
+    if (res?.clientes?.length > 0) {
+      yield put(updateCliente({ clienteId: res.clientes[0]._id }));
+    }
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
     Toast.show({
@@ -123,11 +109,10 @@ export function* getCliente() {
 
 export function* updateCadastro() {
   try {
-    const { cliente } = yield select((state) => state.cliente);
+    const { cliente } = yield select((state: any) => state.cliente);
+    const clienteId = cliente?.clienteId ?? cliente?._id;
 
-    //console.log("cliente: ", cliente);
-
-    const { data: res } = yield call(api.put, `/cliente/${cliente.clienteId}`, {
+    const { data: res } = yield call(api.put, `/cliente/${clienteId}`, {
       cliente,
     });
 
@@ -140,7 +125,6 @@ export function* updateCadastro() {
       return false;
     }
 
-    //console.log("Resposta completa da API:", res);
     yield put(updateCliente({ clienteId: res.clienteId }));
     Toast.show({
       type: "success",
@@ -160,18 +144,15 @@ export function* updateCadastro() {
 
 export function* filterAgendamentos({ filters }: any) {
   try {
-    const { cliente } = yield select((state) => state.cliente);
+    const { cliente } = yield select((state: any) => state.cliente);
+    const clienteId = cliente?.clienteId ?? cliente?._id;
 
-    const { data: res } = yield call(
-      api.post,
-      `/agendamento/filter-agendamentos`,
-      {
-        filters: {
-          ...filters,
-          clienteId: cliente.clienteId,
-        },
-      }
-    );
+    const { data: res } = yield call(api.post, `/agendamento/filter-agendamentos`, {
+      filters: {
+        ...filters,
+        clienteId,
+      },
+    });
 
     if (res.error) {
       Toast.show({
@@ -190,16 +171,19 @@ export function* filterAgendamentos({ filters }: any) {
       text1: "Erro!",
       text2: message,
     });
-    //console.log(message)
   }
 }
 
-<<<<<<< HEAD
-=======
 export function* pushToken({ token }: any) {
   try {
-    const { cliente } = yield select((state) => state.cliente);
-    const { data: res } = yield call(api.post, `/push-token`, { token, model: "Cliente", referenciaId: cliente.clienteId });
+    const { cliente } = yield select((state: any) => state.cliente);
+    const referenciaId = cliente?.clienteId ?? cliente?._id;
+
+    const { data: res } = yield call(api.post, `/push-token`, {
+      token,
+      model: "Cliente",
+      referenciaId,
+    });
 
     if (res.error) {
       Toast.show({
@@ -209,8 +193,6 @@ export function* pushToken({ token }: any) {
       });
       return false;
     }
-
-    //console.log("Token cadastrado com sucesso: ", res);
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
     Toast.show({
@@ -221,15 +203,11 @@ export function* pushToken({ token }: any) {
   }
 }
 
->>>>>>> parent of 10c19fd (Delete Salon/app directory)
 export default all([
   takeLatest(types.FILTER_CLIENTE, filterCliente),
   takeLatest(types.ADD_CLIENTE, addCliente),
   takeLatest(types.GET_CLIENTE, getCliente),
   takeLatest(types.UPDATE_CADASTRO, updateCadastro),
   takeLatest(types.FILTER_AGENDAMENTOS, filterAgendamentos),
-<<<<<<< HEAD
-=======
   takeLatest(types.PUSH_TOKEN, pushToken),
->>>>>>> parent of 10c19fd (Delete Salon/app directory)
 ]);

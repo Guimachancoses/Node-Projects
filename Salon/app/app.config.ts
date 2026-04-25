@@ -33,8 +33,6 @@ export default ({ config }: ConfigContext): ExpoConfig => {
     icon,
     scheme,
     platforms: ["ios", "android", "web"],
-    userInterfaceStyle: "automatic",
-    newArchEnabled: true,
     splash: {
       image: SPLASH,
       resizeMode: "cover",

@@ -13,10 +13,7 @@ import {
 import { useDispatch, useSelector } from "react-redux";
 import { Portal } from "react-native-paper";
 import { useClerk } from "@clerk/clerk-expo";
-<<<<<<< HEAD
-=======
 import { router } from "expo-router";
->>>>>>> parent of 10c19fd (Delete Salon/app directory)
 
 import Header from "@/Agendamento/Header";
 import Servico from "@/Agendamento/Servico";
@@ -28,17 +25,6 @@ import MenuComponent from "@/src/components/Menu/MenuComponet";
 import {
   allServicos,
   getSalao,
-<<<<<<< HEAD
-  updateAgendamento,
-  updateForm,
-  updateTipoServicos,
-  updateTypeChoice,
-} from "@/src/store/modules/salao/actions";
-import { filterClinte, getCliente } from "@/src/store/modules/cliente/action";
-import Gradient from "@/src/components/Agendamento/Gradient";
-import MaterialCommunityIcons from "react-native-vector-icons/MaterialCommunityIcons";
-
-=======
   resetAgendamento,
   updateAgendamento,
   updateForm,
@@ -56,31 +42,22 @@ import { createEvent } from "@/src/hook/expoCalendar";
 import moment from "moment";
 
 const MaterialCommunityIcons = MaterialCommunityIconsRaw as any;
->>>>>>> parent of 10c19fd (Delete Salon/app directory)
 const MENU_WIDTH = 250;
 
 export default function Home() {
   const dispatch = useDispatch();
-<<<<<<< HEAD
-  const { servicos, form, salao, tipoServicos } = useSelector(
-=======
   const { form, salao, tipoServicos, agendamento, servicos } = useSelector(
->>>>>>> parent of 10c19fd (Delete Salon/app directory)
     (state: any) => state.salao
   );
   const { cliente } = useSelector((state: any) => state.cliente);
+
   const [menuVisible, setMenuVisible] = useState(false);
   const slideAnim = useRef(new Animated.Value(-MENU_WIDTH)).current;
   const { user } = useClerk();
   const [refreshing, setRefreshing] = useState(false);
-  const [loading, setLoading] = useState(false);
+  const [loading] = useState(false);
   const listaBase = tipoServicos.length > 0 ? tipoServicos : [];
-<<<<<<< HEAD
-
-  //console.log(listaBase);
-=======
   const { notification, error, clearNotification } = useNotification();
->>>>>>> parent of 10c19fd (Delete Salon/app directory)
 
   const onRefresh = async () => {
     setRefreshing(true);
@@ -89,21 +66,15 @@ export default function Home() {
       dispatch(allServicos());
       dispatch(getCliente());
       dispatch(filterClinte());
-<<<<<<< HEAD
-      dispatch(updateAgendamento({ clienteId: cliente?.clienteId }));
-=======
-      //console.log("cliente: ", cliente);
       dispatch(updateAgendamento({ clienteId: cliente?._id }));
->>>>>>> parent of 10c19fd (Delete Salon/app directory)
       dispatch(updateForm({ modalAgendamento: false, buttonCard: false }));
-    } catch (error) {
-      console.error("Erro ao atualizar dados:", error);
+    } catch (err) {
+      console.error("Erro ao atualizar dados:", err);
     } finally {
       setRefreshing(false);
     }
   };
 
-  // Transição suave
   useEffect(() => {
     Animated.timing(slideAnim, {
       toValue: menuVisible ? 0 : -MENU_WIDTH,
@@ -113,18 +84,11 @@ export default function Home() {
     }).start();
   }, [menuVisible]);
 
-  // Carrega dados do salão
   useEffect(() => {
     dispatch(getCliente());
-<<<<<<< HEAD
-    dispatch(updateAgendamento({ clienteId: cliente?.clienteId }));
-=======
-    //console.log("cliente: ", cliente);
     dispatch(updateAgendamento({ clienteId: cliente?._id }));
->>>>>>> parent of 10c19fd (Delete Salon/app directory)
   }, []);
 
-  // PanResponder para swipe lateral
   const panResponder = useRef(
     PanResponder.create({
       onMoveShouldSetPanResponder: (_, gesture) =>
@@ -153,18 +117,14 @@ export default function Home() {
       ? listaBase.filter((busque: any) => {
           const titulo = busque?.titulo?.toLowerCase().trim();
           const arrSearch = form?.inputFiltro?.toLowerCase().trim().split(" ");
-          return arrSearch.every(
-            (palavra: any) => titulo.search(palavra) !== -1
-          );
+          return arrSearch.every((palavra: any) => titulo.search(palavra) !== -1);
         })
       : listaBase;
 
-<<<<<<< HEAD
-=======
   useEffect(() => {
     if (error) {
       console.error("Erro ao receber notificações:", error);
-    } 
+    }
   }, [error]);
 
   useEffect(() => {
@@ -172,18 +132,16 @@ export default function Home() {
       try {
         const token = await registerForPushNotificationsAsync();
         dispatch(pushToken(token));
-      } catch (error) {
-        console.warn("Erro ao registrar push token:", error);
+      } catch (err) {
+        console.warn("Erro ao registrar push token:", err);
       }
     }
 
     registerToken();
   }, []);
 
->>>>>>> parent of 10c19fd (Delete Salon/app directory)
   return (
     <>
-      {/* Menu lateral com fundo opaco */}
       {menuVisible && (
         <Portal>
           <View
@@ -214,7 +172,6 @@ export default function Home() {
         </Portal>
       )}
 
-      {/* Área invisível para detectar swipe da borda */}
       {!menuVisible && (
         <View
           {...panResponder.panHandlers}
@@ -228,19 +185,12 @@ export default function Home() {
           }}
         />
       )}
-      {/* Botão de imagem (abre menu) */}
+
       <FlatList
         style={{ backgroundColor: util.toAlpha(theme.colors.muted, 3) }}
         ListHeaderComponent={
           <>
-            {/* HEADER + FOTO DO SALÃO + AVATAR */}
-            <Box
-              position="absolute"
-              top="20px"
-              left="20px"
-              zIndex={1}
-              width="auto"
-            >
+            <Box position="absolute" top="20px" left="20px" zIndex={1} width="auto">
               <Touchable
                 width="40px"
                 height="40px"
@@ -263,7 +213,6 @@ export default function Home() {
               </Touchable>
             </Box>
 
-            {/* Área da imagem e infos */}
             <View
               style={{
                 borderBottomLeftRadius: 20,
@@ -294,54 +243,30 @@ export default function Home() {
               </Cover>
             </View>
 
-            {/* Filtros e título */}
             <Header />
           </>
         }
         data={finalServicos}
-        keyExtractor={(item) => item._id}
-<<<<<<< HEAD
-        renderItem={({ item }) => <Servico servico={item}/>}
-=======
+        keyExtractor={(item: any) => item._id}
         renderItem={({ item }) => <Servico servico={item} />}
->>>>>>> parent of 10c19fd (Delete Salon/app directory)
-        refreshControl={
-          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
-        }
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
         ListEmptyComponent={
           <Box align="center" justify="center" height="200px">
             {loading ? (
               <>
                 <ActivityIndicator size="large" color={theme.colors.primary} />
-<<<<<<< HEAD
                 <Text spacing="10px 0 0" align="center" color={theme.colors.primary}>
-=======
-                <Text
-                  spacing="10px 0 0"
-                  align="center"
-                  color={theme.colors.primary}
-                >
->>>>>>> parent of 10c19fd (Delete Salon/app directory)
                   Buscando serviços...
                 </Text>
               </>
             ) : (
               <>
-<<<<<<< HEAD
-                <MaterialCommunityIcons name="alert-circle-outline" size={48} color={theme.colors.primary} />
-                <Text spacing="10px 0 0" align="center" color={theme.colors.primary}>
-=======
                 <MaterialCommunityIcons
                   name="alert-circle-outline"
                   size={48}
                   color={theme.colors.primary}
                 />
-                <Text
-                  spacing="10px 0 0"
-                  align="center"
-                  color={theme.colors.primary}
-                >
->>>>>>> parent of 10c19fd (Delete Salon/app directory)
+                <Text spacing="10px 0 0" align="center" color={theme.colors.primary}>
                   Nenhum serviço encontrado
                 </Text>
               </>
@@ -351,6 +276,7 @@ export default function Home() {
       />
 
       <AgendamentoBottomS />
+
       <Modal visible={refreshing} transparent animationType="fade">
         <View
           style={{
@@ -361,15 +287,11 @@ export default function Home() {
           }}
         >
           <ActivityIndicator size="large" color="#FFF" />
-          <Text style={{ color: "#FFF", marginTop: 10 }}>
-            Atualizando dados...
-          </Text>
+          <Text style={{ color: "#FFF", marginTop: 10 }}>Atualizando dados...</Text>
         </View>
       </Modal>
-<<<<<<< HEAD
-=======
+
       <Portal>
-        {/* Modal de notificação padrão */}
         <Modal visible={notification !== null} transparent animationType="fade">
           <View
             style={{
@@ -387,13 +309,7 @@ export default function Home() {
                 width: "80%",
               }}
             >
-              <Text
-                bold
-                color="primary"
-                spacing="0 0 10px"
-                hasPadding
-                removePaddingBottom
-              >
+              <Text bold color="primary" spacing="0 0 10px" hasPadding removePaddingBottom>
                 {notification?.request.content.title}
               </Text>
               <Text hasPadding removePaddingBottom>
@@ -405,13 +321,7 @@ export default function Home() {
                   router.push("/(agendamentos)/agendamentos");
                 }}
               >
-                <Text
-                  hasPadding
-                  removePaddingBottom
-                  bold
-                  color="primary"
-                  align="center"
-                >
+                <Text hasPadding removePaddingBottom bold color="primary" align="center">
                   Confirmar
                 </Text>
               </TouchableWithoutFeedback>
@@ -419,12 +329,7 @@ export default function Home() {
           </View>
         </Modal>
 
-        {/* Modal de sucesso de agendamento */}
-        <Modal
-          visible={!!form?.saveAgendamento}
-          transparent
-          animationType="fade"
-        >
+        <Modal visible={!!form?.saveAgendamento} transparent animationType="fade">
           <View
             style={{
               flex: 1,
@@ -443,19 +348,14 @@ export default function Home() {
                 elevation: 4,
               }}
             >
-              <Text
-                bold
-                color="primary"
-                align="center"
-                hasPadding
-                style={{ fontSize: 20 }}
-              >
+              <Text bold color="primary" align="center" hasPadding style={{ fontSize: 20 }}>
                 Agendamento realizado com sucesso!
               </Text>
               <Text align="center" spacing="0 0 18px" style={{ color: "#666" }}>
-                Seu agendamento foi confirmado. Você receberá uma notificação de
-                lembrete próximo ao horário.
+                Seu agendamento foi confirmado. Você receberá uma notificação de lembrete
+                próximo ao horário.
               </Text>
+
               <TouchableWithoutFeedback
                 onPress={() => {
                   dispatch(updateForm({ saveAgendamento: false }));
@@ -464,22 +364,13 @@ export default function Home() {
                     (s: any) => s._id === agendamento?.servicoId
                   );
 
-                  console.log("servico: ", servico);
-
-                  // Ajuste fuso horário
-                  const duracaoMoment = moment.tz(
-                    servico?.duracao,
-                    "America/Sao_Paulo"
-                  );
-                  const horas = duracaoMoment.hours(); // Deve resultar em 0
-                  const minutos = duracaoMoment.minutes(); // Deve resultar em 30
-
-                  const totalMinutes = horas * 60 + minutos; // Exemplo: 0 * 60 + 30 = 30 minutos
+                  const duracaoMoment = moment.tz(servico?.duracao, "America/Sao_Paulo");
+                  const horas = duracaoMoment.hours();
+                  const minutos = duracaoMoment.minutes();
+                  const totalMinutes = horas * 60 + minutos;
 
                   const startMoment = moment(agendamento?.data);
-                  const endMoment = startMoment
-                    .clone()
-                    .add(totalMinutes, "minutes");
+                  const endMoment = startMoment.clone().add(totalMinutes, "minutes");
 
                   createEvent({
                     title: "Parrudus Barbearia",
@@ -501,16 +392,12 @@ export default function Home() {
                     width: "100%",
                   }}
                 >
-                  <Text
-                    bold
-                    color="white"
-                    align="center"
-                    style={{ fontSize: 16 }}
-                  >
+                  <Text bold color="white" align="center" style={{ fontSize: 16 }}>
                     Deseja sincronizar com seu calendário?
                   </Text>
                 </View>
               </TouchableWithoutFeedback>
+
               <TouchableWithoutFeedback
                 onPress={() => {
                   dispatch(updateForm({ saveAgendamento: false }));
@@ -529,7 +416,6 @@ export default function Home() {
           </View>
         </Modal>
       </Portal>
->>>>>>> parent of 10c19fd (Delete Salon/app directory)
     </>
   );
 }

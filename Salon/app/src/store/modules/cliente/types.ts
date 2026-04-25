@@ -10,10 +10,8 @@ const types = {
   RESET_CLIENTE: "@cliente/RESET_CLIENTE",
   UPDATE_AGENDAMENTO: "@cliente/UPDATE_AGENDAMENTO",
   RESET_AGENDAMENTO: "@cliente/RESET_AGENDAMENTO",
-<<<<<<< HEAD
-=======
   PUSH_TOKEN: "@cliente/PUSH_TOKEN",
->>>>>>> parent of 10c19fd (Delete Salon/app directory)
+
 };
 
 export default types;

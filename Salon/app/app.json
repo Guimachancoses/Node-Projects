@@ -8,14 +8,11 @@
     "scheme": "parrudus-app",
     "platforms": ["ios", "android", "web"],
     "userInterfaceStyle": "automatic",
-    "newArchEnabled": true,
     "splash": {
       "image": "./src/assets/images/splash.png",
       "resizeMode": "cover",
       "backgroundColor": "#02555d"
     },
-    "facebookAppId": "698093242776645",
-    "facebookDisplayName": "Parrudus",
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.parrudus.app",
