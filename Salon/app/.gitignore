@@ -41,9 +41,7 @@ yarn-error.*
 
 # typescript
 *.tsbuildinfo
-<<<<<<< HEAD
-=======
 
 # google services
 google-services.json
->>>>>>> parent of 10c19fd (Delete Salon/app directory)
+
