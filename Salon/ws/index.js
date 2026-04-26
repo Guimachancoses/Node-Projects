@@ -20,14 +20,22 @@ app.use(busboyBodyParser());
 // 🔽 CORS novo (coloque aqui)
 const allowedOrigins = (process.env.FRONTEND_URLS || "")
   .split(",")
-  .map((o) => o.trim())
+  .map((o) => o.trim().replace(/\/$/, "")) // remove barra final
   .filter(Boolean);
+
+console.log("CORS allowedOrigins:", allowedOrigins);
 
 const corsOptions = {
   origin: (origin, callback) => {
-    if (!origin) return callback(null, true); // postman/curl
-    if (allowedOrigins.includes(origin)) return callback(null, true);
-    return callback(new Error(`CORS bloqueado para origem: ${origin}`));
+    if (!origin) return callback(null, true); // postman/curl/health checks
+
+    const normalizedOrigin = origin.replace(/\/$/, "");
+    if (allowedOrigins.includes(normalizedOrigin)) {
+      return callback(null, true);
+    }
+
+    console.warn("CORS bloqueado para origem:", origin);
+    return callback(null, false); // não lança erro 500
   },
   credentials: true,
   methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
@@ -35,10 +43,8 @@ const corsOptions = {
 };
 
 app.use(cors(corsOptions));
-app.options("*", cors(corsOptions));
+app.options(/.*/, cors(corsOptions));
 
-// Servir HTML do /web
-app.use(express.static(path.resolve(__dirname, "../web")));
 // Define a porta
 app.set("port", process.env.PORT || 8000);
 
