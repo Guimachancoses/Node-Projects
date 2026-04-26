@@ -16,16 +16,29 @@ app.use(morgan("dev"));
 app.use(express.json());
 app.use(busboy());
 app.use(busboyBodyParser());
-app.use(
-  cors({
-    origin: [process.env.FRONTEND_URL],
-    credentials: true,
-  })
-);
+
+// 🔽 CORS novo (coloque aqui)
+const allowedOrigins = (process.env.FRONTEND_URLS || "")
+  .split(",")
+  .map((o) => o.trim())
+  .filter(Boolean);
+
+const corsOptions = {
+  origin: (origin, callback) => {
+    if (!origin) return callback(null, true); // postman/curl
+    if (allowedOrigins.includes(origin)) return callback(null, true);
+    return callback(new Error(`CORS bloqueado para origem: ${origin}`));
+  },
+  credentials: true,
+  methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+  allowedHeaders: ["Content-Type", "Authorization"],
+};
+
+app.use(cors(corsOptions));
+app.options("*", cors(corsOptions));
 
 // Servir HTML do /web
 app.use(express.static(path.resolve(__dirname, "../web")));
-
 // Define a porta
 app.set("port", process.env.PORT || 8000);
 

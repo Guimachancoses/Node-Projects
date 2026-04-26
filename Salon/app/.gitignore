@@ -5,6 +5,10 @@ node_modules/
 .env
 /android
 yarn.lock
+android/.gradle/
+android/build/
+android/app/build/
+android/app/.cxx/
 
 # Expo
 .expo/

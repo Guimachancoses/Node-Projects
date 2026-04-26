@@ -59,16 +59,6 @@ const { LightTheme, DarkTheme } = adaptNavigationTheme({
 const CombinedDefaultTheme = merge(LightTheme, customLightTheme);
 const CombinedDarkTheme = merge(DarkTheme, customDarkTheme);
 
-const addFontsToTheme = (theme: any) => ({
-  ...theme,
-  fonts: {
-    regular: { fontFamily: "Ubuntu-Regular", fontWeight: "normal" },
-    medium: { fontFamily: "Ubuntu-Medium", fontWeight: "500" },
-    bold: { fontFamily: "Ubuntu-Bold", fontWeight: "bold" },
-    light: { fontFamily: "Ubuntu-Light", fontWeight: "300" },
-  },
-});
-
 export default function RootLayout() {
   const [appIsReady, setAppIsReady] = useState(false);
   const colorScheme = useColorScheme();
@@ -95,10 +85,7 @@ export default function RootLayout() {
 
   if (!appIsReady) return null;
 
-  const paperTheme =
-    colorScheme !== "dark" ? CombinedDefaultTheme : CombinedDarkTheme;
-
-  const themeWithFonts = addFontsToTheme(paperTheme);
+  const paperTheme = colorScheme !== "dark" ? CombinedDefaultTheme : CombinedDarkTheme;
 
   const publishableKey =
     Constants.expoConfig?.extra?.EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY;
@@ -111,9 +98,9 @@ export default function RootLayout() {
     <GestureHandlerRootView style={{ flex: 1 }} onLayout={onLayoutRootView}>
       <ClerkProvider publishableKey={publishableKey} tokenCache={tokenCache}>
         <Provider store={store}>
-          <PaperProvider theme={themeWithFonts}>
-            <StyledThemeProvider theme={themeWithFonts}>
-              <ThemeProvider value={themeWithFonts}>
+          <PaperProvider theme={paperTheme}>
+            <StyledThemeProvider theme={paperTheme}>
+              <ThemeProvider value={paperTheme}>
                 <NotificationProvider>
                   <Slot />
                 </NotificationProvider>
