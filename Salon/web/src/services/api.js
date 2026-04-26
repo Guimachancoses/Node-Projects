@@ -1,15 +1,8 @@
-import axios from 'axios';
-
-// const api = axios.create({
-//   baseURL: 'https://salao.ws:8000',
-//   headers: {
-//     Authorization: 'a7c360b6a7a1986ecd15027956d3b39d',
-//   },
-// });
+import axios from "axios";
 
 const api = axios.create({
-    //baseURL: 'http://localhost:7000', //'http://ec2-3-147-238-182.us-east-2.compute.amazonaws.com:8000'
-    baseURL: "https://salon.fabrisportalhub.com.br",
-})
+  baseURL: process.env.REACT_APP_API_URL,
+  // withCredentials: true, // habilite se usar cookie/sessão
+});
 
 export default api;
