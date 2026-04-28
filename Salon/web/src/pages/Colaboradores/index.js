@@ -50,6 +50,22 @@ import { buscarEndereco } from "../../services/apiCep";
 
 import { useUser } from "@clerk/clerk-react";
 
+import {
+  isValidEmail,
+  isValidName,
+  isValidPhone9,
+  isValidCep,
+  isValidCpf,
+  isValidCnpj,
+  maskArea,
+  maskPhone9,
+  maskCep,
+  maskCpf,
+  maskCnpj,
+  onlyDigits,
+  isValidSobreName
+} from "../../utils/formValidators";
+
 const Alert = React.forwardRef(function Alert(props, ref) {
   return <MuiAlert elevation={6} ref={ref} variant="filled" {...props} />;
 });
@@ -64,6 +80,113 @@ const Colaboradores = () => {
     useSelector((state) => state.colaborador);
 
   const { user } = useUser();
+  const [errors, setErrors] = useState({});
+  const [cepLoading, setCepLoading] = useState(false);
+  const ultimoCepBuscadoRef = useRef("");
+  const cepRequestIdRef = useRef(0);
+
+  const setTelefoneField = (key, value) => {
+    setColaborador("telefone", {
+      ...colaborador.telefone,
+      [key]: onlyDigits(value),
+    });
+  };
+
+  const setEndereco = (patch) => {
+    setColaborador("endereco", {
+      ...colaborador.endereco,
+      ...patch,
+      cidade: {
+        ...colaborador.endereco?.cidade,
+        ...(patch.cidade || {}),
+      },
+    });
+  };
+
+  const handleCepChange = (e) => {
+    const cep = onlyDigits(e.target.value).slice(0, 8);
+
+    setEndereco({ cep });
+    setErrors((prev) => ({ ...prev, cep: "" }));
+
+    // permite nova busca quando CEP muda
+    if (cep.length < 8) {
+      ultimoCepBuscadoRef.current = "";
+    }
+  };
+
+  const handleCepBlur = async () => {
+    const cep = onlyDigits(colaborador?.endereco?.cep || "");
+
+    if (!cep) return; // se não for obrigatório, apenas sai
+
+    if (!isValidCep(cep)) {
+      setErrors((prev) => ({ ...prev, cep: "CEP deve conter 8 dígitos" }));
+      return;
+    }
+
+    // evita bater na API repetidamente para o mesmo CEP
+    if (ultimoCepBuscadoRef.current === cep) return;
+    ultimoCepBuscadoRef.current = cep;
+
+    const requestId = ++cepRequestIdRef.current;
+    setCepLoading(true);
+
+    const endereco = await buscarEndereco(cep);
+
+    // evita race condition
+    if (requestId !== cepRequestIdRef.current) return;
+
+    setCepLoading(false);
+
+    if (!endereco) {
+      setErrors((prev) => ({ ...prev, cep: "CEP não encontrado" }));
+      return;
+    }
+
+    setErrors((prev) => ({ ...prev, cep: "" }));
+
+    // preenche somente campos vindos do CEP e preserva número/complementos
+    setEndereco({
+      cep,
+      logradouro: endereco.logradouro || "",
+      bairro: endereco.bairro || "",
+      cidade: { nome: endereco.localidade || "" },
+    });
+  };
+
+  const setIdentificacaoField = (key, value) => {
+    setColaborador("identificacao", {
+      ...colaborador.identificacao,
+      [key]:
+        key === "numero"
+          ? onlyDigits(value)
+          : value,
+    });
+  };
+
+  const handleAreaChange = (e) => {
+    const typed = e.target.value;
+    const prevDigits = onlyDigits(colaborador?.telefone?.area || "");
+    const nextDigitsRaw = onlyDigits(typed).slice(0, 2);
+
+    const prevMasked = maskArea(prevDigits);
+
+    // usuário apagou só máscara (ex: de "(11)" para "(11")
+    const deletingMaskChar =
+      typed.length < prevMasked.length && nextDigitsRaw === prevDigits;
+
+    const nextDigits = deletingMaskChar
+      ? prevDigits.slice(0, -1)
+      : nextDigitsRaw;
+
+    setColaborador("telefone", {
+      ...colaborador.telefone,
+      area: nextDigits,
+    });
+
+    setErrors((p) => ({ ...p, area: "" }));
+  };
 
   const loggedEmail =
     (userStore?.email || user?.emailAddresses?.[0]?.emailAddress || "")
@@ -104,6 +227,7 @@ const Colaboradores = () => {
     dispatch(
       updateColaborador({
         behavior: "create",
+        form: { disabled: true },
         colaborador: {
           nome: "",
           sobrenome: "",
@@ -119,7 +243,6 @@ const Colaboradores = () => {
             logradouro: "",
             numero: null,
           },
-          // Adicione outros campos que você usa no formulário aqui, se houver
         },
       })
     );
@@ -174,6 +297,10 @@ const Colaboradores = () => {
   const handleEmailBlur = () => {
     if (debounceEmailRef.current) clearTimeout(debounceEmailRef.current);
     verificarEmail(colaborador?.email || "", { force: true });
+    setErrors((prev) => ({
+      ...prev,
+      email: isValidEmail(colaborador?.email) ? "" : "E-mail inválido. Ex: nome@dominio.com.br",
+    }))
   };
 
   const handleEmailKeyDown = (e) => {
@@ -357,7 +484,10 @@ const Colaboradores = () => {
           show={components.drawer}
           anchor="right"
           isOpen={components.drawer}
-          onClose={() => setComponent("drawer", false)}
+          onClose={() => {
+            setComponent("drawer", false);
+            setErrors({});
+          }}
         >
           <div className="col-12">
             <h3>
@@ -386,6 +516,8 @@ const Colaboradores = () => {
                       </InputAdornment>
                     ),
                   }}
+                  error={!!errors.email}
+                  helperText={errors.email}
                 />
               </div>
               <div className="form-group col-6 mb-3">
@@ -396,6 +528,14 @@ const Colaboradores = () => {
                   variant="outlined"
                   placeholder="Nome do colaborador"
                   value={colaborador?.nome || ""}
+                  onBlur={() =>
+                    setErrors((p) => ({
+                      ...p,
+                      nome: isValidName(colaborador?.nome) ? "" : "Nome inválido",
+                    }))
+                  }
+                  error={!!errors.nome}
+                  helperText={errors.nome}
                   onChange={(e) => setColaborador("nome", e.target.value)}
                   disabled={form.disabled && behavior === "create"}
                   InputProps={{
@@ -420,6 +560,14 @@ const Colaboradores = () => {
                   variant="outlined"
                   placeholder="Sobrenome do colaborador"
                   value={colaborador?.sobrenome || ""}
+                  onBlur={() =>
+                    setErrors((p) => ({
+                      ...p,
+                      sobrenome: isValidSobreName(colaborador?.sobrenome) ? "" : "Sobrenome inválido",
+                    }))
+                  }
+                  error={!!errors.sobrenome}
+                  helperText={errors.sobrenome}
                   onChange={(e) => setColaborador("sobrenome", e.target.value)}
                   disabled={form.disabled}
                   InputProps={{
@@ -442,14 +590,24 @@ const Colaboradores = () => {
                   type="text"
                   fullWidth
                   variant="outlined"
-                  placeholder="+ 55"
-                  value={colaborador?.telefone.area || ""}
-                  onChange={(e) =>
-                    setColaborador("telefone", {
-                      ...colaborador.telefone,
-                      area: e.target.value,
-                    })
-                  }
+                  placeholder="(19)"
+                  onChange={handleAreaChange}
+                  value={maskArea(colaborador?.telefone?.area || "")}
+                  // onChange={(e) => setTelefoneField("area", e.target.value)}
+                  // onBlur={() =>
+                  //   setErrors((p) => ({
+                  //     ...p,
+                  //     area: isValidArea(colaborador?.telefone?.area) ? "" : "DDD deve ter 2 dígitos",
+                  //   }))
+                  // }
+                  error={!!errors.area}
+                  helperText={errors.area}
+                  // onChange={(e) =>
+                  //   setColaborador("telefone", {
+                  //     ...colaborador.telefone,
+                  //     area: e.target.value,
+                  //   })
+                  // }
                   disabled={form.disabled}
                   InputProps={{
                     startAdornment: (
@@ -472,13 +630,22 @@ const Colaboradores = () => {
                   fullWidth
                   variant="outlined"
                   placeholder="Telefone / Whatsapp"
-                  value={colaborador?.telefone.numero || ""}
-                  onChange={(e) =>
-                    setColaborador("telefone", {
-                      ...colaborador.telefone,
-                      numero: e.target.value,
-                    })
+                  value={maskPhone9(colaborador?.telefone?.numero || "")}
+                  onChange={(e) => setTelefoneField("numero", e.target.value)}
+                  onBlur={() =>
+                    setErrors((p) => ({
+                      ...p,
+                      telefone: isValidPhone9(colaborador?.telefone?.numero) ? "" : "Telefone deve ter 9 dígitos",
+                    }))
                   }
+                  error={!!errors.telefone}
+                  helperText={errors.telefone}
+                  // onChange={(e) =>
+                  //   setColaborador("telefone", {
+                  //     ...colaborador.telefone,
+                  //     numero: e.target.value,
+                  //   })
+                  // }
                   disabled={form.disabled}
                   InputProps={{
                     startAdornment: (
@@ -501,32 +668,36 @@ const Colaboradores = () => {
                   fullWidth
                   variant="outlined"
                   placeholder="Código postal"
-                  value={colaborador?.endereco.cep || ""}
-                  onChange={async (e) => {
-                    const novoCep = e.target.value;
-                    setColaborador("endereco", {
-                      ...colaborador.endereco,
-                      cep: novoCep,
-                    });
+                  // onChange={async (e) => {
+                  //   const novoCep = e.target.value;
+                  //   setColaborador("endereco", {
+                  //     ...colaborador.endereco,
+                  //     cep: novoCep,
+                  //   });
 
-                    // Verifique se o comportamento é 'create' antes de buscar o endereço
-                    if (novoCep.length === 8) {
-                      const endereco = await buscarEndereco(novoCep);
-                      if (endereco) {
-                        setColaborador("endereco", {
-                          ...colaborador.endereco,
-                          cep: novoCep,
-                          logradouro: endereco.logradouro || "",
-                          bairro: endereco.bairro || "",
-                          cidade: {
-                            nome: endereco.localidade || "",
-                          },
-                        });
-                      }
-                      console.log(endereco);
-                    }
-                  }}
+                  //   // Verifique se o comportamento é 'create' antes de buscar o endereço
+                  //   if (novoCep.length === 8) {
+                  //     const endereco = await buscarEndereco(novoCep);
+                  //     if (endereco) {
+                  //       setColaborador("endereco", {
+                  //         ...colaborador.endereco,
+                  //         cep: novoCep,
+                  //         logradouro: endereco.logradouro || "",
+                  //         bairro: endereco.bairro || "",
+                  //         cidade: {
+                  //           nome: endereco.localidade || "",
+                  //         },
+                  //       });
+                  //     }
+                  //     console.log(endereco);
+                  //   }
+                  // }}
+                  value={maskCep(colaborador?.endereco?.cep || "")}
+                  onChange={handleCepChange}
+                  onBlur={handleCepBlur}
                   disabled={form.disabled}
+                  error={!!errors.cep}
+                  helperText={errors.cep || (cepLoading ? "Consultando CEP..." : "")}
                   InputProps={{
                     startAdornment: (
                       <InputAdornment position="start">
@@ -538,7 +709,7 @@ const Colaboradores = () => {
                     style: {
                       fontSize: "0.8rem", // Altere esse valor conforme quiser
                     },
-                    maxLength: 8, // Adicionando o maxLength para limitar a entrada
+                    maxLength: 9, // Adicionando o maxLength para limitar a entrada
                   }}
                 />
               </div>
@@ -700,13 +871,30 @@ const Colaboradores = () => {
                   fullWidth
                   variant="outlined"
                   placeholder="Digite o número"
-                  value={colaborador?.identificacao.numero || ""}
-                  onChange={(e) =>
-                    setColaborador("identificacao", {
-                      ...colaborador.identificacao,
-                      numero: e.target.value,
-                    })
+                  value={
+                    colaborador?.identificacao?.tipoD === "CNPJ"
+                      ? maskCnpj(colaborador?.identificacao?.numero || "")
+                      : maskCpf(colaborador?.identificacao?.numero || "")
                   }
+                  onChange={(e) => setIdentificacaoField("numero", e.target.value)}
+                  onBlur={() => {
+                    const tipo = colaborador?.identificacao?.tipoD;
+                    const numero = colaborador?.identificacao?.numero || "";
+                    const ok = tipo === "CNPJ" ? isValidCnpj(numero) : isValidCpf(numero);
+
+                    setErrors((p) => ({
+                      ...p,
+                      documento: ok ? "" : `${tipo || "Documento"} inválido`,
+                    }));
+                  }}
+                  error={!!errors.documento}
+                  helperText={errors.documento}
+                  // onChange={(e) =>
+                  //   setColaborador("identificacao", {
+                  //     ...colaborador.identificacao,
+                  //     numero: e.target.value,
+                  //   })
+                  // }
                   disabled={form.disabled}
                   InputProps={{
                     startAdornment: (
@@ -755,6 +943,7 @@ const Colaboradores = () => {
                   <Select
                     label="Especialidades"
                     multiple
+                    disabled={form.disabled}
                     value={especialidadesValue}
                     onChange={(e) =>
                       setColaborador("especialidades", (e.target.value || []).map((v) => String(v)))

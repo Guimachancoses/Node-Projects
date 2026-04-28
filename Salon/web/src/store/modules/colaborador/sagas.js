@@ -163,7 +163,7 @@ export function* filterColaboradores({ filters }) {
           behavior: "create",
           colaborador: {
             ...colaboradorAtual,
-            email: filters?.email || "",
+            email: emailBusca || colaboradorAtual?.email || "",
             vinculo: "A",
             especialidades: [],
           },

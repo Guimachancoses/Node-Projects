@@ -78,8 +78,7 @@ const TableComponent = ({
   // };
 
   const handleRowClick = (row) => {
-    setExpandedRowId((prev) => (prev === row.id ? null : row.id));
-    onRowClick(row);
+    onRowClick(row); // só ação externa (ex.: abrir drawer)
   };
 
   const theme = useTheme();
@@ -162,11 +161,7 @@ const TableComponent = ({
                   }}
                   selected={selectedIds.includes(row.id)}
                   key={`row-${row.id}`}
-                  onClick={(e) => {
-                    if (e.target.closest(`#flecha-expand-icon-btn-${row.id}`))
-                      return;
-                    handleRowClick(row);
-                  }}
+                  onClick={() => handleRowClick(row)}
                 >
                   {checkboxSelection && (
                     <TableCell padding="checkbox" key={`checkbox-${row.id}`}>
