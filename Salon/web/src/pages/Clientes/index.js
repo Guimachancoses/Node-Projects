@@ -41,7 +41,6 @@ import RecentActorsIcon from "@mui/icons-material/RecentActors";
 import FilterListIcon from "@mui/icons-material/FilterList";
 import SaveIcon from "@mui/icons-material/Save";
 import SignpostIcon from "@mui/icons-material/Signpost";
-import SearchIcon from "@mui/icons-material/Search";
 
 import { buscarEndereco } from "../../services/apiCep";
 

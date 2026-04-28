@@ -24,6 +24,8 @@ import {
   MenuItem,
   InputAdornment,
   Chip,
+  Checkbox,
+  ListItemText
 } from "@mui/material";
 import PhotoCamera from "@mui/icons-material/PhotoCamera";
 import LocalPhoneIcon from "@mui/icons-material/LocalPhone";
@@ -39,6 +41,10 @@ export default function Account() {
   const dispatch = useDispatch();
   const { user: userRaw, form, servicos } = useSelector((state) => state.colaborador);
   const userStore = userRaw?.user ?? userRaw;
+
+  useEffect(() => {
+    dispatch(allServicos());
+  }, [dispatch]);
 
   const [fotoFile, setFotoFile] = useState(null);
   const [fotoPreview, setFotoPreview] = useState("");
@@ -413,7 +419,12 @@ export default function Account() {
     };
   }, [fotoPreview]);
 
-  console.log("accountForm", accountForm)
+  const especialidadesValue = (accountForm?.especialidades || [])
+    .map((e) => {
+      if (typeof e === "string") return String(e);
+      return String(e?.value || e?._id || e?.id || e?.servicoId || e?.servicoId?._id || "");
+    })
+    .filter(Boolean);
 
   return (
     <Container component="main" maxWidth="lg" sx={{ py: 4 }}>
@@ -654,23 +665,23 @@ export default function Account() {
                 />
               </Grid>
               <Grid item xs={12} md={4} sx={{
-    width: "100%",
-    "@media (min-width:900px)": {
-      width: "calc(100% + 112px)", // aumenta só esse campo
-      mr: "-112px",
-    },
-  }}>
+                width: "100%",
+                "@media (min-width:600px)": {
+                  width: "calc(80% + 60px)", // aumenta só esse campo
+                  mr: "-60px",
+                },
+              }}>
                 <FormControl fullWidth size="small">
                   <InputLabel id="especialidades-account-label">Especialidades</InputLabel>
                   <Select
                     labelId="especialidades-account-label"
                     multiple
-                    value={(accountForm.especialidades || []).map(String)}
                     label="Especialidades"
+                    value={especialidadesValue}
                     onChange={(e) =>
                       setAccountForm((prev) => ({
                         ...prev,
-                        especialidades: (e.target.value || []).map(String),
+                        especialidades: (e.target.value || []).map((v) => String(v)),
                       }))
                     }
                     renderValue={(selected) =>
@@ -679,20 +690,16 @@ export default function Account() {
                         .map((s) => s.label || s.nome)
                         .join(", ")
                     }
-                    sx={{
-                      minHeight: 40,         // mesmo “compacto” dos campos small
-                      "& .MuiSelect-select": {
-                        whiteSpace: "nowrap",
-                        overflow: "hidden",
-                        textOverflow: "ellipsis",
-                      },
+                    MenuProps={{
+                      PaperProps: { sx: { maxHeight: 320 } },
                     }}
                   >
                     {(servicos || []).map((s) => {
-                      const v = String(s.value || s._id || s.id);
+                      const optionValue = String(s.value || s._id || s.id);
                       return (
-                        <MenuItem key={v} value={v}>
-                          {s.label || s.nome}
+                        <MenuItem key={optionValue} value={optionValue}>
+                          <Checkbox checked={especialidadesValue.includes(optionValue)} />
+                          <ListItemText primary={s.label || s.nome} />
                         </MenuItem>
                       );
                     })}
@@ -701,7 +708,7 @@ export default function Account() {
               </Grid>
             </Grid>
 
-            <Box sx={{ mt: 3, display: "flex", justifyContent: "flex-end" }}>
+            <Box sx={{ mt: 3, display: "flex", justifyContent: "flex-start" }}>
               <Button
                 variant="contained"
                 onClick={handleSalvarConta}
