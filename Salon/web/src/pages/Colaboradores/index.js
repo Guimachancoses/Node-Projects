@@ -123,6 +123,8 @@ const Colaboradores = () => {
         },
       })
     );
+    ultimoEmailVerificadoRef.current = "";
+    if (debounceEmailRef.current) clearTimeout(debounceEmailRef.current);
     setComponent("drawer", true);
     //console.log("Criar novo cliente");
   };
@@ -132,22 +134,21 @@ const Colaboradores = () => {
 
   const validarFormatoEmail = (value = "") => /\S+@\S+\.\S+/.test(value);
 
-  const verificarEmail = (rawEmail) => {
-    if (behavior !== "create") return;
-
+  const verificarEmail = (rawEmail, { force = false } = {}) => {
     const emailNormalizado = (rawEmail || "").trim().toLowerCase();
+
     if (!emailNormalizado) return;
     if (!validarFormatoEmail(emailNormalizado)) return;
 
-    // evita chamada repetida do mesmo email
-    if (ultimoEmailVerificadoRef.current === emailNormalizado) return;
+    // só bloqueia repetição se NÃO for forçado
+    if (!force && ultimoEmailVerificadoRef.current === emailNormalizado) return;
 
     ultimoEmailVerificadoRef.current = emailNormalizado;
 
     dispatch(
       filterColaboradores({
         filters: {
-          email: colaborador.email,
+          email: emailNormalizado,
           status: "A",
           salaoId: process.env.REACT_APP_SALAO_ID,
         },
@@ -159,7 +160,11 @@ const Colaboradores = () => {
     const value = e.target.value;
     setColaborador("email", value);
 
-    // debounce ao digitar
+    if (!value?.trim()) {
+      ultimoEmailVerificadoRef.current = "";
+      return;
+    }
+
     if (debounceEmailRef.current) clearTimeout(debounceEmailRef.current);
     debounceEmailRef.current = setTimeout(() => {
       verificarEmail(value);
@@ -168,14 +173,14 @@ const Colaboradores = () => {
 
   const handleEmailBlur = () => {
     if (debounceEmailRef.current) clearTimeout(debounceEmailRef.current);
-    verificarEmail(colaborador?.email || "");
+    verificarEmail(colaborador?.email || "", { force: true });
   };
 
   const handleEmailKeyDown = (e) => {
     if (e.key === "Enter") {
       e.preventDefault();
       if (debounceEmailRef.current) clearTimeout(debounceEmailRef.current);
-      verificarEmail(colaborador?.email || "");
+      verificarEmail(colaborador?.email || "", { force: true });
     }
   };
 
@@ -747,8 +752,8 @@ const Colaboradores = () => {
               <div className="form-group col-8 mb-3">
                 <FormControl fullWidth variant="outlined">
                   <InputLabel>Especialidades</InputLabel>
-
                   <Select
+                    label="Especialidades"
                     multiple
                     value={especialidadesValue}
                     onChange={(e) =>
@@ -760,6 +765,14 @@ const Colaboradores = () => {
                         .map((s) => s.label || s.nome)
                         .join(", ")
                     }
+                    sx={{ fontSize: "0.8rem" }} // Aplica no valor selecionado
+                    MenuProps={{
+                      PaperProps: {
+                        sx: {
+                          fontSize: "0.8rem", // Aplica no dropdown
+                        },
+                      },
+                    }}
                   >
                     {(servicos || []).map((esp) => {
                       const optionValue = String(esp.value || esp._id || esp.id);
@@ -770,6 +783,7 @@ const Colaboradores = () => {
                         </MenuItem>
                       );
                     })}
+
                   </Select>
                 </FormControl>
               </div>

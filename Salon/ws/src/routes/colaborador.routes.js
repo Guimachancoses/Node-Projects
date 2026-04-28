@@ -273,10 +273,45 @@ router.get("/salao/:salaoId", async (req, res) => {
 router.get("/check/:email", async (req, res) => {
   try {
     const { email } = req.params;
-    const colaborador = await Colaborador.findOne({ email });
-    res.json({ error: false, colaborador });
+    const { salaoId } = req.query;
+
+    const colaborador = await Colaborador.findOne({
+      email: { $regex: new RegExp(`^${email}$`, "i") },
+    }).select("-senha -recipientId");
+
+    if (!colaborador) {
+      return res.json({ error: false, colaborador: null });
+    }
+
+    let vinculo = null;
+    if (salaoId) {
+      vinculo = await SalaoColaborador.findOne({
+        salaoId,
+        colaboradorId: colaborador._id,
+        status: { $ne: "E" },
+      }).select("_id status dataCadastro");
+    }
+
+    const especialidades = await ColaboradorServico.find({
+      colaboradorId: colaborador._id,
+    }).populate("servicoId", "_id nome");
+
+    const especialidadesIds = especialidades
+      .filter((e) => e.servicoId)
+      .map((e) => e.servicoId._id);
+
+    return res.json({
+      error: false,
+      colaborador: {
+        ...colaborador._doc,
+        vinculoId: vinculo?._id || "",
+        vinculo: vinculo?.status || "A",
+        especialidades: especialidadesIds,
+        dataCadastro: vinculo?.dataCadastro || null,
+      },
+    });
   } catch (err) {
-    res.json({ error: true, message: err.message });
+    return res.json({ error: true, message: err.message });
   }
 });
 

@@ -55,6 +55,7 @@ export function* filterClientes({ filters }) {
     if (res.clientes.length > 0) {
       yield put(
         updateCliente({
+          behavior: "update", // <- ESSENCIAL para mudar botão para "alterar"
           cliente: res.clientes[0],
           form: { ...form, filtering: false, disabled: true },
         })
@@ -62,6 +63,7 @@ export function* filterClientes({ filters }) {
     } else {
       yield put(
         updateCliente({
+          behavior: "create", // <- volta para criação quando não encontra
           form: { ...form, filtering: false, disabled: false },
         })
       );
@@ -95,8 +97,11 @@ export function* addCliente() {
       res = response.data;
     }
 
-    
-    yield put(updateCliente({ form: { ...form, saving: false } }));
+    yield put(updateCliente({
+      behavior: "update",
+      form: { ...form, saving: false }
+    })
+    );
 
     //console.log("Resposta da API:", res);
 

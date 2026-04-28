@@ -519,15 +519,25 @@ export function* loadMyAccount({ email }) {
 
     const { data: res } = yield call(
       api.get,
-      `/colaborador/check/${encodeURIComponent(email)}`
+      `/colaborador/check/${encodeURIComponent(email)}?salaoId=${SALAOID}`
     );
+
+    const colaborador = res?.colaborador
+      ? {
+        ...res.colaborador,
+        especialidades: (res.colaborador.especialidades || []).map((x) => String(x)),
+      }
+      : null;
+
+    if (!colaborador) return;
+
+    yield put(loadMyAccountSuccess(colaborador));
+    yield put(updateUser(colaborador));
 
     yield put(updateColaborador({ form: { ...form, filtering: false } }));
 
     if (res?.error || !res?.colaborador) return; // silencioso na account
 
-    yield put(loadMyAccountSuccess(res.colaborador));
-    yield put(updateUser(res.colaborador)); // usuário plano
   } catch (err) {
     yield put(updateColaborador({ form: { ...form, filtering: false } }));
   }

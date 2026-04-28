@@ -46,6 +46,7 @@ const INITIAL_STATE = {
     firstName: "",
     lastName: "",
     imageUrl: "",
+    especialidades: []
   }
 };
 
@@ -94,7 +95,7 @@ function colaborador(state = INITIAL_STATE, action) {
 
     case types.LOAD_MY_ACCOUNT_SUCCESS: {
       return produce(state, (draft) => {
-        draft.user = action.user || {};
+        draft.user = { ...draft.user, ...(action.user || {}) };
       });
     }
 

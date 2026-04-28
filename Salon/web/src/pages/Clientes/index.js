@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 
 import {
   IconButton,
@@ -112,10 +112,6 @@ const Clientes = () => {
     //console.log("Criar novo cliente");
   };
 
-  const handleEmailChange = (e) => {
-    setCliente("email", e.target.value);
-  };
-
   const clientesProcessados = clientes.map((cliente, index, selectedIds) => {
     const telefone = cliente.telefone;
     const selectedIx = cliente._id;
@@ -197,17 +193,75 @@ const Clientes = () => {
   };
 
   const [selectedId, setSelectedId] = useState(null);
-    const [, setSelectedToDelete] = useState([]);
-  
-    const handleOpenDialog = (selectedIds) => {
-      setSelectedId(selectedIds[0]);
-      setComponent("confirmDelete", true);
+  const [, setSelectedToDelete] = useState([]);
+
+  const handleOpenDialog = (selectedIds) => {
+    setSelectedId(selectedIds[0]);
+    setComponent("confirmDelete", true);
+  };
+
+  const handleCloseDialog = () => {
+    setComponent("confirmDelete", false);
+    setSelectedToDelete([]);
+  };
+
+  const debounceEmailRef = useRef(null);
+  const ultimoEmailVerificadoRef = useRef("");
+
+  const validarFormatoEmail = (value = "") => /\S+@\S+\.\S+/.test(value);
+
+  const verificarEmailCliente = (rawEmail, { force = false } = {}) => {
+    if (behavior !== "create") return;
+
+    const emailNormalizado = (rawEmail || "").trim().toLowerCase();
+    if (!emailNormalizado || !validarFormatoEmail(emailNormalizado)) return;
+
+    if (!force && ultimoEmailVerificadoRef.current === emailNormalizado) return;
+    ultimoEmailVerificadoRef.current = emailNormalizado;
+
+    dispatch(
+      filterClientes({
+        filters: {
+          email: emailNormalizado,
+          status: "A",
+        },
+      })
+    );
+  };
+
+  const handleEmailChange = (e) => {
+    const value = e.target.value;
+    setCliente("email", value);
+
+    if (!value?.trim()) {
+      ultimoEmailVerificadoRef.current = "";
+      return;
+    }
+
+    if (debounceEmailRef.current) clearTimeout(debounceEmailRef.current);
+    debounceEmailRef.current = setTimeout(() => {
+      verificarEmailCliente(value);
+    }, 500);
+  };
+
+  const handleEmailBlur = () => {
+    if (debounceEmailRef.current) clearTimeout(debounceEmailRef.current);
+    verificarEmailCliente(cliente?.email || "", { force: true });
+  };
+
+  const handleEmailKeyDown = (e) => {
+    if (e.key === "Enter" || e.key === "Tab") {
+      if (e.key === "Enter") e.preventDefault();
+      if (debounceEmailRef.current) clearTimeout(debounceEmailRef.current);
+      verificarEmailCliente(cliente?.email || "", { force: true });
+    }
+  };
+
+  useEffect(() => {
+    return () => {
+      if (debounceEmailRef.current) clearTimeout(debounceEmailRef.current);
     };
-  
-    const handleCloseDialog = () => {
-      setComponent("confirmDelete", false);
-      setSelectedToDelete([]);
-    };
+  }, []);
 
   return (
     <div className="col">
@@ -277,6 +331,8 @@ const Clientes = () => {
                   value={cliente?.email || ""}
                   placeholder="E-mail do cliente"
                   onChange={handleEmailChange}
+                  onBlur={handleEmailBlur}
+                  onKeyDown={handleEmailKeyDown}
                   disabled={behavior === "update"}
                   InputProps={{
                     style: {
@@ -286,33 +342,7 @@ const Clientes = () => {
                       <InputAdornment position="start">
                         <MailOutlineIcon />
                       </InputAdornment>
-                    ),
-                    endAdornment:
-                      behavior === "create" ? (
-                        <InputAdornment position="end">
-                          <IconButton
-                            onClick={() =>
-                              dispatch(
-                                filterClientes({
-                                  filters: {
-                                    email: cliente.email,
-                                    status: "A",
-                                  },
-                                })
-                              )
-                            }
-                            disabled={form.filtering}
-                          >
-                            {form.filtering ? (
-                              <div style={{ width: 24, height: 24 }}>
-                                <span className="loader" />
-                              </div>
-                            ) : (
-                              <SearchIcon />
-                            )}
-                          </IconButton>
-                        </InputAdornment>
-                      ) : null,
+                    )
                   }}
                 />
               </div>
@@ -693,8 +723,8 @@ const Clientes = () => {
         onClose={handleCloseDialog}
         onConfirm={() => {
           if (selectedId) {
-            const vinculoId = clientesProcessados[selectedId -1]?.selectedIx;
-            console.log("Excluir:", clientesProcessados[selectedId -1]?.selectedIx);
+            const vinculoId = clientesProcessados[selectedId - 1]?.selectedIx;
+            console.log("Excluir:", clientesProcessados[selectedId - 1]?.selectedIx);
             removeCli(vinculoId); // use o ID diretamente
           }
         }}
