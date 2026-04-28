@@ -4,7 +4,12 @@
 /node_modules
 /.pnp
 .pnp.js
-.env*
+# env files (all)
+.env
+.env.*
+**/.env
+**/.env.*
+!.env.example
 
 # testing
 /coverage
