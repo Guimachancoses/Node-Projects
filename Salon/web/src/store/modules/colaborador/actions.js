@@ -47,3 +47,10 @@ export function updateMyAccountSuccess(user) {
   return { type: types.UPDATE_MY_ACCOUNT_SUCCESS, user };
 }
 
+export function loadMyAccountRequest(email) {
+  return { type: types.LOAD_MY_ACCOUNT_REQUEST, email };
+}
+
+export function loadMyAccountSuccess(user) {
+  return { type: types.LOAD_MY_ACCOUNT_SUCCESS, user };
+}

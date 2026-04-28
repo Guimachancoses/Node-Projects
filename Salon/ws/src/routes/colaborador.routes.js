@@ -159,10 +159,69 @@ router.delete("/vinculo/:id", async (req, res) => {
 // Rota para retornar todos os colaboradores cadastrados
 router.post("/filter", async (req, res) => {
   try {
-    const colaboradores = await Colaborador.find(req.body.filters);
-    res.json({ error: false, colaboradores });
+    const { filters = {} } = req.body;
+    const { email, status, salaoId } = filters;
+
+    if (!email) {
+      return res.json({
+        error: true,
+        message: "Informe o e-mail para filtrar.",
+      });
+    }
+
+    // busca colaborador por email (case insensitive)
+    const colaborador = await Colaborador.findOne({
+      email: { $regex: new RegExp(`^${email}$`, "i") },
+    }).select("-senha -recipientId");
+
+    if (!colaborador) {
+      return res.json({ error: false, colaboradores: [] });
+    }
+
+    // busca vínculo do colaborador com salão (se salaoId vier, melhor)
+    const queryVinculo = {
+      colaboradorId: colaborador._id,
+      status: { $ne: "E" },
+    };
+
+    if (salaoId) queryVinculo.salaoId = salaoId;
+    if (status) queryVinculo.status = status; // ex: "A"
+
+    const vinculo = await SalaoColaborador.findOne(queryVinculo)
+      .select("_id status dataCadastro salaoId colaboradorId")
+      .sort({ dataCadastro: -1 });
+
+    if (!vinculo) {
+      return res.json({ error: false, colaboradores: [] });
+    }
+
+    // especialidades do colaborador (mesma lógica do /salao/:salaoId)
+    const especialidades = await ColaboradorServico.find({
+      colaboradorId: colaborador._id,
+    }).populate({
+      path: "servicoId",
+      select: "_id nome titulo",
+    });
+
+    const especialidadesIds = especialidades
+      .filter((item) => item.servicoId)
+      .map((item) => item.servicoId._id);
+
+    // mesmo shape usado no front ao clicar na tabela
+    return res.json({
+      error: false,
+      colaboradores: [
+        {
+          ...colaborador._doc,
+          vinculoId: vinculo._id,
+          vinculo: vinculo.status,
+          especialidades: especialidadesIds,
+          dataCadastro: vinculo.dataCadastro,
+        },
+      ],
+    });
   } catch (err) {
-    res.json({ error: true, message: err.message });
+    return res.json({ error: true, message: err.message });
   }
 });
 

@@ -5,7 +5,8 @@ import {
   resetColaborador,
   setAlerta,
   updateUser,
-  updateMyAccountSuccess
+  updateMyAccountSuccess,
+  loadMyAccountSuccess
 } from "./actions";
 import types from "./types";
 import api from "../../../services/api";
@@ -42,31 +43,130 @@ export function* allColaboradores() {
 }
 
 export function* filterColaboradores({ filters }) {
-  const { form } = yield select((state) => state.colaborador);
+  const { form, colaborador: colaboradorAtual, colaboradores, servicos } = yield select(
+    (state) => state.colaborador
+  );
 
   try {
     yield put(updateColaborador({ form: { ...form, filtering: true } }));
 
-    const { data: res } = yield call(api.post, "/colaborador/filter", filters);
-    yield put(updateColaborador({ form: { ...form, filtering: false } }));
+    const emailBusca = (filters?.email || "").trim().toLowerCase();
 
-    //console.log("Resposta da API:", res);
+    const { data: res } = yield call(api.post, "/colaborador/filter", {
+      ...filters,
+      email: emailBusca,
+    });
 
-    if (res.error) {
+    if (res?.error) {
+      yield put(updateColaborador({ form: { ...form, filtering: false } }));
       alert(res.message);
       return false;
     }
 
-    if (res.colaboradores.length > 0) {
+    const encontradoApi = res?.colaboradores?.[0];
+    const encontradoLocal = (colaboradores || []).find(
+      (c) => (c?.email || "").trim().toLowerCase() === emailBusca
+    );
+
+    // prioridade API
+    const found = encontradoApi || encontradoLocal;
+
+    if (found) {
+      const vinculoNormalizado =
+        typeof found?.vinculo === "string"
+          ? found.vinculo
+          : found?.vinculo?.status || found?.status || "A";
+
+      const fontesEspecialidades = [
+        ...(Array.isArray(found?.especialidades) ? found.especialidades : []),
+        ...(Array.isArray(found?.vinculo?.especialidades) ? found.vinculo.especialidades : []),
+        ...(Array.isArray(encontradoApi?.especialidades) ? encontradoApi.especialidades : []),
+        ...(Array.isArray(encontradoApi?.vinculo?.especialidades) ? encontradoApi.vinculo.especialidades : []),
+        ...(Array.isArray(encontradoLocal?.especialidades) ? encontradoLocal.especialidades : []),
+        ...(Array.isArray(encontradoLocal?.vinculo?.especialidades) ? encontradoLocal.vinculo.especialidades : []),
+      ];
+
+      const servicosNorm = (servicos || []).map((s) => ({
+        value: String(s?.value || s?._id || s?.id || ""),
+        label: String(s?.label || s?.nome || "").trim().toLowerCase(),
+      }));
+
+      const especialidadesNormalizadas = [
+        ...new Set(
+          fontesEspecialidades
+            .map((e) => {
+              if (!e) return null;
+
+              // 1) tenta por ID
+              let id =
+                typeof e === "string"
+                  ? e
+                  : e?.value ||
+                  e?._id ||
+                  e?.id ||
+                  e?.servicoId?._id ||
+                  e?.servicoId ||
+                  e?.servico?._id ||
+                  e?.servico?.id;
+
+              if (id) return String(id);
+
+              // 2) fallback por NOME (quando API retorna só nome)
+              const nome =
+                (typeof e === "string" ? e : e?.label || e?.nome || e?.servico?.nome || e?.servicoId?.nome || "")
+                  .trim()
+                  .toLowerCase();
+
+              if (!nome) return null;
+
+              const servicoMatch = servicosNorm.find((s) => s.label === nome);
+              return servicoMatch?.value || null;
+            })
+            .filter(Boolean)
+        ),
+      ];
+
+      const colaboradorNormalizado = {
+        ...colaboradorAtual,
+        ...found,
+        vinculo: vinculoNormalizado,
+        especialidades: especialidadesNormalizadas,
+        telefone: {
+          area: found?.telefone?.area || "",
+          numero: found?.telefone?.numero || "",
+        },
+        identificacao: {
+          tipoD: found?.identificacao?.tipoD || "",
+          numero: found?.identificacao?.numero || "",
+        },
+        endereco: {
+          cep: found?.endereco?.cep || "",
+          logradouro: found?.endereco?.logradouro || "",
+          numero: found?.endereco?.numero || "",
+          bairro: found?.endereco?.bairro || "",
+          cidade: {
+            nome: found?.endereco?.cidade?.nome || "",
+          },
+        },
+      };
+
       yield put(
         updateColaborador({
-          colaborador: res.colaboradores[0],
-          form: { ...form, filtering: false, disabled: true },
+          behavior: "update",
+          colaborador: colaboradorNormalizado,
+          form: { ...form, filtering: false, disabled: false },
         })
       );
     } else {
       yield put(
         updateColaborador({
+          behavior: "create",
+          colaborador: {
+            ...colaboradorAtual,
+            email: filters?.email || "",
+            vinculo: "A",
+            especialidades: [],
+          },
           form: { ...form, filtering: false, disabled: false },
         })
       );
@@ -239,7 +339,17 @@ export function* allServicos() {
       return false;
     }
 
-    yield put(updateColaborador({ servicos: res.servicos }));
+    const servicosNormalizados = (res?.servicos || [])
+      .map((s) => {
+        const value = String(
+          s?.value || s?._id || s?.id || s?.servicoId?._id || s?.servicoId || ""
+        );
+        const label = s?.label || s?.nome || s?.titulo || s?.descricao || "Serviço";
+        return value ? { ...s, value, label } : null;
+      })
+      .filter(Boolean);
+
+    yield put(updateColaborador({ servicos: servicosNormalizados }));
 
   } catch (err) {
     // dispara o alerta de erro:
@@ -399,6 +509,30 @@ export function* updateMyAccount({ payload, fotoFile }) {
   }
 }
 
+export function* loadMyAccount({ email }) {
+  const { form } = yield select((state) => state.colaborador);
+
+  try {
+    if (!email) return;
+
+    yield put(updateColaborador({ form: { ...form, filtering: true } }));
+
+    const { data: res } = yield call(
+      api.get,
+      `/colaborador/check/${encodeURIComponent(email)}`
+    );
+
+    yield put(updateColaborador({ form: { ...form, filtering: false } }));
+
+    if (res?.error || !res?.colaborador) return; // silencioso na account
+
+    yield put(loadMyAccountSuccess(res.colaborador));
+    yield put(updateUser(res.colaborador)); // usuário plano
+  } catch (err) {
+    yield put(updateColaborador({ form: { ...form, filtering: false } }));
+  }
+}
+
 export default all([
   takeLatest(types.ALL_COLABORADORES, allColaboradores),
   takeLatest(types.FILTER_COLABORADORES, filterColaboradores),
@@ -407,4 +541,5 @@ export default all([
   takeLatest(types.ALL_SERVICOS, allServicos),
   takeLatest(types.CHECK_USER, checkUser),
   takeLatest(types.UPDATE_MY_ACCOUNT_REQUEST, updateMyAccount),
+  takeLatest(types.LOAD_MY_ACCOUNT_REQUEST, loadMyAccount),
 ]);

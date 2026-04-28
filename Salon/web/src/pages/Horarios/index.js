@@ -213,7 +213,7 @@ const Horarios = () => {
   };
 
   return (
-    <div className="col p-5 overflow-auto h-100">
+    <div className="col px-5 overflow-auto h-100">
       {/* Drawer Component Controlado diretamente pelo estado do Redux */}
       <div
         style={{ display: "flex", flexDirection: "column", marginLeft: "16px" }}

@@ -31,13 +31,14 @@ import PhoneAndroidIcon from "@mui/icons-material/PhoneAndroid";
 import RecentActorsIcon from "@mui/icons-material/RecentActors";
 import SignpostIcon from "@mui/icons-material/Signpost";
 
-import { updateMyAccountRequest } from "../../store/modules/colaborador/actions";
+import { updateMyAccountRequest, loadMyAccountRequest } from "../../store/modules/colaborador/actions";
 
 const API_BASE = "https://salon.fabrisportalhub.com.br";
 
 export default function Account() {
   const dispatch = useDispatch();
-  const { user: userStore, form } = useSelector((state) => state.colaborador);
+  const { user: userRaw, form } = useSelector((state) => state.colaborador);
+  const userStore = userRaw?.user ?? userRaw;
 
   const [fotoFile, setFotoFile] = useState(null);
   const [fotoPreview, setFotoPreview] = useState("");
@@ -85,14 +86,13 @@ export default function Account() {
     },
   });
 
-  // useEffect(() => {
-  //   if (!email) return;
-  //   if (userStore?._id || userStore?.vinculoId) return;
+  useEffect(() => {
+    if (!isLoaded || !isSignedIn) return;
+    if (!email) return;
+    if (userStore?._id || userStore?.vinculoId) return;
 
-  //   dispatch(updateUser({ user: { email } }));
-  //   dispatch(checkUser({ silent: true, preventLogout: true }));
-  // }, [dispatch, email, userStore?._id, userStore?.vinculoId]);
-
+    dispatch(loadMyAccountRequest(email));
+  }, [dispatch, isLoaded, isSignedIn, email, userStore?._id, userStore?.vinculoId]);
 
   const checkGoogleStatus = useCallback(async () => {
     if (!userId && !email) return;

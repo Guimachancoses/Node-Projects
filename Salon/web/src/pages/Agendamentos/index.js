@@ -252,7 +252,7 @@ const Agendamentos = () => {
       : colaboradoresOptions.find((c) => String(c.value) === String(agendamento?.colaboradorId))?.label || "";
 
   return (
-    <div className="col p-5 overflow-auto h-100">
+    <div className="col px-5 overflow-auto h-100">
       <PopSyncCalendarDrive />
 
       <div className="d-flex justify-content-between align-items-center mb-4">

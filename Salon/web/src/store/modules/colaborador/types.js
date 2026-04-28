@@ -11,6 +11,9 @@ const types = {
   UPDATE_USER: "@colaborador/UPDATE_USER",
   UPDATE_MY_ACCOUNT_REQUEST: "@colaborador/UPDATE_MY_ACCOUNT_REQUEST",
   UPDATE_MY_ACCOUNT_SUCCESS: "@colaborador/UPDATE_MY_ACCOUNT_SUCCESS",
+
+  LOAD_MY_ACCOUNT_REQUEST: "@colaborador/LOAD_MY_ACCOUNT_REQUEST",
+  LOAD_MY_ACCOUNT_SUCCESS: "@colaborador/LOAD_MY_ACCOUNT_SUCCESS",
 };
 
 export default types;

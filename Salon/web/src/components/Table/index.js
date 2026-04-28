@@ -85,7 +85,7 @@ const TableComponent = ({
   const theme = useTheme();
 
   return (
-    <Container maxWidth="lg" sx={{ py: 5, backgroundColor: "inquerit" }}>
+    <Container maxWidth="lg" sx={{ px: 5, backgroundColor: "inquerit" }}>
       <Box display="flex" justifyContent="space-between" mb={3}>
         <Box variant="h4" component="h2" sx={{ color: "white" }}>
           {title}

@@ -142,7 +142,7 @@ export default function Layout({ toggleTheme }) {
           transition: "width 0.3s, margin-left 0.3s",
         }}
       >
-        <Toolbar sx={{ marginRight: 3 }}>
+        <Toolbar sx={{ marginRight: 3, p: 0 }}>
           <IconButton
             color="inherit"
             edge="start"

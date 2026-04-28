@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useMemo, useRef } from "react";
 
 import {
   IconButton,
@@ -45,10 +45,11 @@ import RecentActorsIcon from "@mui/icons-material/RecentActors";
 import FilterListIcon from "@mui/icons-material/FilterList";
 import SaveIcon from "@mui/icons-material/Save";
 import SignpostIcon from "@mui/icons-material/Signpost";
-import SearchIcon from "@mui/icons-material/Search";
 import AutorenewIcon from "@mui/icons-material/Autorenew";
 
 import { buscarEndereco } from "../../services/apiCep";
+
+import { useUser } from "@clerk/clerk-react";
 
 const Alert = React.forwardRef(function Alert(props, ref) {
   return <MuiAlert elevation={6} ref={ref} variant="filled" {...props} />;
@@ -60,8 +61,18 @@ function SlideTransition(props) {
 
 const Colaboradores = () => {
   const dispatch = useDispatch();
-  const { colaborador, colaboradores, behavior, form, components, servicos } =
+  const { user: userStore, colaborador, colaboradores, behavior, form, components, servicos } =
     useSelector((state) => state.colaborador);
+
+  const { user } = useUser();
+
+  const loggedEmail =
+    (userStore?.email || user?.emailAddresses?.[0]?.emailAddress || "")
+      .trim()
+      .toLowerCase();
+
+  const loggedVinculoId = String(userStore?.vinculoId || "");
+  const loggedColaboradorId = String(userStore?._id || "");
 
   const alerta = useSelector((state) => state.colaborador.alerta);
 
@@ -117,26 +128,95 @@ const Colaboradores = () => {
     //console.log("Criar novo cliente");
   };
 
-  const handleEmailChange = (e) => {
-    setColaborador("email", e.target.value);
+  const debounceEmailRef = useRef(null);
+  const ultimoEmailVerificadoRef = useRef("");
+
+  const validarFormatoEmail = (value = "") => /\S+@\S+\.\S+/.test(value);
+
+  const verificarEmail = (rawEmail) => {
+    if (behavior !== "create") return;
+
+    const emailNormalizado = (rawEmail || "").trim().toLowerCase();
+    if (!emailNormalizado) return;
+    if (!validarFormatoEmail(emailNormalizado)) return;
+
+    // evita chamada repetida do mesmo email
+    if (ultimoEmailVerificadoRef.current === emailNormalizado) return;
+
+    ultimoEmailVerificadoRef.current = emailNormalizado;
+
+    dispatch(
+      filterColaboradores({
+        filters: {
+          email: colaborador.email,
+          status: "A",
+          salaoId: process.env.REACT_APP_SALAO_ID,
+        },
+      })
+    );
   };
 
-  const colaboradoresProcessados = colaboradores.map(
-    (colaborador, index, selectedIds) => {
-      const telefone = colaborador.telefone;
-      const vinculoIx = colaborador.vinculoId
-      let telefoneFormatado = "Telefone inválido";
-      if (telefone && telefone.area && telefone.numero) {
-        const numero = telefone.numero ? String(telefone.numero) : "";
-        telefoneFormatado = `(${numero.substring(0, 2)}) ${numero.substring(
-          2,
-          7
-        )}-${numero.substring(7)}`;
-      }
-      selectedIds.includes(colaborador.vinculoId);
-      return { ...colaborador, telefoneFormatado, id: index + 1, selectedIds, vinculoIx };
+  const handleEmailChange = (e) => {
+    const value = e.target.value;
+    setColaborador("email", value);
+
+    // debounce ao digitar
+    if (debounceEmailRef.current) clearTimeout(debounceEmailRef.current);
+    debounceEmailRef.current = setTimeout(() => {
+      verificarEmail(value);
+    }, 500);
+  };
+
+  const handleEmailBlur = () => {
+    if (debounceEmailRef.current) clearTimeout(debounceEmailRef.current);
+    verificarEmail(colaborador?.email || "");
+  };
+
+  const handleEmailKeyDown = (e) => {
+    if (e.key === "Enter") {
+      e.preventDefault();
+      if (debounceEmailRef.current) clearTimeout(debounceEmailRef.current);
+      verificarEmail(colaborador?.email || "");
     }
-  );
+  };
+
+  useEffect(() => {
+    return () => {
+      if (debounceEmailRef.current) clearTimeout(debounceEmailRef.current);
+    };
+  }, []);
+
+  const colaboradoresFiltrados = useMemo(() => {
+    return (colaboradores || []).filter((c) => {
+      const email = (c?.email || "").trim().toLowerCase();
+      const vinculoId = String(c?.vinculoId || "");
+      const colaboradorId = String(c?._id || "");
+
+      const sameByEmail = loggedEmail && email === loggedEmail;
+      const sameByVinculo = loggedVinculoId && vinculoId === loggedVinculoId;
+      const sameById = loggedColaboradorId && colaboradorId === loggedColaboradorId;
+
+      return !(sameByEmail || sameByVinculo || sameById);
+    });
+  }, [colaboradores, loggedEmail, loggedVinculoId, loggedColaboradorId]);
+
+  const colaboradoresProcessados = colaboradoresFiltrados.map((colaborador, index) => {
+    const telefone = colaborador.telefone;
+    const vinculoIx = colaborador.vinculoId;
+
+    let telefoneFormatado = "Telefone inválido";
+    if (telefone && telefone.area && telefone.numero) {
+      const numero = String(telefone.numero || "");
+      telefoneFormatado = `(${numero.substring(0, 2)}) ${numero.substring(2, 7)}-${numero.substring(7)}`;
+    }
+
+    return {
+      ...colaborador,
+      telefoneFormatado,
+      id: index + 1,
+      vinculoIx,
+    };
+  });
 
   const columns = [
     { field: "id", headerName: "ID", width: 10, fixed: true },
@@ -216,6 +296,13 @@ const Colaboradores = () => {
     setSelectedToDelete([]);
   };
 
+  const especialidadesValue = (colaborador?.especialidades || [])
+    .map((e) => {
+      if (typeof e === "string") return String(e);
+      return String(e?.value || e?._id || e?.id || e?.servicoId || e?.servicoId?._id || "");
+    })
+    .filter(Boolean);
+
   return (
     <div className="col">
       <TableComponent
@@ -284,42 +371,16 @@ const Colaboradores = () => {
                   value={colaborador?.email || ""}
                   placeholder="E-mail do colaborador"
                   onChange={handleEmailChange}
+                  onBlur={handleEmailBlur}
+                  onKeyDown={handleEmailKeyDown}
                   disabled={behavior === "update"}
                   InputProps={{
-                    style: {
-                      fontSize: "0.8rem", // Altere esse valor conforme quiser
-                    },
+                    style: { fontSize: "0.8rem" },
                     startAdornment: (
                       <InputAdornment position="start">
                         <MailOutlineIcon />
                       </InputAdornment>
                     ),
-                    endAdornment:
-                      behavior === "create" ? (
-                        <InputAdornment position="end">
-                          <IconButton
-                            onClick={() =>
-                              dispatch(
-                                filterColaboradores({
-                                  filters: {
-                                    email: colaborador.email,
-                                    status: "A",
-                                  },
-                                })
-                              )
-                            }
-                            disabled={form.filtering}
-                          >
-                            {form.filtering ? (
-                              <div style={{ width: 24, height: 24 }}>
-                                <span className="loader" />
-                              </div>
-                            ) : (
-                              <SearchIcon />
-                            )}
-                          </IconButton>
-                        </InputAdornment>
-                      ) : null,
                   }}
                 />
               </div>
@@ -687,43 +748,29 @@ const Colaboradores = () => {
               <div className="form-group col-8 mb-3">
                 <FormControl fullWidth variant="outlined">
                   <InputLabel>Especialidades</InputLabel>
+
                   <Select
                     multiple
-                    value={colaborador?.especialidades || []}
+                    value={especialidadesValue}
                     onChange={(e) =>
-                      setColaborador("especialidades", e.target.value)
+                      setColaborador("especialidades", (e.target.value || []).map((v) => String(v)))
                     }
-                    label="Especialidades"
-                    disabled={form.disabled && behavior === "create"}
-                    input={<OutlinedInput label="Especialidades" />}
                     renderValue={(selected) =>
-                      servicos
-                        .filter((s) => selected.includes(s.value))
-                        .map((s) => s.label)
+                      (servicos || [])
+                        .filter((s) => selected.includes(String(s.value || s._id || s.id)))
+                        .map((s) => s.label || s.nome)
                         .join(", ")
                     }
-                    startAdornment={
-                      <InputAdornment position="start">
-                        <AutorenewIcon />
-                      </InputAdornment>
-                    }
-                    sx={{ fontSize: "0.8rem" }}
-                    MenuProps={{
-                      PaperProps: {
-                        sx: { fontSize: "0.8rem" },
-                      },
-                    }}
                   >
-                    {servicos.map((esp) => (
-                      <MenuItem key={esp.value} value={esp.value}>
-                        <Checkbox
-                          checked={colaborador?.especialidades?.includes(
-                            esp.value
-                          )}
-                        />
-                        <ListItemText primary={esp.label} />
-                      </MenuItem>
-                    ))}
+                    {(servicos || []).map((esp) => {
+                      const optionValue = String(esp.value || esp._id || esp.id);
+                      return (
+                        <MenuItem key={optionValue} value={optionValue}>
+                          <Checkbox checked={especialidadesValue.includes(optionValue)} />
+                          <ListItemText primary={esp.label || esp.nome} />
+                        </MenuItem>
+                      );
+                    })}
                   </Select>
                 </FormControl>
               </div>
