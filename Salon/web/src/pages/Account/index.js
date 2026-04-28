@@ -498,109 +498,208 @@ export default function Account() {
             </Typography>
 
             <Grid container spacing={2} sx={{ mt: 0.5 }}>
-  {/* Nome / Sobrenome */}
-  <Grid item xs={12} md={6}>
-    <TextField fullWidth size="small" label="Nome" value={accountForm.nome}
-      onChange={(e) => setCampo("nome", e.target.value)} />
-  </Grid>
-  <Grid item xs={12} md={6}>
-    <TextField fullWidth size="small" label="Sobrenome" value={accountForm.sobrenome}
-      onChange={(e) => setCampo("sobrenome", e.target.value)} />
-  </Grid>
+              <Grid item xs={12} md={6}>
+                <TextField
+                  fullWidth
+                  label="Nome"
+                  size="small"
+                  value={accountForm.nome}
+                  onChange={(e) => setCampo("nome", e.target.value)}
+                />
+              </Grid>
 
-  {/* Área antes do Telefone + Sexo na frente */}
-  <Grid item xs={12} sm={3} md={2}>
-    <TextField fullWidth size="small" label="Área" value={accountForm.telefone.area}
-      onChange={(e) => setTelefone("area", e.target.value)} />
-  </Grid>
-  <Grid item xs={12} sm={9} md={4}>
-    <TextField fullWidth size="small" label="Telefone" value={accountForm.telefone.numero}
-      onChange={(e) => setTelefone("numero", e.target.value)} />
-  </Grid>
-  <Grid item xs={12} md={6}>
-    <FormControl fullWidth size="small">
-      <InputLabel>Sexo</InputLabel>
-      <Select value={accountForm.sexo || ""} label="Sexo"
-        onChange={(e) => setCampo("sexo", e.target.value)}>
-        <MenuItem value="M">Masculino</MenuItem>
-        <MenuItem value="F">Feminino</MenuItem>
-        <MenuItem value="O">Outro</MenuItem>
-      </Select>
-    </FormControl>
-  </Grid>
+              <Grid item xs={12} md={6}>
+                <TextField
+                  fullWidth
+                  label="Sobrenome"
+                  size="small"
+                  value={accountForm.sobrenome}
+                  onChange={(e) => setCampo("sobrenome", e.target.value)}
+                />
+              </Grid>
 
-  {/* Documento abaixo */}
-  <Grid item xs={12} md={4}>
-    <FormControl fullWidth size="small">
-      <InputLabel>Tipo doc</InputLabel>
-      <Select value={accountForm.identificacao.tipoD || ""} label="Tipo doc"
-        onChange={(e) => setIdentificacao("tipoD", e.target.value)}>
-        <MenuItem value="CPF">CPF</MenuItem>
-        <MenuItem value="CNPJ">CNPJ</MenuItem>
-      </Select>
-    </FormControl>
-  </Grid>
-  <Grid item xs={12} md={8}>
-    <TextField fullWidth size="small" label="Documento" value={accountForm.identificacao.numero}
-      onChange={(e) => setIdentificacao("numero", e.target.value)} />
-  </Grid>
+              <Grid item xs={12} md={4}>
+                <TextField
+                  label="Área"
+                  size="small"
+                  value={accountForm.telefone.area}
+                  onChange={(e) => setTelefone("area", e.target.value)}
+                  InputProps={{
+                    startAdornment: (
+                      <InputAdornment position="start">
+                        <LocalPhoneIcon />
+                      </InputAdornment>
+                    ),
+                  }}
+                />
+              </Grid>
 
-  {/* Endereço */}
-  <Grid item xs={12} md={3}>
-    <TextField fullWidth size="small" label="CEP" value={accountForm.endereco.cep}
-      onChange={(e) => setEndereco("cep", e.target.value)} />
-  </Grid>
-  <Grid item xs={12} md={5}>
-    <TextField fullWidth size="small" label="Cidade" value={accountForm.endereco.cidade.nome}
-      onChange={(e) => setCidade(e.target.value)} />
-  </Grid>
-  <Grid item xs={12} md={4}>
-    <TextField fullWidth size="small" label="Bairro" value={accountForm.endereco.bairro}
-      onChange={(e) => setEndereco("bairro", e.target.value)} />
-  </Grid>
-  <Grid item xs={12} md={9}>
-    <TextField fullWidth size="small" label="Rua" value={accountForm.endereco.logradouro}
-      onChange={(e) => setEndereco("logradouro", e.target.value)} />
-  </Grid>
-  <Grid item xs={12} md={3}>
-    <TextField fullWidth size="small" label="Número" value={accountForm.endereco.numero}
-      onChange={(e) => setEndereco("numero", e.target.value)} />
-  </Grid>
+              <Grid item xs={12} md={8}>
+                <TextField
+                  fullWidth
+                  label="Telefone"
+                  size="small"
+                  value={accountForm.telefone.numero}
+                  onChange={(e) => setTelefone("numero", e.target.value)}
+                  InputProps={{
+                    startAdornment: (
+                      <InputAdornment position="start">
+                        <PhoneAndroidIcon />
+                      </InputAdornment>
+                    ),
+                  }}
+                />
+              </Grid>
 
-  {/* ESPECIALIDADES POR ÚLTIMO E LARGURA DE NOME/SOBRENOME */}
-  <Grid item xs={12} md={6}>
-    <FormControl fullWidth size="small">
-      <InputLabel id="especialidades-account-label">Especialidades</InputLabel>
-      <Select
-        labelId="especialidades-account-label"
-        multiple
-        value={(accountForm.especialidades || []).map(String)}
-        label="Especialidades"
-        onChange={(e) =>
-          setAccountForm((prev) => ({
-            ...prev,
-            especialidades: (e.target.value || []).map(String),
-          }))
-        }
-        renderValue={(selected) =>
-          (servicos || [])
-            .filter((s) => selected.includes(String(s.value || s._id || s.id)))
-            .map((s) => s.label || s.nome)
-            .join(", ")
-        }
-      >
-        {(servicos || []).map((s) => {
-          const v = String(s.value || s._id || s.id);
-          return (
-            <MenuItem key={v} value={v}>
-              {s.label || s.nome}
-            </MenuItem>
-          );
-        })}
-      </Select>
-    </FormControl>
-  </Grid>
-</Grid>
+              <Grid item xs={12} md={6}>
+                <FormControl fullWidth size="small">
+                  <InputLabel>Sexo</InputLabel>
+                  <Select
+                    value={accountForm.sexo || ""}
+                    label="Sexo"
+                    onChange={(e) => setCampo("sexo", e.target.value)}
+                  >
+                    <MenuItem value="M">Masculino</MenuItem>
+                    <MenuItem value="F">Feminino</MenuItem>
+                    <MenuItem value="O">Outro</MenuItem>
+                  </Select>
+                </FormControl>
+              </Grid>
+
+              <Grid item xs={12} md={6}>
+                <FormControl fullWidth size="small">
+                  <InputLabel>Tipo doc</InputLabel>
+                  <Select
+                    value={accountForm.identificacao.tipoD || ""}
+                    label="Tipo doc"
+                    onChange={(e) => setIdentificacao("tipoD", e.target.value)}
+                  >
+                    <MenuItem value="CPF">CPF</MenuItem>
+                    <MenuItem value="CNPJ">CNPJ</MenuItem>
+                  </Select>
+                </FormControl>
+              </Grid>
+
+              <Grid item xs={12} md={4}>
+                <TextField
+                  fullWidth
+                  label="Documento"
+                  size="small"
+                  value={accountForm.identificacao.numero}
+                  onChange={(e) => setIdentificacao("numero", e.target.value)}
+                  InputProps={{
+                    startAdornment: (
+                      <InputAdornment position="start">
+                        <RecentActorsIcon />
+                      </InputAdornment>
+                    ),
+                  }}
+                />
+              </Grid>
+
+              <Grid item xs={12} md={4}>
+                <TextField
+                  fullWidth
+                  label="CEP"
+                  size="small"
+                  value={accountForm.endereco.cep}
+                  onChange={(e) => setEndereco("cep", e.target.value)}
+                  InputProps={{
+                    startAdornment: (
+                      <InputAdornment position="start">
+                        <SignpostIcon />
+                      </InputAdornment>
+                    ),
+                  }}
+                />
+              </Grid>
+
+              <Grid item xs={12} md={8}>
+                <TextField
+                  fullWidth
+                  size="small"
+                  label="Rua"
+                  value={accountForm.endereco.logradouro}
+                  onChange={(e) => setEndereco("logradouro", e.target.value)}
+                />
+              </Grid>
+
+              <Grid item xs={12} md={3}>
+                <TextField
+                  fullWidth
+                  size="small"
+                  label="Número"
+                  value={accountForm.endereco.numero}
+                  onChange={(e) => setEndereco("numero", e.target.value)}
+                />
+              </Grid>
+
+              <Grid item xs={12} md={4}>
+                <TextField
+                  fullWidth
+                  label="Bairro"
+                  size="small"
+                  value={accountForm.endereco.bairro}
+                  onChange={(e) => setEndereco("bairro", e.target.value)}
+                />
+              </Grid>
+
+              <Grid item xs={12} md={5}>
+                <TextField
+                  fullWidth
+                  size="small"
+                  label="Cidade"
+                  value={accountForm.endereco.cidade.nome}
+                  onChange={(e) => setCidade(e.target.value)}
+                />
+              </Grid>
+              <Grid item xs={12} md={4} sx={{
+    width: "100%",
+    "@media (min-width:900px)": {
+      width: "calc(100% + 112px)", // aumenta só esse campo
+      mr: "-112px",
+    },
+  }}>
+                <FormControl fullWidth size="small">
+                  <InputLabel id="especialidades-account-label">Especialidades</InputLabel>
+                  <Select
+                    labelId="especialidades-account-label"
+                    multiple
+                    value={(accountForm.especialidades || []).map(String)}
+                    label="Especialidades"
+                    onChange={(e) =>
+                      setAccountForm((prev) => ({
+                        ...prev,
+                        especialidades: (e.target.value || []).map(String),
+                      }))
+                    }
+                    renderValue={(selected) =>
+                      (servicos || [])
+                        .filter((s) => selected.includes(String(s.value || s._id || s.id)))
+                        .map((s) => s.label || s.nome)
+                        .join(", ")
+                    }
+                    sx={{
+                      minHeight: 40,         // mesmo “compacto” dos campos small
+                      "& .MuiSelect-select": {
+                        whiteSpace: "nowrap",
+                        overflow: "hidden",
+                        textOverflow: "ellipsis",
+                      },
+                    }}
+                  >
+                    {(servicos || []).map((s) => {
+                      const v = String(s.value || s._id || s.id);
+                      return (
+                        <MenuItem key={v} value={v}>
+                          {s.label || s.nome}
+                        </MenuItem>
+                      );
+                    })}
+                  </Select>
+                </FormControl>
+              </Grid>
+            </Grid>
 
             <Box sx={{ mt: 3, display: "flex", justifyContent: "flex-end" }}>
               <Button
