@@ -347,9 +347,6 @@ const Colaboradores = () => {
     });
   }, [colaboradores, loggedEmail, loggedVinculoId, loggedColaboradorId]);
 
-
-  console.log("colaboradores", colaboradores)
-
   const colaboradoresProcessados = colaboradoresFiltrados.map((colaborador, index) => {
     const telefone = colaborador.telefone;
     let telefoneFormatado = "Telefone inválido";
@@ -568,7 +565,7 @@ const Colaboradores = () => {
               disabled={selectedIds.length === 0}
               onClick={() => {
                 handleOpenDialog(selectedIds);
-                console.log(selectedIds);
+                //console.log(selectedIds);
               }}
             >
               Excluir

@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useRef } from "react";
+import React, { useEffect, useState, useRef, useMemo, useCallback } from "react";
 
 import {
   IconButton,
@@ -44,6 +44,22 @@ import SignpostIcon from "@mui/icons-material/Signpost";
 
 import { buscarEndereco } from "../../services/apiCep";
 
+import {
+  isValidEmail,
+  isValidName,
+  isValidSobreName,
+  isValidPhone9,
+  isValidCep,
+  isValidCpf,
+  isValidCnpj,
+  maskArea,
+  maskPhone9,
+  maskCep,
+  maskCpf,
+  maskCnpj,
+  onlyDigits,
+} from "../../utils/formValidators";
+
 const Alert = React.forwardRef(function Alert(props, ref) {
   return <MuiAlert elevation={6} ref={ref} variant="filled" {...props} />;
 });
@@ -59,6 +75,75 @@ const Clientes = () => {
   );
 
   const alerta = useSelector((state) => state.cliente.alerta);
+
+  const [errors, setErrors] = useState({});
+  const [cepLoading, setCepLoading] = useState(false);
+  const ultimoCepBuscadoRef = useRef("");
+  const cepRequestIdRef = useRef(0);
+
+  const originalRef = useRef(null);
+  const loadedIdentityRef = useRef("");
+
+  const setTelefoneField = (key, value) => {
+    setCliente("telefone", {
+      ...cliente.telefone,
+      [key]: onlyDigits(value),
+    });
+  };
+
+  const setEndereco = (patch) => {
+    setCliente("endereco", {
+      ...cliente.endereco,
+      ...patch,
+      cidade: { ...cliente.endereco?.cidade, ...(patch.cidade || {}) },
+    });
+  };
+
+  const setIdentificacaoField = (key, value) => {
+    setCliente("identificacao", {
+      ...cliente.identificacao,
+      [key]: key === "numero" ? onlyDigits(value) : value,
+    });
+  };
+
+  const handleCepChange = (e) => {
+    const cep = onlyDigits(e.target.value).slice(0, 8);
+    setEndereco({ cep });
+    setErrors((p) => ({ ...p, cep: "" }));
+    if (cep.length < 8) ultimoCepBuscadoRef.current = "";
+  };
+
+  const handleCepBlur = async () => {
+    const cep = onlyDigits(cliente?.endereco?.cep || "");
+    if (!cep) return;
+
+    if (!isValidCep(cep)) {
+      setErrors((p) => ({ ...p, cep: "CEP deve conter 8 dígitos" }));
+      return;
+    }
+
+    if (ultimoCepBuscadoRef.current === cep) return;
+    ultimoCepBuscadoRef.current = cep;
+
+    const reqId = ++cepRequestIdRef.current;
+    setCepLoading(true);
+    const endereco = await buscarEndereco(cep);
+    if (reqId !== cepRequestIdRef.current) return;
+    setCepLoading(false);
+
+    if (!endereco) {
+      setErrors((p) => ({ ...p, cep: "CEP não encontrado" }));
+      return;
+    }
+
+    setErrors((p) => ({ ...p, cep: "" }));
+    setEndereco({
+      cep,
+      logradouro: endereco.logradouro || "",
+      bairro: endereco.bairro || "",
+      cidade: { nome: endereco.localidade || "" },
+    });
+  };
 
   const handleClose = () => {
     dispatch(setAlerta({ ...alerta, open: false }));
@@ -88,6 +173,7 @@ const Clientes = () => {
     dispatch(
       updateCliente({
         behavior: "create",
+        form: { disabled: true },
         cliente: {
           nome: "",
           sobrenome: "",
@@ -222,7 +308,7 @@ const Clientes = () => {
       filterClientes({
         filters: {
           email: emailNormalizado,
-          status: "A",
+          salaoId: process.env.REACT_APP_SALAO_ID,
         },
       })
     );
@@ -246,6 +332,10 @@ const Clientes = () => {
   const handleEmailBlur = () => {
     if (debounceEmailRef.current) clearTimeout(debounceEmailRef.current);
     verificarEmailCliente(cliente?.email || "", { force: true });
+    setErrors((p) => ({
+      ...p,
+      email: isValidEmail(cliente?.email) ? "" : "E-mail inválido. Ex: nome@dominio.com.br",
+    }));
   };
 
   const handleEmailKeyDown = (e) => {
@@ -261,6 +351,88 @@ const Clientes = () => {
       if (debounceEmailRef.current) clearTimeout(debounceEmailRef.current);
     };
   }, []);
+
+  const handleCloseDrawer = () => {
+    setErrors({});
+    originalRef.current = null;
+    loadedIdentityRef.current = "";
+    setComponent("drawer", false);
+  };
+
+  const normalizeForCompare = useCallback((c = {}) => ({
+    nome: (c.nome || "").trim(),
+    sobrenome: (c.sobrenome || "").trim(),
+    email: (c.email || "").trim().toLowerCase(),
+    telefone: {
+      area: onlyDigits(c?.telefone?.area || ""),
+      numero: onlyDigits(c?.telefone?.numero || ""),
+    },
+    identificacao: {
+      tipoD: c?.identificacao?.tipoD || "",
+      numero: onlyDigits(c?.identificacao?.numero || ""),
+    },
+    endereco: {
+      cep: onlyDigits(c?.endereco?.cep || ""),
+      logradouro: (c?.endereco?.logradouro || "").trim(),
+      numero: String(c?.endereco?.numero ?? "").trim(),
+      bairro: (c?.endereco?.bairro || "").trim(),
+      cidade: { nome: (c?.endereco?.cidade?.nome || "").trim() },
+    },
+  }), []);
+
+  useEffect(() => {
+    if (!components.drawer || behavior !== "update") return;
+
+    const identity = `${cliente?._id || ""}-${cliente?.vinculoId || ""}`;
+    if (!identity) return;
+
+    if (loadedIdentityRef.current !== identity) {
+      originalRef.current = normalizeForCompare(cliente);
+      loadedIdentityRef.current = identity;
+    }
+  }, [components.drawer, behavior, cliente?._id, cliente?.vinculoId, normalizeForCompare]); // <- evita depender do objeto inteiro
+
+  const hasErrors = Object.values(errors || {}).some(Boolean);
+
+  const requiredFilled = Boolean(
+    (cliente?.email || "").trim() &&
+    (cliente?.nome || "").trim() &&
+    (cliente?.sobrenome || "").trim() &&
+    onlyDigits(cliente?.telefone?.area || "").length === 2 &&
+    onlyDigits(cliente?.telefone?.numero || "").length === 9 &&
+    onlyDigits(cliente?.endereco?.cep || "").length === 8 &&
+    (cliente?.endereco?.logradouro || "").trim() &&
+    String(cliente?.endereco?.numero ?? "").trim() &&
+    (cliente?.endereco?.bairro || "").trim() &&
+    (cliente?.endereco?.cidade?.nome || "").trim() &&
+    (cliente?.identificacao?.tipoD || "").trim() &&
+    (cliente?.identificacao?.numero || "").trim()
+  );
+
+  const hasChanges = useMemo(() => {
+    if (behavior === "create") return true;
+    if (!originalRef.current) return false; // <- importante
+    return (
+      JSON.stringify(normalizeForCompare(cliente)) !==
+      JSON.stringify(originalRef.current)
+    );
+  }, [behavior, cliente, normalizeForCompare]);
+
+  const isSaveDisabled = useMemo(() => {
+    if (loading || form?.saving || form?.filtering) return true;
+    if (hasErrors) return true;
+
+    if (behavior === "create") {
+      return !requiredFilled;
+    }
+
+    // update
+    return !hasChanges;
+  }, [loading, form?.saving, form?.filtering, hasErrors, behavior, requiredFilled, hasChanges]);
+
+  const isReativar = behavior !== "create" && cliente?.vinculo === "E";
+
+  console.log("cliente", cliente)
 
   return (
     <div className="col">
@@ -312,7 +484,7 @@ const Clientes = () => {
           show={components.drawer}
           anchor="right"
           isOpen={components.drawer}
-          onClose={() => setComponent("drawer", false)}
+          onClose={handleCloseDrawer}
         >
           <div className="col-12">
             <h3>
@@ -343,6 +515,8 @@ const Clientes = () => {
                       </InputAdornment>
                     )
                   }}
+                  error={!!errors.email}
+                  helperText={errors.email}
                 />
               </div>
               <div className="form-group col-6 mb-3">
@@ -353,6 +527,9 @@ const Clientes = () => {
                   variant="outlined"
                   placeholder="Nome do cliente"
                   value={cliente?.nome || ""}
+                  onBlur={() => setErrors((p) => ({ ...p, nome: isValidName(cliente?.nome) ? "" : "Nome inválido" }))}
+                  error={!!errors.nome}
+                  helperText={errors.nome}
                   onChange={(e) => setCliente("nome", e.target.value)}
                   disabled={form.disabled}
                   InputProps={{
@@ -377,6 +554,9 @@ const Clientes = () => {
                   variant="outlined"
                   placeholder="Sobrenome do cliente"
                   value={cliente?.sobrenome || ""}
+                  onBlur={() => setErrors((p) => ({ ...p, sobrenome: isValidSobreName(cliente?.sobrenome) ? "" : "Sobrenome inválido" }))}
+                  error={!!errors.sobrenome}
+                  helperText={errors.sobrenome}
                   onChange={(e) => setCliente("sobrenome", e.target.value)}
                   disabled={form.disabled}
                   InputProps={{
@@ -399,14 +579,14 @@ const Clientes = () => {
                   type="text"
                   fullWidth
                   variant="outlined"
-                  placeholder="+ 55"
-                  value={cliente?.telefone.area || ""}
-                  onChange={(e) =>
-                    setCliente("telefone", {
-                      ...cliente.telefone,
-                      area: e.target.value,
-                    })
-                  }
+                  placeholder="(19)"
+                  value={maskArea(cliente?.telefone?.area || "")}
+                  onChange={(e) => {
+                    setTelefoneField("area", e.target.value);
+                    setErrors((p) => ({ ...p, area: "" }));
+                  }}
+                  error={!!errors.area}
+                  helperText={errors.area}
                   disabled={form.disabled}
                   InputProps={{
                     startAdornment: (
@@ -429,13 +609,16 @@ const Clientes = () => {
                   fullWidth
                   variant="outlined"
                   placeholder="Telefone / Whatsapp"
-                  value={cliente?.telefone.numero || ""}
-                  onChange={(e) =>
-                    setCliente("telefone", {
-                      ...cliente.telefone,
-                      numero: e.target.value,
-                    })
+                  value={maskPhone9(cliente?.telefone?.numero || "")}
+                  onChange={(e) => setTelefoneField("numero", e.target.value)}
+                  onBlur={() =>
+                    setErrors((p) => ({
+                      ...p,
+                      telefone: isValidPhone9(cliente?.telefone?.numero) ? "" : "Telefone deve ter 9 dígitos",
+                    }))
                   }
+                  error={!!errors.telefone}
+                  helperText={errors.telefone}
                   disabled={form.disabled}
                   InputProps={{
                     startAdornment: (
@@ -458,31 +641,11 @@ const Clientes = () => {
                   fullWidth
                   variant="outlined"
                   placeholder="Código postal"
-                  value={cliente?.endereco.cep || ""}
-                  onChange={async (e) => {
-                    const novoCep = e.target.value;
-                    setCliente("endereco", {
-                      ...cliente.endereco,
-                      cep: novoCep,
-                    });
-
-                    // Verifique se o comportamento é 'create' antes de buscar o endereço
-                    if (novoCep.length === 8) {
-                      const endereco = await buscarEndereco(novoCep);
-                      if (endereco) {
-                        setCliente("endereco", {
-                          ...cliente.endereco,
-                          cep: novoCep,
-                          logradouro: endereco.logradouro || "",
-                          bairro: endereco.bairro || "",
-                          cidade: {
-                            nome: endereco.localidade || "",
-                          },
-                        });
-                      }
-                      console.log(endereco);
-                    }
-                  }}
+                  value={maskCep(cliente?.endereco?.cep || "")}
+                  onChange={handleCepChange}
+                  onBlur={handleCepBlur}
+                  error={!!errors.cep}
+                  helperText={errors.cep || (cepLoading ? "Consultando CEP..." : "")}
                   disabled={form.disabled}
                   InputProps={{
                     startAdornment: (
@@ -495,7 +658,7 @@ const Clientes = () => {
                     style: {
                       fontSize: "0.8rem", // Altere esse valor conforme quiser
                     },
-                    maxLength: 8, // Adicionando o maxLength para limitar a entrada
+                    maxLength: 9, // Adicionando o maxLength para limitar a entrada
                   }}
                 />
               </div>
@@ -657,13 +820,20 @@ const Clientes = () => {
                   fullWidth
                   variant="outlined"
                   placeholder="Digite o número"
-                  value={cliente?.identificacao.numero || ""}
-                  onChange={(e) =>
-                    setCliente("identificacao", {
-                      ...cliente.identificacao,
-                      numero: e.target.value,
-                    })
+                  value={
+                    cliente?.identificacao?.tipoD === "CNPJ"
+                      ? maskCnpj(cliente?.identificacao?.numero || "")
+                      : maskCpf(cliente?.identificacao?.numero || "")
                   }
+                  onChange={(e) => setIdentificacaoField("numero", e.target.value)}
+                  onBlur={() => {
+                    const tipo = cliente?.identificacao?.tipoD;
+                    const numero = cliente?.identificacao?.numero || "";
+                    const ok = tipo === "CNPJ" ? isValidCnpj(numero) : isValidCpf(numero);
+                    setErrors((p) => ({ ...p, documento: ok ? "" : `${tipo || "Documento"} inválido` }));
+                  }}
+                  error={!!errors.documento}
+                  helperText={errors.documento}
                   disabled={form.disabled}
                   InputProps={{
                     startAdornment: (
@@ -688,6 +858,7 @@ const Clientes = () => {
             loading={loading}
             loadingPosition="start"
             startIcon={<SaveIcon />}
+            disabled={isReativar ? false : isSaveDisabled}
             size="large"
             sx={{
               mt: 3,
@@ -723,7 +894,7 @@ const Clientes = () => {
         onConfirm={() => {
           if (selectedId) {
             const vinculoId = clientesProcessados[selectedId - 1]?.selectedIx;
-            console.log("Excluir:", clientesProcessados[selectedId - 1]?.selectedIx);
+            //console.log("Excluir:", clientesProcessados[selectedId - 1]?.selectedIx);
             removeCli(vinculoId); // use o ID diretamente
           }
         }}

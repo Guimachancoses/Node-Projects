@@ -133,13 +133,55 @@ router.post("/", async (req, res) => {
   }
 });
 
-// Rota para filtrar clientes
+// Rota para filtrar clientes (com vínculo SalaoCliente)
 router.post("/filter", async (req, res) => {
   try {
-    const clientes = await Cliente.find(req.body.filters);
-    res.json({ error: false, clientes });
+    const { filters = {} } = req.body;
+    const { email, salaoId } = filters;
+
+    if (!email) {
+      return res.json({
+        error: true,
+        message: "Informe o e-mail para filtrar.",
+      });
+    }
+
+    // 1) Busca cliente por email (case-insensitive)
+    const cliente = await Cliente.findOne({
+      email: { $regex: new RegExp(`^${email}$`, "i") },
+    });
+
+    if (!cliente) {
+      return res.json({ error: false, clientes: [] });
+    }
+
+    // 2) Busca vínculo do cliente com salão
+    const queryVinculo = { clienteId: cliente._id };
+    if (salaoId) queryVinculo.salaoId = salaoId;
+
+    const vinculo = await SalaoCliente.findOne(queryVinculo)
+      .select("_id status dataCadastro salaoId clienteId")
+      .sort({ dataCadastro: -1 });
+
+    // Se não tiver vínculo no salão informado, retorna vazio
+    if (!vinculo) {
+      return res.json({ error: false, clientes: [] });
+    }
+
+    // 3) Retorno no mesmo padrão do colaborador
+    return res.json({
+      error: false,
+      clientes: [
+        {
+          ...cliente._doc,
+          vinculoId: vinculo._id,
+          vinculo: vinculo.status, // "A" | "I" | "E"
+          dataCadastro: vinculo.dataCadastro,
+        },
+      ],
+    });
   } catch (err) {
-    res.json({ error: true, message: err.message });
+    return res.json({ error: true, message: err.message });
   }
 });
 
