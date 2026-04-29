@@ -197,19 +197,24 @@ const Clientes = () => {
     //console.log("Criar novo cliente");
   };
 
-  const clientesProcessados = clientes.map((cliente, index, selectedIds) => {
+  const clientesProcessados = clientes.map((cliente, index) => {
     const telefone = cliente.telefone;
-    const selectedIx = cliente._id;
     let telefoneFormatado = "Telefone inválido";
+
     if (telefone && telefone.area && telefone.numero) {
-      const numero = telefone.numero ? String(telefone.numero) : "";
-      telefoneFormatado = `(${numero.substring(0, 2)}) ${numero.substring(
-        2,
-        7
-      )}-${numero.substring(7)}`;
+      const numero = String(telefone.numero || "");
+      telefoneFormatado = `(${numero.substring(0, 2)}) ${numero.substring(2, 7)}-${numero.substring(7)}`;
     }
-    selectedIds.includes(cliente.vinculoId);
-    return { ...cliente, telefoneFormatado, id: index + 1, selectedIds, selectedIx };
+
+    const chatbotStatus = cliente?.idChatBot ? "ChatBot" : "";
+
+    return {
+      ...cliente,
+      telefoneFormatado,
+      chatbotStatus,
+      id: index + 1,
+      selectedIx: cliente._id,
+    };
   });
 
   const columns = [
@@ -218,6 +223,7 @@ const Clientes = () => {
     { field: "sobrenome", headerName: "Sobrenome", width: 100 },
     { field: "email", headerName: "E-mail", width: 150 },
     { field: "telefoneFormatado", headerName: "Telefone", width: 150 },
+    { field: "chatbotStatus", headerName: "Whatsapp", width: 120 },
   ];
 
   const filtro = (
@@ -862,14 +868,26 @@ const Clientes = () => {
             size="large"
             sx={{
               mt: 3,
-              backgroundColor: behavior === "create" ? "#2e7d32" : "#1565c0", // verde e azul
+              backgroundColor: isReativar
+                ? "#d32f2f" // vermelho
+                : behavior === "create"
+                  ? "#2e7d32" // verde
+                  : "#1565c0", // azul
               "&:hover": {
                 mt: 3,
-                backgroundColor: behavior === "create" ? "#1b5e20" : "#0d47a1",
+                backgroundColor: isReativar
+                  ? "#b71c1c" // vermelho hover
+                  : behavior === "create"
+                    ? "#1b5e20"
+                    : "#0d47a1",
               },
             }}
           >
-            {behavior === "create" ? "Salvar" : "Salvar alterações"}
+            {behavior === "create"
+              ? "Salvar"
+              : cliente?.vinculo === "E"
+                ? "Reativar cadastro"
+                : "Salvar alterações"}
           </Button>
         </CustomDrawer>
       </div>

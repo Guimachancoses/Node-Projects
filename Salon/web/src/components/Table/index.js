@@ -44,8 +44,8 @@ const TableComponent = ({
   rows = [],
   columns = [],
   buttonLabel = "",
-  onButtonClick = () => {},
-  onRowClick = () => {},
+  onButtonClick = () => { },
+  onRowClick = () => { },
   height = 400,
   checkboxSelection = false,
   iconClass = "",
@@ -192,11 +192,13 @@ const TableComponent = ({
                       {col.field === "statusFormat" ? (
                         <Chip
                           label={row[col.field]}
-                          color={
-                            row[col.field] === "Ativo" ? "success" : "error"
-                          }
+                          color={row[col.field] === "Ativo" ? "success" : "error"}
                           size="small"
                         />
+                      ) : col.field === "chatbotStatus" ? (
+                        row[col.field] ? (
+                          <Chip label="ChatBot" color="success" size="small" />
+                        ) : null
                       ) : (
                         row[col.field]
                       )}
