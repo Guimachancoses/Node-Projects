@@ -547,6 +547,8 @@ const Colaboradores = () => {
     return false;
   }, [loading, form?.saving, form?.filtering, hasErrors, behavior, requiredFilled, hasChanges]);
 
+  const isReativar = behavior !== "create" && colaborador?.vinculo === "E";
+
   return (
     <div className="col">
       <TableComponent
@@ -995,6 +997,9 @@ const Colaboradores = () => {
                   >
                     <MenuItem value="A">Ativo</MenuItem>
                     <MenuItem value="I">Inativo</MenuItem>
+                    {colaborador?.vinculo === "E" &&
+                      <MenuItem value="E">Desativado</MenuItem>
+                    }
                   </Select>
                 </FormControl>
               </div>
@@ -1048,21 +1053,33 @@ const Colaboradores = () => {
             fullWidth
             variant="contained"
             onClick={handleClickSave}
-            disabled={isSaveDisabled}
+            disabled={isReativar ? false : isSaveDisabled}
             loading={loading}
             loadingPosition="start"
             startIcon={<SaveIcon />}
             size="large"
             sx={{
               mt: 3,
-              backgroundColor: behavior === "create" ? "#2e7d32" : "#1565c0", // verde e azul
+              backgroundColor: isReativar
+                ? "#d32f2f" // vermelho
+                : behavior === "create"
+                  ? "#2e7d32" // verde
+                  : "#1565c0", // azul
               "&:hover": {
                 mt: 3,
-                backgroundColor: behavior === "create" ? "#1b5e20" : "#0d47a1",
+                backgroundColor: isReativar
+                  ? "#b71c1c" // vermelho hover
+                  : behavior === "create"
+                    ? "#1b5e20"
+                    : "#0d47a1",
               },
             }}
           >
-            {behavior === "create" ? "Salvar" : "Salvar alterações"}
+            {behavior === "create"
+              ? "Salvar"
+              : colaborador?.vinculo === "E"
+                ? "Reativar cadastro"
+                : "Salvar alterações"}
           </Button>
         </CustomDrawer>
       </div>
