@@ -396,7 +396,7 @@ const Clientes = () => {
       originalRef.current = normalizeForCompare(cliente);
       loadedIdentityRef.current = identity;
     }
-  }, [components.drawer, behavior, cliente?._id, cliente?.vinculoId, normalizeForCompare]); // <- evita depender do objeto inteiro
+  }, [components.drawer, behavior, cliente, normalizeForCompare]);
 
   const hasErrors = Object.values(errors || {}).some(Boolean);
 
