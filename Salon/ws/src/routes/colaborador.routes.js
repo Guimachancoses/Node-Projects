@@ -160,7 +160,7 @@ router.delete("/vinculo/:id", async (req, res) => {
 router.post("/filter", async (req, res) => {
   try {
     const { filters = {} } = req.body;
-    const { email, status, salaoId } = filters;
+    const { email, salaoId } = filters;
 
     if (!email) {
       return res.json({
@@ -184,7 +184,6 @@ router.post("/filter", async (req, res) => {
     };
 
     if (salaoId) queryVinculo.salaoId = salaoId;
-    if (status) queryVinculo.status = status; // ex: "A"
 
     const vinculo = await SalaoColaborador.findOne(queryVinculo)
       .select("_id status dataCadastro salaoId colaboradorId")

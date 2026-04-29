@@ -289,7 +289,6 @@ const Colaboradores = () => {
       filterColaboradores({
         filters: {
           email: emailNormalizado,
-          status: "A",
           salaoId: process.env.REACT_APP_SALAO_ID,
         },
       })
