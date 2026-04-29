@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useMemo, useRef } from "react";
+import React, { useEffect, useState, useMemo, useRef, useCallback } from "react";
 
 import {
   IconButton,
@@ -45,6 +45,7 @@ import FilterListIcon from "@mui/icons-material/FilterList";
 import SaveIcon from "@mui/icons-material/Save";
 import SignpostIcon from "@mui/icons-material/Signpost";
 import AutorenewIcon from "@mui/icons-material/Autorenew";
+import ContentCutIcon from '@mui/icons-material/ContentCut';
 
 import { buscarEndereco } from "../../services/apiCep";
 
@@ -224,6 +225,8 @@ const Colaboradores = () => {
   };
 
   const handleNovoColaborador = () => {
+    originalRef.current = null;
+    loadedIdentityRef.current = "";
     dispatch(
       updateColaborador({
         behavior: "create",
@@ -250,6 +253,13 @@ const Colaboradores = () => {
     if (debounceEmailRef.current) clearTimeout(debounceEmailRef.current);
     setComponent("drawer", true);
     //console.log("Criar novo cliente");
+  };
+
+  const handleCloseDrawer = () => {
+    setErrors({});
+    originalRef.current = null;
+    loadedIdentityRef.current = "";
+    setComponent("drawer", false);
   };
 
   const debounceEmailRef = useRef(null);
@@ -434,6 +444,85 @@ const Colaboradores = () => {
     })
     .filter(Boolean);
 
+  const normalizeForCompare = useCallback((c = {}) => ({
+    nome: (c.nome || "").trim(),
+    sobrenome: (c.sobrenome || "").trim(),
+    email: (c.email || "").trim().toLowerCase(),
+    vinculo: c.vinculo || "A",
+    especialidades: (c.especialidades || []).map(String).sort(),
+    telefone: {
+      area: onlyDigits(c?.telefone?.area || ""),
+      numero: onlyDigits(c?.telefone?.numero || ""),
+    },
+    identificacao: {
+      tipoD: c?.identificacao?.tipoD || "",
+      numero: onlyDigits(c?.identificacao?.numero || ""),
+    },
+    endereco: {
+      cep: onlyDigits(c?.endereco?.cep || ""),
+      logradouro: (c?.endereco?.logradouro || "").trim(),
+      numero: String(c?.endereco?.numero ?? "").trim(),
+      bairro: (c?.endereco?.bairro || "").trim(),
+      cidade: { nome: (c?.endereco?.cidade?.nome || "").trim() },
+    },
+  }), []);
+
+  const originalRef = useRef(null);
+  const loadedIdentityRef = useRef("");
+  const colaboradorId = colaborador?._id || "";
+  const vinculoId = colaborador?.vinculoId || "";
+
+  useEffect(() => {
+    if (!components.drawer || behavior !== "update") return;
+
+    const identity = `${colaboradorId}-${vinculoId}`;
+    if (!identity) return;
+
+    if (loadedIdentityRef.current !== identity) {
+      originalRef.current = normalizeForCompare(colaborador);
+      loadedIdentityRef.current = identity;
+    }
+  }, [components.drawer, behavior, colaboradorId, vinculoId, colaborador, normalizeForCompare]);
+
+  const hasErrors = useMemo(
+    () => Object.values(errors || {}).some((v) => Boolean(v)),
+    [errors]
+  );
+
+  const requiredFilled = useMemo(() => {
+    const c = colaborador || {};
+    return Boolean(
+      (c.email || "").trim() &&
+      (c.nome || "").trim() &&
+      (c.sobrenome || "").trim() &&
+      onlyDigits(c?.telefone?.area || "").length === 2 &&
+      onlyDigits(c?.telefone?.numero || "").length === 9 &&
+      onlyDigits(c?.endereco?.cep || "").length === 8 &&
+      (c?.endereco?.logradouro || "").trim() &&
+      String(c?.endereco?.numero ?? "").trim() &&
+      (c?.endereco?.bairro || "").trim() &&
+      (c?.endereco?.cidade?.nome || "").trim() &&
+      (c?.identificacao?.tipoD || "").trim() &&
+      (c?.identificacao?.numero || "").trim()
+    );
+  }, [colaborador]);
+
+  const hasChanges = useMemo(() => {
+    if (behavior === "create") return true;
+    if (!originalRef.current) return false;
+
+    const now = normalizeForCompare(colaborador);
+    return JSON.stringify(now) !== JSON.stringify(originalRef.current);
+  }, [behavior, colaborador, normalizeForCompare]);
+
+  const isSaveDisabled = useMemo(() => {
+    if (loading || form?.saving || form?.filtering) return true;
+    if (hasErrors) return true;
+    if (!requiredFilled) return true;
+    if (behavior === "update" && !hasChanges) return true;
+    return false;
+  }, [loading, form?.saving, form?.filtering, hasErrors, requiredFilled, behavior, hasChanges]);
+
   return (
     <div className="col">
       <TableComponent
@@ -484,10 +573,7 @@ const Colaboradores = () => {
           show={components.drawer}
           anchor="right"
           isOpen={components.drawer}
-          onClose={() => {
-            setComponent("drawer", false);
-            setErrors({});
-          }}
+          onClose={handleCloseDrawer}
         >
           <div className="col-12">
             <h3>
@@ -944,6 +1030,11 @@ const Colaboradores = () => {
                     label="Especialidades"
                     multiple
                     disabled={form.disabled}
+                    startAdornment={
+                      <InputAdornment position="start">
+                        <ContentCutIcon />
+                      </InputAdornment>
+                    }
                     value={especialidadesValue}
                     onChange={(e) =>
                       setColaborador("especialidades", (e.target.value || []).map((v) => String(v)))
@@ -982,6 +1073,7 @@ const Colaboradores = () => {
             fullWidth
             variant="contained"
             onClick={handleClickSave}
+            disabled={isSaveDisabled}
             loading={loading}
             loadingPosition="start"
             startIcon={<SaveIcon />}
