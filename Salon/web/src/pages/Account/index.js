@@ -1,4 +1,4 @@
-import { useMemo, useState, useEffect, useCallback } from "react";
+import { useMemo, useState, useEffect, useCallback, useRef } from "react";
 import { useAuth, useUser } from "@clerk/clerk-react";
 import { useLocation } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
@@ -27,13 +27,33 @@ import {
   Checkbox,
   ListItemText
 } from "@mui/material";
+// icons
 import PhotoCamera from "@mui/icons-material/PhotoCamera";
 import LocalPhoneIcon from "@mui/icons-material/LocalPhone";
 import PhoneAndroidIcon from "@mui/icons-material/PhoneAndroid";
 import RecentActorsIcon from "@mui/icons-material/RecentActors";
 import SignpostIcon from "@mui/icons-material/Signpost";
+import PersonOutlineIcon from "@mui/icons-material/PersonOutline";
+import ContentCutIcon from '@mui/icons-material/ContentCut';
+
 
 import { updateMyAccountRequest, loadMyAccountRequest, allServicos } from "../../store/modules/colaborador/actions";
+
+import {
+  isValidName,
+  isValidSobreName,
+  isValidPhone9,
+  isValidCep,
+  isValidCpf,
+  isValidCnpj,
+  maskArea,
+  maskPhone9,
+  maskCep,
+  maskCpf,
+  maskCnpj,
+  onlyDigits,
+} from "../../utils/formValidators";
+import { buscarEndereco } from "../../services/apiCep";
 
 const API_BASE = "https://salon.fabrisportalhub.com.br";
 
@@ -41,6 +61,12 @@ export default function Account() {
   const dispatch = useDispatch();
   const { user: userRaw, form, servicos } = useSelector((state) => state.colaborador);
   const userStore = userRaw?.user ?? userRaw;
+
+  const [errors, setErrors] = useState({});
+  const [cepLoading, setCepLoading] = useState(false);
+  const originalRef = useRef(null);
+  const cepRequestIdRef = useRef(0);
+  const ultimoCepBuscadoRef = useRef("");
 
   useEffect(() => {
     dispatch(allServicos());
@@ -87,6 +113,37 @@ export default function Account() {
     especialidades: [],
   });
 
+  // hidratar
+  useEffect(() => {
+    if (!userStore || (!userStore._id && !userStore.vinculoId)) return;
+
+    const hydrated = {
+      nome: userStore?.nome ?? "",
+      sobrenome: userStore?.sobrenome ?? "",
+      email: userStore?.email ?? (user?.emailAddresses?.[0]?.emailAddress ?? ""),
+      sexo: userStore?.sexo ?? "",
+      telefone: {
+        area: userStore?.telefone?.area ?? "",
+        numero: userStore?.telefone?.numero ?? "",
+      },
+      identificacao: {
+        tipoD: userStore?.identificacao?.tipoD ?? "",
+        numero: userStore?.identificacao?.numero ?? "",
+      },
+      endereco: {
+        cep: userStore?.endereco?.cep ?? "",
+        logradouro: userStore?.endereco?.logradouro ?? "",
+        numero: userStore?.endereco?.numero ?? "",
+        bairro: userStore?.endereco?.bairro ?? "",
+        cidade: { nome: userStore?.endereco?.cidade?.nome ?? "" },
+      },
+      especialidades: (userStore?.especialidades || []).map(String),
+    };
+
+    setAccountForm(hydrated);
+    originalRef.current = hydrated;
+  }, [userStore, user]);
+
   useEffect(() => {
     if (!isLoaded || !isSignedIn) return;
     if (!email) return;
@@ -94,6 +151,66 @@ export default function Account() {
 
     dispatch(loadMyAccountRequest(email));
   }, [dispatch, isLoaded, isSignedIn, email, userStore?._id, userStore?.vinculoId]);
+
+  const handleAreaChange = (e) => {
+    setTelefone("area", onlyDigits(e.target.value).slice(0, 2));
+    setErrors((p) => ({ ...p, area: "" }));
+  };
+
+  const handlePhoneChange = (e) => {
+    setTelefone("numero", onlyDigits(e.target.value).slice(0, 9));
+    setErrors((p) => ({ ...p, telefone: "" }));
+  };
+
+  const handleDocChange = (e) => {
+    setIdentificacao("numero", onlyDigits(e.target.value));
+    setErrors((p) => ({ ...p, documento: "" }));
+  };
+
+  const handleCepChange = (e) => {
+    const cep = onlyDigits(e.target.value).slice(0, 8);
+    setEndereco("cep", cep);
+    setErrors((p) => ({ ...p, cep: "" }));
+    if (cep.length < 8) ultimoCepBuscadoRef.current = "";
+  };
+
+  const handleCepBlur = async () => {
+    const cep = onlyDigits(accountForm?.endereco?.cep || "");
+    if (!cep) return;
+
+    if (!isValidCep(cep)) {
+      setErrors((p) => ({ ...p, cep: "CEP deve conter 8 dígitos" }));
+      return;
+    }
+
+    if (ultimoCepBuscadoRef.current === cep) return;
+    ultimoCepBuscadoRef.current = cep;
+
+    const reqId = ++cepRequestIdRef.current;
+    setCepLoading(true);
+
+    const endereco = await buscarEndereco(cep);
+
+    if (reqId !== cepRequestIdRef.current) return;
+    setCepLoading(false);
+
+    if (!endereco) {
+      setErrors((p) => ({ ...p, cep: "CEP não encontrado" }));
+      return;
+    }
+
+    setErrors((p) => ({ ...p, cep: "" }));
+    setAccountForm((prev) => ({
+      ...prev,
+      endereco: {
+        ...prev.endereco,
+        cep,
+        logradouro: endereco.logradouro || "",
+        bairro: endereco.bairro || "",
+        cidade: { ...prev.endereco.cidade, nome: endereco.localidade || "" },
+      },
+    }));
+  };
 
   const checkGoogleStatus = useCallback(async () => {
     if (!userId && !email) return;
@@ -426,6 +543,54 @@ export default function Account() {
     })
     .filter(Boolean);
 
+  const hasErrors = useMemo(
+    () => Object.values(errors || {}).some(Boolean),
+    [errors]
+  );
+
+  const requiredFilled = useMemo(() => Boolean(
+    accountForm?.nome?.trim() &&
+    accountForm?.sobrenome?.trim() &&
+    onlyDigits(accountForm?.telefone?.area || "").length === 2 &&
+    onlyDigits(accountForm?.telefone?.numero || "").length === 9 &&
+    onlyDigits(accountForm?.endereco?.cep || "").length === 8 &&
+    accountForm?.endereco?.logradouro?.trim() &&
+    String(accountForm?.endereco?.numero ?? "").trim() &&
+    accountForm?.endereco?.bairro?.trim() &&
+    accountForm?.endereco?.cidade?.nome?.trim() &&
+    accountForm?.identificacao?.tipoD?.trim() &&
+    accountForm?.identificacao?.numero?.trim()
+  ), [accountForm]);
+
+  const normalize = (f = {}) => ({
+    ...f,
+    nome: (f.nome || "").trim(),
+    sobrenome: (f.sobrenome || "").trim(),
+    telefone: {
+      area: onlyDigits(f?.telefone?.area || ""),
+      numero: onlyDigits(f?.telefone?.numero || ""),
+    },
+    identificacao: {
+      tipoD: f?.identificacao?.tipoD || "",
+      numero: onlyDigits(f?.identificacao?.numero || ""),
+    },
+    endereco: {
+      cep: onlyDigits(f?.endereco?.cep || ""),
+      logradouro: (f?.endereco?.logradouro || "").trim(),
+      numero: String(f?.endereco?.numero ?? "").trim(),
+      bairro: (f?.endereco?.bairro || "").trim(),
+      cidade: { nome: (f?.endereco?.cidade?.nome || "").trim() },
+    },
+    especialidades: (f?.especialidades || []).map(String).sort(),
+  });
+
+  const hasChanges = useMemo(() => {
+    if (!originalRef.current) return false;
+    return JSON.stringify(normalize(accountForm)) !== JSON.stringify(normalize(originalRef.current));
+  }, [accountForm]);
+
+  const disableSave = form?.saving || hasErrors || !requiredFilled || !hasChanges;
+
   return (
     <Container component="main" maxWidth="lg" sx={{ py: 4 }}>
       {/* CARD PRINCIPAL - CONTA */}
@@ -503,7 +668,7 @@ export default function Account() {
           </Box>
 
           {/* Espaço à direita no desktop para não colidir com avatar */}
-          <Box sx={{ pr: { xs: 0, md: 22 } }}>
+          <Box sx={{ pr: { xs: 0, md: 34 } }}>
             <Typography variant="h6" sx={{ mb: 2 }}>
               Minha Conta
             </Typography>
@@ -514,8 +679,27 @@ export default function Account() {
                   fullWidth
                   label="Nome"
                   size="small"
-                  value={accountForm.nome}
+                  placeholder="Digite seu nome"
+                  variant="outlined"
+                  value={accountForm?.nome}
                   onChange={(e) => setCampo("nome", e.target.value)}
+                  onBlur={() =>
+                    setErrors((p) => ({ ...p, nome: isValidName(accountForm.nome) ? "" : "Nome inválido" }))
+                  }
+                  error={!!errors.nome}
+                  helperText={errors.nome}
+                  InputProps={{
+                    startAdornment: (
+                      <InputAdornment position="start">
+                        <PersonOutlineIcon />
+                      </InputAdornment>
+                    ),
+                  }}
+                  inputProps={{
+                    style: {
+                      fontSize: "0.8rem", // Altere esse valor conforme quiser
+                    },
+                  }}
                 />
               </Grid>
 
@@ -526,6 +710,23 @@ export default function Account() {
                   size="small"
                   value={accountForm.sobrenome}
                   onChange={(e) => setCampo("sobrenome", e.target.value)}
+                  onBlur={() =>
+                    setErrors((p) => ({ ...p, sobrenome: isValidSobreName(accountForm.sobrenome) ? "" : "Sobrenome inválido" }))
+                  }
+                  error={!!errors.sobrenome}
+                  helperText={errors.sobrenome}
+                  InputProps={{
+                    startAdornment: (
+                      <InputAdornment position="start">
+                        <PersonOutlineIcon />
+                      </InputAdornment>
+                    ),
+                  }}
+                  inputProps={{
+                    style: {
+                      fontSize: "0.8rem", // Altere esse valor conforme quiser
+                    },
+                  }}
                 />
               </Grid>
 
@@ -533,14 +734,21 @@ export default function Account() {
                 <TextField
                   label="Área"
                   size="small"
-                  value={accountForm.telefone.area}
-                  onChange={(e) => setTelefone("area", e.target.value)}
+                  value={maskArea(accountForm.telefone.area || "")}
+                  onChange={handleAreaChange}
+                  error={!!errors.area}
+                  helperText={errors.area}
                   InputProps={{
                     startAdornment: (
                       <InputAdornment position="start">
                         <LocalPhoneIcon />
                       </InputAdornment>
                     ),
+                  }}
+                  inputProps={{
+                    style: {
+                      fontSize: "0.8rem", // Altere esse valor conforme quiser
+                    },
                   }}
                 />
               </Grid>
@@ -550,14 +758,24 @@ export default function Account() {
                   fullWidth
                   label="Telefone"
                   size="small"
-                  value={accountForm.telefone.numero}
-                  onChange={(e) => setTelefone("numero", e.target.value)}
+                  value={maskPhone9(accountForm.telefone.numero || "")}
+                  onChange={handlePhoneChange}
+                  onBlur={() =>
+                    setErrors((p) => ({ ...p, telefone: isValidPhone9(accountForm.telefone.numero) ? "" : "Telefone deve ter 9 dígitos" }))
+                  }
+                  error={!!errors.telefone}
+                  helperText={errors.telefone}
                   InputProps={{
                     startAdornment: (
                       <InputAdornment position="start">
                         <PhoneAndroidIcon />
                       </InputAdornment>
                     ),
+                  }}
+                  inputProps={{
+                    style: {
+                      fontSize: "0.8rem", // Altere esse valor conforme quiser
+                    },
                   }}
                 />
               </Grid>
@@ -569,6 +787,7 @@ export default function Account() {
                     value={accountForm.sexo || ""}
                     label="Sexo"
                     onChange={(e) => setCampo("sexo", e.target.value)}
+                    sx={{ fontSize: "0.8rem" }} // Aplica no valor selecionado
                   >
                     <MenuItem value="M">Masculino</MenuItem>
                     <MenuItem value="F">Feminino</MenuItem>
@@ -584,6 +803,14 @@ export default function Account() {
                     value={accountForm.identificacao.tipoD || ""}
                     label="Tipo doc"
                     onChange={(e) => setIdentificacao("tipoD", e.target.value)}
+                    sx={{ fontSize: "0.8rem" }} // Aplica no valor selecionado
+                    MenuProps={{
+                      PaperProps: {
+                        sx: {
+                          fontSize: "0.8rem", // Aplica no dropdown
+                        },
+                      },
+                    }}
                   >
                     <MenuItem value="CPF">CPF</MenuItem>
                     <MenuItem value="CNPJ">CNPJ</MenuItem>
@@ -596,14 +823,31 @@ export default function Account() {
                   fullWidth
                   label="Documento"
                   size="small"
-                  value={accountForm.identificacao.numero}
-                  onChange={(e) => setIdentificacao("numero", e.target.value)}
+                  value={
+                    accountForm.identificacao.tipoD === "CNPJ"
+                      ? maskCnpj(accountForm.identificacao.numero || "")
+                      : maskCpf(accountForm.identificacao.numero || "")
+                  }
+                  onChange={handleDocChange}
+                  onBlur={() => {
+                    const tipo = accountForm.identificacao.tipoD;
+                    const numero = accountForm.identificacao.numero || "";
+                    const ok = tipo === "CNPJ" ? isValidCnpj(numero) : isValidCpf(numero);
+                    setErrors((p) => ({ ...p, documento: ok ? "" : `${tipo || "Documento"} inválido` }));
+                  }}
+                  error={!!errors.documento}
+                  helperText={errors.documento}
                   InputProps={{
                     startAdornment: (
                       <InputAdornment position="start">
                         <RecentActorsIcon />
                       </InputAdornment>
                     ),
+                  }}
+                  inputProps={{
+                    style: {
+                      fontSize: "0.8rem", // Altere esse valor conforme quiser
+                    },
                   }}
                 />
               </Grid>
@@ -613,14 +857,23 @@ export default function Account() {
                   fullWidth
                   label="CEP"
                   size="small"
-                  value={accountForm.endereco.cep}
-                  onChange={(e) => setEndereco("cep", e.target.value)}
+                  value={maskCep(accountForm.endereco.cep || "")}
+                  onChange={handleCepChange}
+                  onBlur={handleCepBlur}
+                  error={!!errors.cep}
+                  helperText={errors.cep || (cepLoading ? "Consultando CEP..." : "")}
                   InputProps={{
                     startAdornment: (
                       <InputAdornment position="start">
                         <SignpostIcon />
                       </InputAdornment>
                     ),
+                  }}
+                  inputProps={{
+                    style: {
+                      fontSize: "0.8rem", // Altere esse valor conforme quiser
+                    },
+                    maxLength: 9, // Adicionando o maxLength para limitar a entrada
                   }}
                 />
               </Grid>
@@ -632,6 +885,11 @@ export default function Account() {
                   label="Rua"
                   value={accountForm.endereco.logradouro}
                   onChange={(e) => setEndereco("logradouro", e.target.value)}
+                  inputProps={{
+                    style: {
+                      fontSize: "0.8rem", // Altere esse valor conforme quiser
+                    },
+                  }}
                 />
               </Grid>
 
@@ -642,6 +900,11 @@ export default function Account() {
                   label="Número"
                   value={accountForm.endereco.numero}
                   onChange={(e) => setEndereco("numero", e.target.value)}
+                  inputProps={{
+                    style: {
+                      fontSize: "0.8rem", // Altere esse valor conforme quiser
+                    },
+                  }}
                 />
               </Grid>
 
@@ -652,6 +915,11 @@ export default function Account() {
                   size="small"
                   value={accountForm.endereco.bairro}
                   onChange={(e) => setEndereco("bairro", e.target.value)}
+                  inputProps={{
+                    style: {
+                      fontSize: "0.8rem", // Altere esse valor conforme quiser
+                    },
+                  }}
                 />
               </Grid>
 
@@ -662,6 +930,11 @@ export default function Account() {
                   label="Cidade"
                   value={accountForm.endereco.cidade.nome}
                   onChange={(e) => setCidade(e.target.value)}
+                  inputProps={{
+                    style: {
+                      fontSize: "0.8rem", // Altere esse valor conforme quiser
+                    },
+                  }}
                 />
               </Grid>
               <Grid item xs={12} md={4} sx={{
@@ -677,6 +950,11 @@ export default function Account() {
                     labelId="especialidades-account-label"
                     multiple
                     label="Especialidades"
+                    startAdornment={
+                      <InputAdornment position="start">
+                        <ContentCutIcon />
+                      </InputAdornment>
+                    }
                     value={especialidadesValue}
                     onChange={(e) =>
                       setAccountForm((prev) => ({
@@ -690,8 +968,13 @@ export default function Account() {
                         .map((s) => s.label || s.nome)
                         .join(", ")
                     }
+                    sx={{ fontSize: "0.8rem" }} // Aplica no valor selecionado
                     MenuProps={{
-                      PaperProps: { sx: { maxHeight: 320 } },
+                      PaperProps: {
+                        sx: {
+                          fontSize: "0.8rem", // Aplica no dropdown
+                        },
+                      },
                     }}
                   >
                     {(servicos || []).map((s) => {
@@ -712,8 +995,7 @@ export default function Account() {
               <Button
                 variant="contained"
                 onClick={handleSalvarConta}
-                disabled={form?.saving}
-                sx={{ minWidth: 220, borderRadius: 2 }}
+                disabled={disableSave}
               >
                 {form?.saving ? <CircularProgress size={20} /> : "Salvar dados da conta"}
               </Button>
@@ -736,7 +1018,7 @@ export default function Account() {
           Integrações
         </Typography>
         <Typography variant="body2" sx={{ mb: 2, opacity: 0.85 }}>
-          Conecte Google Agenda/Drive e WhatsApp.
+          Conecte sua agenda e drive do Google para acompanhar os agendamentos, e o WhatsApp para usar o chatbot.
         </Typography>
 
         {waFriendly && (waStatus !== "connected" || showWaConnectedMsg) && (

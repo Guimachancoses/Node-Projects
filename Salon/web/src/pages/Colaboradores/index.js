@@ -81,6 +81,7 @@ const Colaboradores = () => {
     useSelector((state) => state.colaborador);
 
   const { user } = useUser();
+
   const [errors, setErrors] = useState({});
   const [cepLoading, setCepLoading] = useState(false);
   const ultimoCepBuscadoRef = useRef("");
