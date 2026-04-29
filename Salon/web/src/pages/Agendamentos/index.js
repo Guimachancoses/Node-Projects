@@ -257,8 +257,21 @@ const Agendamentos = () => {
 
       <div className="d-flex justify-content-between align-items-center mb-4">
         <h2 className="m-0" style={{ color: "white" }}>Agendamentos</h2>
-        <Button variant="contained" onClick={handleNovoAgendamento}>
-          + Agendamento
+        <Button
+          variant="contained"
+          size="medium"
+          onClick={handleNovoAgendamento}
+          startIcon={<span className="mdi mdi-plus" />}
+          sx={{
+            textTransform: "none",
+            minHeight: 36,      // altura padrão visual do buttonLabel
+            py: 0,              // padding horizontal
+            fontSize: "0.875rem",
+            fontWeight: 500,
+            lineHeight: 1.75,
+          }}
+        >
+          Agendamento
         </Button>
       </div>
 

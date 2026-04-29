@@ -95,6 +95,14 @@ const TableComponent = ({
             size="medium"
             onClick={onButtonClick}
             startIcon={iconClass ? <span className={iconClass} /> : null}
+            sx={{
+              textTransform: "none",
+              minHeight: 36,
+              py: 0,
+              fontSize: "0.875rem",
+              fontWeight: 500,
+              lineHeight: 1.75,
+            }}
           >
             {buttonLabel}
           </Button>

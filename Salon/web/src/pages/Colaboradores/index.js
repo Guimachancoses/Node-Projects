@@ -263,6 +263,12 @@ const Colaboradores = () => {
     setComponent("drawer", false);
   };
 
+  useEffect(() => {
+    if (components.drawer && behavior === "update") {
+      setErrors({});
+    }
+  }, [components.drawer, behavior]);
+
   const debounceEmailRef = useRef(null);
   const ultimoEmailVerificadoRef = useRef("");
 
@@ -342,21 +348,32 @@ const Colaboradores = () => {
     });
   }, [colaboradores, loggedEmail, loggedVinculoId, loggedColaboradorId]);
 
+
+  console.log("colaboradores", colaboradores)
+
   const colaboradoresProcessados = colaboradoresFiltrados.map((colaborador, index) => {
     const telefone = colaborador.telefone;
-    const vinculoIx = colaborador.vinculoId;
-
     let telefoneFormatado = "Telefone inválido";
+
     if (telefone && telefone.area && telefone.numero) {
-      const numero = String(telefone.numero || "");
+      const numero = telefone.numero ? String(telefone.numero) : "";
       telefoneFormatado = `(${numero.substring(0, 2)}) ${numero.substring(2, 7)}-${numero.substring(7)}`;
     }
+
+    // vinculo pode vir string ("A"/"I") ou objeto
+    const statusRaw =
+      typeof colaborador?.vinculo === "string"
+        ? colaborador.vinculo
+        : colaborador?.vinculo?.status || colaborador?.status || "A";
+
+    const statusFormat = String(statusRaw).toUpperCase() === "A" ? "Ativo" : "Inativo";
 
     return {
       ...colaborador,
       telefoneFormatado,
+      statusFormat,
       id: index + 1,
-      vinculoIx,
+      selectedIx: colaborador._id,
     };
   });
 
@@ -366,6 +383,7 @@ const Colaboradores = () => {
     { field: "sobrenome", headerName: "Sobrenome", width: 100 },
     { field: "email", headerName: "E-mail", width: 150 },
     { field: "telefoneFormatado", headerName: "Telefone", width: 150 },
+    { field: "statusFormat", headerName: "Status", width: 120 },
   ];
 
   const filtro = (
@@ -519,10 +537,16 @@ const Colaboradores = () => {
   const isSaveDisabled = useMemo(() => {
     if (loading || form?.saving || form?.filtering) return true;
     if (hasErrors) return true;
-    if (!requiredFilled) return true;
-    if (behavior === "update" && !hasChanges) return true;
+
+    if (behavior === "create") {
+      if (!requiredFilled) return true;
+      return false;
+    }
+
+    // update
+    if (!hasChanges) return true;
     return false;
-  }, [loading, form?.saving, form?.filtering, hasErrors, requiredFilled, behavior, hasChanges]);
+  }, [loading, form?.saving, form?.filtering, hasErrors, behavior, requiredFilled, hasChanges]);
 
   return (
     <div className="col">
@@ -680,21 +704,8 @@ const Colaboradores = () => {
                   placeholder="(19)"
                   onChange={handleAreaChange}
                   value={maskArea(colaborador?.telefone?.area || "")}
-                  // onChange={(e) => setTelefoneField("area", e.target.value)}
-                  // onBlur={() =>
-                  //   setErrors((p) => ({
-                  //     ...p,
-                  //     area: isValidArea(colaborador?.telefone?.area) ? "" : "DDD deve ter 2 dígitos",
-                  //   }))
-                  // }
                   error={!!errors.area}
                   helperText={errors.area}
-                  // onChange={(e) =>
-                  //   setColaborador("telefone", {
-                  //     ...colaborador.telefone,
-                  //     area: e.target.value,
-                  //   })
-                  // }
                   disabled={form.disabled}
                   InputProps={{
                     startAdornment: (
@@ -727,12 +738,6 @@ const Colaboradores = () => {
                   }
                   error={!!errors.telefone}
                   helperText={errors.telefone}
-                  // onChange={(e) =>
-                  //   setColaborador("telefone", {
-                  //     ...colaborador.telefone,
-                  //     numero: e.target.value,
-                  //   })
-                  // }
                   disabled={form.disabled}
                   InputProps={{
                     startAdornment: (
@@ -755,30 +760,6 @@ const Colaboradores = () => {
                   fullWidth
                   variant="outlined"
                   placeholder="Código postal"
-                  // onChange={async (e) => {
-                  //   const novoCep = e.target.value;
-                  //   setColaborador("endereco", {
-                  //     ...colaborador.endereco,
-                  //     cep: novoCep,
-                  //   });
-
-                  //   // Verifique se o comportamento é 'create' antes de buscar o endereço
-                  //   if (novoCep.length === 8) {
-                  //     const endereco = await buscarEndereco(novoCep);
-                  //     if (endereco) {
-                  //       setColaborador("endereco", {
-                  //         ...colaborador.endereco,
-                  //         cep: novoCep,
-                  //         logradouro: endereco.logradouro || "",
-                  //         bairro: endereco.bairro || "",
-                  //         cidade: {
-                  //           nome: endereco.localidade || "",
-                  //         },
-                  //       });
-                  //     }
-                  //     console.log(endereco);
-                  //   }
-                  // }}
                   value={maskCep(colaborador?.endereco?.cep || "")}
                   onChange={handleCepChange}
                   onBlur={handleCepBlur}
@@ -976,12 +957,6 @@ const Colaboradores = () => {
                   }}
                   error={!!errors.documento}
                   helperText={errors.documento}
-                  // onChange={(e) =>
-                  //   setColaborador("identificacao", {
-                  //     ...colaborador.identificacao,
-                  //     numero: e.target.value,
-                  //   })
-                  // }
                   disabled={form.disabled}
                   InputProps={{
                     startAdornment: (

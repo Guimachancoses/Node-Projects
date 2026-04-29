@@ -180,8 +180,7 @@ router.post("/filter", async (req, res) => {
 
     // busca vínculo do colaborador com salão (se salaoId vier, melhor)
     const queryVinculo = {
-      colaboradorId: colaborador._id,
-      status: { $ne: "E" },
+      colaboradorId: colaborador._id
     };
 
     if (salaoId) queryVinculo.salaoId = salaoId;
