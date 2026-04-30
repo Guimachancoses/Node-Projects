@@ -30,7 +30,7 @@ import {
   updateForm,
 } from "@/src/store/modules/salao/actions";
 import {
-  filterClinte,
+    filterClinte,
   getCliente,
   pushToken,
 } from "@/src/store/modules/cliente/action";
@@ -50,7 +50,7 @@ export default function Home() {
     (state: any) => state.salao
   );
   const { cliente } = useSelector((state: any) => state.cliente);
-
+  const [showConfirmModal, setShowConfirmModal] = useState(false);
   const [menuVisible, setMenuVisible] = useState(false);
   const slideAnim = useRef(new Animated.Value(-MENU_WIDTH)).current;
   const { user } = useClerk();
@@ -58,22 +58,66 @@ export default function Home() {
   const [loading] = useState(false);
   const listaBase = tipoServicos.length > 0 ? tipoServicos : [];
   const { notification, error, clearNotification } = useNotification();
+  const [loadingInitial, setLoadingInitial] = useState(true);
+  const clienteId = cliente?.clienteId ?? cliente?._id;
+  const clerkEmail = user?.primaryEmailAddress?.emailAddress;
+
+  useEffect(() => {
+    // se já tem clienteId, não precisa filtrar de novo
+    if (clienteId) return;
+
+    // só chama quando já tiver email do Clerk
+    if (!clerkEmail) return;
+
+    dispatch(
+      filterClinte({
+        email: clerkEmail,
+        shouldRedirect: false,
+      })
+    );
+  }, [clienteId, clerkEmail, dispatch]);
+
+  const carregarDados = React.useCallback(() => {
+    dispatch(getSalao());
+    dispatch(allServicos());
+    dispatch(getCliente());
+  }, [dispatch]);
+
+  useEffect(() => {
+    carregarDados();
+    const t = setTimeout(() => setLoadingInitial(false), 1200); // ajuste fino
+    return () => clearTimeout(t);
+  }, [carregarDados]);
 
   const onRefresh = async () => {
     setRefreshing(true);
-    try {
-      dispatch(getSalao());
-      dispatch(allServicos());
-      dispatch(getCliente());
-      dispatch(filterClinte());
-      dispatch(updateAgendamento({ clienteId: cliente?._id }));
-      dispatch(updateForm({ modalAgendamento: false, buttonCard: false }));
-    } catch (err) {
-      console.error("Erro ao atualizar dados:", err);
-    } finally {
-      setRefreshing(false);
-    }
+    carregarDados();
+    setTimeout(() => setRefreshing(false), 1000);
   };
+
+  useEffect(() => {
+    const clienteId = cliente?.clienteId ?? cliente?._id;
+    if (!clienteId) return;
+
+    dispatch(updateAgendamento({ clienteId }));
+
+    (async () => {
+      try {
+        const token = await registerForPushNotificationsAsync();
+        if (token) dispatch(pushToken(token));
+      } catch (err: any) {
+        const msg = String(err?.message || err);
+
+        // timeout/503: só avisa e segue app normal
+        if (msg.includes("503") || msg.toLowerCase().includes("timeout")) {
+          console.warn("Push token indisponível no momento, tentando depois...");
+          return;
+        }
+
+        console.warn("Erro ao registrar push token:", err);
+      }
+    })();
+  }, [cliente?.clienteId, cliente?._id, dispatch]);
 
   useEffect(() => {
     Animated.timing(slideAnim, {
@@ -83,11 +127,6 @@ export default function Home() {
       useNativeDriver: false,
     }).start();
   }, [menuVisible]);
-
-  useEffect(() => {
-    dispatch(getCliente());
-    dispatch(updateAgendamento({ clienteId: cliente?._id }));
-  }, []);
 
   const panResponder = useRef(
     PanResponder.create({
@@ -115,10 +154,10 @@ export default function Home() {
   const finalServicos =
     form?.inputFiltro?.length > 0
       ? listaBase.filter((busque: any) => {
-          const titulo = busque?.titulo?.toLowerCase().trim();
-          const arrSearch = form?.inputFiltro?.toLowerCase().trim().split(" ");
-          return arrSearch.every((palavra: any) => titulo.search(palavra) !== -1);
-        })
+        const titulo = busque?.titulo?.toLowerCase().trim();
+        const arrSearch = form?.inputFiltro?.toLowerCase().trim().split(" ");
+        return arrSearch.every((palavra: any) => titulo.search(palavra) !== -1);
+      })
       : listaBase;
 
   useEffect(() => {
@@ -127,18 +166,13 @@ export default function Home() {
     }
   }, [error]);
 
-  useEffect(() => {
-    async function registerToken() {
-      try {
-        const token = await registerForPushNotificationsAsync();
-        dispatch(pushToken(token));
-      } catch (err) {
-        console.warn("Erro ao registrar push token:", err);
-      }
-    }
-
-    registerToken();
-  }, []);
+  if (loadingInitial) {
+    return (
+      <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
+        <ActivityIndicator size="large" color={theme.colors.primary} />
+      </View>
+    );
+  }
 
   return (
     <>
@@ -416,6 +450,45 @@ export default function Home() {
           </View>
         </Modal>
       </Portal>
+      <Modal visible={showConfirmModal} transparent animationType="fade">
+        <View style={{ flex: 1, backgroundColor: "rgba(0,0,0,0.4)", justifyContent: "center", alignItems: "center" }}>
+          <View style={{ backgroundColor: "white", padding: 24, borderRadius: 16, width: "85%" }}>
+            <Text bold color="primary" align="center" style={{ fontSize: 20 }}>
+              Confirme seu agendamento
+            </Text>
+
+            <Text align="center" style={{ color: "#666", marginTop: 8 }}>
+              Toque em confirmar para validar sua presença.
+            </Text>
+
+            <TouchableWithoutFeedback
+              onPress={() => {
+                const data = notification?.request?.content?.data as any;
+                clearNotification();
+
+                router.push({
+                  pathname: "/(agendamentos)/agendamentos",
+                  params: {
+                    fromPush: "1",
+                    action: data?.action ?? "confirmar_agendamento",
+                    agendamentoId: data?.agendamentoId ?? "",
+                  },
+                });
+              }}
+            >
+              <View style={{ backgroundColor: "#0A6475", borderRadius: 8, paddingVertical: 12, marginTop: 18 }}>
+                <Text bold color="white" align="center">Confirmar</Text>
+              </View>
+            </TouchableWithoutFeedback>
+
+            <TouchableWithoutFeedback onPress={() => setShowConfirmModal(false)}>
+              <Text align="center" color="primary" style={{ marginTop: 10, textDecorationLine: "underline" }}>
+                Fechar
+              </Text>
+            </TouchableWithoutFeedback>
+          </View>
+        </View>
+      </Modal>
     </>
   );
 }

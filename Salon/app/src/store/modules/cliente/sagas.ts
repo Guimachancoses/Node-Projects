@@ -8,22 +8,26 @@ import Constants from "expo-constants";
 
 const SALAO_ID = Constants.expoConfig?.extra?.EXPO_SALAO_ID;
 
-export function* filterCliente() {
+export function* filterCliente({ email, shouldRedirect = true }: any) {
   try {
     const { cliente } = yield select((state: any) => state.cliente);
+    const emailToUse = email ?? cliente?.email;
 
-    const { data: res } = yield call(api.post, `/cliente/filter`, {
-      filters: {
-        email: cliente.email,
-      },
-    });
-
-    if (res.error) {
+    if (!emailToUse) {
       Toast.show({
         type: "error",
         text1: "Erro!",
-        text2: res.message,
+        text2: "Email não informado.",
       });
+      return false;
+    }
+
+    const { data: res } = yield call(api.post, `/cliente/filter`, {
+      filters: { email: emailToUse },
+    });
+
+    if (res.error) {
+      Toast.show({ type: "error", text1: "Erro!", text2: res.message });
       return false;
     }
 
@@ -31,17 +35,14 @@ export function* filterCliente() {
       const clienteDb = res.clientes[0];
       yield put(updateCliente(clienteDb));
       yield put(updateCliente({ clienteId: clienteDb._id }));
-      router.replace("/(home)/home");
+
+      if (shouldRedirect) router.replace("/(home)/home");
     } else {
-      router.replace("/completRg");
+      if (shouldRedirect) router.replace("/completRg");
     }
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
-    Toast.show({
-      type: "error",
-      text1: "Erro!",
-      text2: message,
-    });
+    Toast.show({ type: "error", text1: "Erro!", text2: message });
   }
 }
 
@@ -75,35 +76,30 @@ export function* addCliente() {
   }
 }
 
-export function* getCliente() {
+export function* getCliente({ email }: any = {}) {
   try {
     const { cliente } = yield select((state: any) => state.cliente);
+    const emailToUse = email ?? cliente?.email;
+
+    if (!emailToUse) return false;
 
     const { data: res } = yield call(api.post, `/cliente/filter`, {
-      filters: {
-        email: cliente.email,
-      },
+      filters: { email: emailToUse },
     });
 
     if (res.error) {
-      Toast.show({
-        type: "error",
-        text1: "Erro!",
-        text2: res.message,
-      });
+      Toast.show({ type: "error", text1: "Erro!", text2: res.message });
       return false;
     }
 
     if (res?.clientes?.length > 0) {
-      yield put(updateCliente({ clienteId: res.clientes[0]._id }));
+      const clienteDb = res.clientes[0];
+      yield put(updateCliente(clienteDb));
+      yield put(updateCliente({ clienteId: clienteDb._id }));
     }
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
-    Toast.show({
-      type: "error",
-      text1: "Erro!",
-      text2: message,
-    });
+    Toast.show({ type: "error", text1: "Erro!", text2: message });
   }
 }
 
@@ -178,6 +174,8 @@ export function* pushToken({ token }: any) {
   try {
     const { cliente } = yield select((state: any) => state.cliente);
     const referenciaId = cliente?.clienteId ?? cliente?._id;
+
+    if (!token || !referenciaId) return false;
 
     const { data: res } = yield call(api.post, `/push-token`, {
       token,

@@ -5,8 +5,9 @@ export const updateCliente = (cliente: any) => ({
   cliente,
 });
 
-export const filterClinte = () => ({
+export const filterClinte = (payload?: { email?: string; shouldRedirect?: boolean }) => ({
   type: types.FILTER_CLIENTE,
+  ...payload,
 });
 
 export function addCliente() {
