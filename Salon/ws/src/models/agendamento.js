@@ -46,6 +46,14 @@ const agendamento = new Schema({
     enum: ["P", "S", "E", "C"],
     default: "P"
   },
+  lembrete3hEnviado: {
+    type: Boolean,
+    default: false,
+  },
+  lembrete3hEnviadoEm: {
+    type: Date,
+    default: null,
+  },
   status: {
     type: String,
     enum: ["P", "C", "A", "F"],

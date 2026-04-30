@@ -75,10 +75,12 @@ app.use("/", require("./src/routes/google.routes"));
 
 // index.js (após app.listen)
 const iniciarAgendamentoScheduler = require("./src/lib/agendamento-update-lib");
+const iniciarLembreteAgendamento3hScheduler = require("./src/lib/agendamento-lembrete-3h-lib");
 
 // Abre um ouvinte
 app.listen(app.get("port"), "0.0.0.0", () => {
   console.log("Antes de iniciar o servidor...");
   console.log(`WS Escutando na porta ${app.get("port")}`);
   iniciarAgendamentoScheduler();
+  iniciarLembreteAgendamento3hScheduler();
 });

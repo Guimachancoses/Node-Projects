@@ -1,40 +1,40 @@
-const mongoose = require("mongoose");
 const { DateTime } = require("luxon");
-const Agendamento = require("../models/agendamento"); // ajuste o caminho conforme sua estrutura
+const Agendamento = require("../models/agendamento");
+
+let isRunning = false;
 
 async function atualizarAgendamentos() {
+  if (isRunning) return; // evita execução sobreposta
+  isRunning = true;
+
   try {
-    const db = mongoose.connection;
-    const session = await db.startSession();
-    session.startTransaction();
     const agoraSP = DateTime.now().setZone("America/Sao_Paulo").toJSDate();
 
     const resultado = await Agendamento.updateMany(
       {
-        status: "A", // status pendente
-        data: { $lte: agoraSP }, // data do agendamento já passou
+        status: { $in: ["A", "P"] }, // ajuste conforme sua regra de negócio
+        data: { $lte: agoraSP },      // já passou do horário
       },
       {
-        $set: { status: "F" }, // status finalizado
+        $set: { status: "F" },        // finalizado
       }
     );
-    await session.commitTransaction();
-    session.endSession();
-    console.log(`Agendamentos atualizados: ${resultado.modifiedCount}`);
+
+    console.log(
+      `[Scheduler] Agendamentos finalizados: ${resultado.modifiedCount} (matched: ${resultado.matchedCount})`
+    );
   } catch (error) {
-    await session.abortTransaction();
-    session.endSession();
-    console.error("Erro ao atualizar agendamentos:", error);
+    console.error("[Scheduler] Erro ao atualizar agendamentos:", error);
+  } finally {
+    isRunning = false;
   }
 }
 
-// Executa a cada minuto
 function iniciarAgendamentoScheduler() {
-  // Executa imediatamente ao iniciar
-  atualizarAgendamentos();
+  atualizarAgendamentos(); // executa ao iniciar
 
-  // Executa a cada 1 minuto
-  setInterval(atualizarAgendamentos, 60 * 10000);
+  // 1 minuto
+  setInterval(atualizarAgendamentos, 60 * 1000);
 }
 
 module.exports = iniciarAgendamentoScheduler;

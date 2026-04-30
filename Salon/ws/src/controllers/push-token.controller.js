@@ -128,4 +128,59 @@ async function sendPushNotification(req, res) {
   }
 }
 
-module.exports = { registerPushToken, deletePushToken, sendPushNotification };
+async function sendPushToCliente(req, res) {
+  try {
+    const { clienteId, title, body, data = {} } = req.body;
+
+    if (!clienteId || !title || !body) {
+      return res.status(400).json({
+        error: true,
+        message: "clienteId, title e body são obrigatórios.",
+      });
+    }
+
+    // busca tokens vinculados ao cliente
+    const docs = await Push_tokens.find({
+      model: "Cliente",
+      referenciaId: clienteId,
+    });
+
+    const tokens = docs
+      .map((d) => d.token)
+      .filter((t) => expo.isExpoPushToken(t));
+
+    if (!tokens.length) {
+      return res.json({
+        error: false,
+        message: "Cliente sem tokens válidos.",
+      });
+    }
+
+    const messages = tokens.map((token) => ({
+      to: token,
+      sound: "default",
+      title,
+      body,
+      data,
+    }));
+
+    const chunks = expo.chunkPushNotifications(messages);
+    const tickets = [];
+
+    for (const chunk of chunks) {
+      const ticketChunk = await expo.sendPushNotificationsAsync(chunk);
+      tickets.push(...ticketChunk);
+    }
+
+    return res.json({
+      error: false,
+      message: "Notificação enviada.",
+      totalTokens: tokens.length,
+      tickets,
+    });
+  } catch (err) {
+    return res.status(500).json({ error: true, message: err.message });
+  }
+}
+
+module.exports = { registerPushToken, deletePushToken, sendPushNotification, sendPushToCliente };
