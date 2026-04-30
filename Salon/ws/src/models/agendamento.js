@@ -54,6 +54,8 @@ const agendamento = new Schema({
     type: Date,
     default: null,
   },
+  lembrete24hEnviado: { type: Boolean, default: false },
+  lembrete24hEnviadoEm: { type: Date, default: null },
   status: {
     type: String,
     enum: ["P", "C", "A", "F"],
