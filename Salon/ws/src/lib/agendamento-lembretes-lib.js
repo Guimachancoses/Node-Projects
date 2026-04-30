@@ -1,7 +1,7 @@
 const { DateTime } = require("luxon");
 const Agendamento = require("../models/agendamento");
 const Push_tokens = require("../models/push_tokens");
-const expo = require("../server/expo/expo");
+const { Expo } = require("expo-server-sdk");
 
 const TIMEZONE = "America/Sao_Paulo";
 const INTERVALO_MINUTOS = 5;
@@ -17,7 +17,7 @@ async function enviarPushParaAgendamento(agendamento, tipo, titulo, corpo) {
 
   const tokensValidos = tokensDocs
     .map((t) => t.token)
-    .filter((t) => expo.isExpoPushToken(t));
+    .filter((t) => Expo.isExpoPushToken(t));
 
   if (!tokensValidos.length) return false;
 
@@ -32,9 +32,9 @@ async function enviarPushParaAgendamento(agendamento, tipo, titulo, corpo) {
     },
   }));
 
-  const chunks = expo.chunkPushNotifications(messages);
+  const chunks = Expo.chunkPushNotifications(messages);
   for (const chunk of chunks) {
-    await expo.sendPushNotificationsAsync(chunk);
+    await Expo.sendPushNotificationsAsync(chunk);
   }
 
   return true;
