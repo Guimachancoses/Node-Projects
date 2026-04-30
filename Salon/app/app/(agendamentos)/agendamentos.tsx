@@ -35,15 +35,16 @@ export default function Agendamentos() {
   const dynamicTextColor = isDarkMode ? "light" : "dark";
   const params = useLocalSearchParams();
   const [showConfirmModal, setShowConfirmModal] = useState(false);
+  const { salao } = useSelector((state: any) => state.salao);
 
   useEffect(() => {
     const fromPush = String(params?.fromPush ?? "");
     const action = String(params?.action ?? "");
-  
-    if (fromPush === "1" && action === "confirmar_agendamento") {
+
+    if (fromPush === "1" && action === "confirmar_agendamento" && salao?.endereco) {
       setShowConfirmModal(true);
     }
-  }, [params]);
+  }, [params, salao?.endereco]);
 
   //console.log("agendamentos: ", agendamentos);
 
@@ -200,8 +201,8 @@ export default function Agendamentos() {
 
             <TouchableWithoutFeedback
               onPress={() => {
-                // aqui você confirma presença no backend, se quiser
                 // dispatch(confirmarPresenca(params.agendamentoId))
+                setValue("proximos"); // <-- marca "Próximos"
                 setShowConfirmModal(false);
               }}
             >

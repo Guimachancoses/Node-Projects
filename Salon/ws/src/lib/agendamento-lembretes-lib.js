@@ -29,7 +29,7 @@ async function enviarPushParaAgendamento(agendamento, tipo, titulo, corpo) {
     data: {
       tipo,
       agendamentoId: String(agendamento._id),
-      route: "/(agendamentos)/agendamentos",
+      route: "/(home)/home",
       action: "confirmar_agendamento",
     },
   }));

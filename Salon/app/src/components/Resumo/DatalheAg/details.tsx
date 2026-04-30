@@ -85,8 +85,8 @@ export default function Details() {
           {upperCase(salao?.nome)}
         </Text>
         <Text small color={dynamicTextColor} spacing="5px 0 0">
-          {salao?.endereco.logradouro}, {salao?.endereco.numero} -{" "}
-          {salao?.endereco.bairro}, {salao?.endereco.uf}
+          {salao?.endereco?.logradouro}, {salao?.endereco?.numero} -{" "}
+          {salao?.endereco?.bairro}, {salao?.endereco?.uf}
         </Text>
       </Box>
 
