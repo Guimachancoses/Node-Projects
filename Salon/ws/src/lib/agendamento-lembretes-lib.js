@@ -49,26 +49,33 @@ async function processarLembretes() {
     const limite24h = agora.plus({ hours: 24 });
     const limite3h = agora.plus({ hours: 3 });
 
-    // Base: só futuros e status válidos
     const baseFiltro = {
       status: { $in: STATUS_VALIDOS },
       data: { $gt: agora.toJSDate() },
     };
 
-    // 1) Lembrete 24h (envia quando entrar na janela <=24h)
+    // 1) 24h: somente se faltar MAIS de 3h e até 24h
     const ag24h = await Agendamento.find({
       ...baseFiltro,
       lembrete24hEnviado: { $ne: true },
-      data: { $gt: agora.toJSDate(), $lte: limite24h.toJSDate() },
+      data: {
+        $gt: limite3h.toJSDate(),   // evita sobrepor com 3h
+        $lte: limite24h.toJSDate(),
+      },
     }).select("_id clienteId data");
 
     for (const agendamento of ag24h) {
       const dataSP = DateTime.fromJSDate(agendamento.data).setZone(TIMEZONE);
+      const ehAmanha = dataSP.hasSame(agora.plus({ days: 1 }), "day");
+      const corpo24h = ehAmanha
+        ? `Você tem um agendamento amanhã às ${dataSP.toFormat("HH:mm")}.`
+        : `Seu agendamento será às ${dataSP.toFormat("HH:mm")}.`;
+
       const enviado = await enviarPushParaAgendamento(
         agendamento,
         "lembrete_agendamento_24h",
         "Lembrete de agendamento",
-        `Você tem um agendamento amanhã às ${dataSP.toFormat("HH:mm")}.`
+        corpo24h
       );
 
       if (enviado) {
@@ -84,11 +91,14 @@ async function processarLembretes() {
       }
     }
 
-    // 2) Lembrete 3h (envia quando entrar na janela <=3h)
+    // 2) 3h: de agora até 3h
     const ag3h = await Agendamento.find({
       ...baseFiltro,
       lembrete3hEnviado: { $ne: true },
-      data: { $gt: agora.toJSDate(), $lte: limite3h.toJSDate() },
+      data: {
+        $gt: agora.toJSDate(),
+        $lte: limite3h.toJSDate(),
+      },
     }).select("_id clienteId data");
 
     for (const agendamento of ag3h) {
