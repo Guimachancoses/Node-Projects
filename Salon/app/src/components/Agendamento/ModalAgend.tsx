@@ -322,6 +322,7 @@ export default function AgendamentoBottomS() {
                         dispatch(saveAgendamento());
                         signIn();
                       } else {
+                        console.log("agendamento", agendamento)
                         dispatch(saveAgendamento());
                       }
                       dispatch(updateForm({ buttonCard: false }));

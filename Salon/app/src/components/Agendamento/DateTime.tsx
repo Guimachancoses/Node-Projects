@@ -41,10 +41,18 @@ export default function DateTime({
       agenda,
       isTime ? dataSelecionada : value
     );
-    //console.log("horariosDisponiveisSete: ", horariosDisponiveis);
-    let dataFinal = !isTime
-      ? `${value}T${horariosDisponiveis[0][0]}`
-      : `${dataSelecionada}T${value}`;
+
+    const dataBase = !isTime ? value : dataSelecionada;
+    const horaBase = !isTime ? horariosDisponiveis?.[0]?.[0] : value;
+
+    if (!dataBase || !horaBase) return;
+
+    // gera: 2026-04-30T17:00:00-03:00 (ou offset do device)
+    const dataFinal = moment(
+      `${dataBase}T${horaBase}`,
+      "YYYY-MM-DDTHH:mm"
+    ).format("YYYY-MM-DDTHH:mm:ssZ");
+
     dispatch(updateAgendamento({ data: dataFinal }));
   };
 
@@ -96,11 +104,10 @@ export default function DateTime({
               direction="column"
               justify="center"
               align="center"
-              border={`1px solid ${
-                selected
+              border={`1px solid ${selected
                   ? theme.colors.primary
                   : util.toAlpha(theme.colors.muted, 20)
-              }`}
+                }`}
               background={selected ? "primary" : "light"}
               onPress={() => setAgendamento(dateISO, false)}
             >
@@ -175,11 +182,10 @@ export default function DateTime({
                   rounded="7px"
                   justify="center"
                   align="center"
-                  border={`1px solid ${
-                    selected
+                  border={`1px solid ${selected
                       ? theme.colors.primary
                       : util.toAlpha(theme.colors.muted, 20)
-                  }`}
+                    }`}
                   onPress={() => setAgendamento(horario, true)}
                 >
                   <Text small color={selected ? "light" : undefined}>

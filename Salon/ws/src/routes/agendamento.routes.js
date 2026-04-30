@@ -4,6 +4,7 @@ const mongoose = require("mongoose");
 const moment = require("moment");
 const util = require("../util");
 const _ = require("lodash");
+const { DateTime } = require("luxon");
 
 const Servico = require("../models/servico");
 const Colaborador = require("../models/colaborador");
@@ -40,13 +41,24 @@ router.post("/", async (req, res) => {
     if (!servico) throw new Error("Serviço não encontrado");
 
     // Validação e conversão da data
-    const inicio = moment(req.body.data);
-    if (!inicio.isValid()) throw new Error("Data de início inválida");
+    const TZ = "America/Sao_Paulo";
 
-    // Verifica se a data não é no passado
-    if (inicio.isBefore(moment())) {
+    // Interpreta o horário recebido como São Paulo
+    const inicioSP = DateTime.fromISO(req.body.data, { zone: TZ });
+
+    if (!inicioSP.isValid) {
+      throw new Error("Data de início inválida");
+    }
+
+    const agoraSP = DateTime.now().setZone(TZ);
+
+    // tolerância de 1 minuto para evitar rejeição por segundos
+    if (inicioSP < agoraSP.minus({ minutes: 1 })) {
       throw new Error("Não é possível agendar para uma data no passado");
     }
+
+    // mantém seu fluxo com moment:
+    const inicio = moment(inicioSP.toJSDate());
 
     // Conversão da duração do serviço
     const duracaoMinutos = util.hourToMinutes(
@@ -69,12 +81,12 @@ router.post("/", async (req, res) => {
         $lt: moment(inicio).endOf('day').toDate(),
       },
     }).populate("servicoId", "duracao");
-    
+
     const conflito = agendamentosColaborador.find(ag => {
       const inicioExistente = moment(ag.data);
       const duracao = util.hourToMinutes(moment(ag.servicoId.duracao).format("HH:mm"));
       const fimExistente = moment(inicioExistente).add(duracao, "minutes");
-    
+
       return (
         inicioExistente.isBefore(fim) && fimExistente.isAfter(inicio)
       );
@@ -101,17 +113,17 @@ router.post("/", async (req, res) => {
         $lt: moment(inicio).endOf('day').toDate(),
       },
     }).populate("servicoId", "duracao");
-    
+
     const clienteConflito = agendamentosCliente.find(ag => {
       const inicioExistente = moment(ag.data);
       const duracao = util.hourToMinutes(moment(ag.servicoId.duracao).format("HH:mm"));
       const fimExistente = moment(inicioExistente).add(duracao, "minutes");
-    
+
       return (
         inicioExistente.isBefore(fim) && fimExistente.isAfter(inicio)
       );
     });
-    
+
     //console.log("clienteConflito:", clienteConflito);
 
     if (clienteConflito) {
@@ -292,7 +304,7 @@ router.post("/dias-disponiveis", async (req, res) => {
           );
 
           /*
-            Verificar se nos slots disponiveis existe tempo suficiente para o total de duração 
+            Verificar se nos slots disponiveis existe tempo suficiente para o total de duração
             sem ultrapassar o horario final do expediente
           */
 
