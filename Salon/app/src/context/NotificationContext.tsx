@@ -7,6 +7,7 @@ import React, {
   ReactNode,
 } from "react";
 import * as Notifications from "expo-notifications";
+import { router } from "expo-router";
 import { registerForPushNotificationsAsync } from "../utils/registerForPushNotificationsAsync";
 
 // Interface que define o tipo de dados do contexto de notificações
@@ -54,6 +55,19 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({
 
   const clearNotification = () => setNotification(null);
 
+  const handleNotificationNavigation = (data: any) => {
+    if (data?.route) {
+      router.push({
+        pathname: data.route,
+        params: {
+          fromPush: "1",
+          action: data?.action ?? "",
+          agendamentoId: data?.agendamentoId ?? "",
+        },
+      });
+    }
+  };
+
   useEffect(() => {
     const setupNotifications = async () => {
       try {
@@ -65,31 +79,36 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({
         );
       }
 
-      // ✅ Check se o app foi aberto por uma notificação
+      // ✅ App aberto a partir de notificação (cold start)
       try {
         const lastNotificationResponse =
           await Notifications.getLastNotificationResponseAsync();
 
         if (lastNotificationResponse) {
           setNotification(lastNotificationResponse.notification);
+
+          const data = lastNotificationResponse.notification.request.content
+            .data as any;
+          handleNotificationNavigation(data);
         }
-      } catch (err) {
+      } catch {
         // opcional: log
       }
     };
 
     setupNotifications();
 
-    // Configura listener para recebimento de notificações
+    // Notificação recebida com app aberto
     notificationListener.current =
       Notifications.addNotificationReceivedListener((incomingNotification) => {
         setNotification(incomingNotification);
       });
 
-    // Configura listener para resposta às notificações
+    // Clique/toque na notificação
     responseListener.current =
-      Notifications.addNotificationResponseReceivedListener((_response) => {
-        // lógica opcional
+      Notifications.addNotificationResponseReceivedListener((response) => {
+        const data = response.notification.request.content.data as any;
+        handleNotificationNavigation(data);
       });
 
     // Limpeza dos listeners quando o componente é desmontado

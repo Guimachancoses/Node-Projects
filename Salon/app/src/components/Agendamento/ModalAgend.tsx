@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useRef } from "react";
-import { TouchableWithoutFeedback, Dimensions, StyleSheet, View, TransformsStyle } from "react-native";
+import { TouchableWithoutFeedback, Dimensions, StyleSheet, View } from "react-native";
 import BottomSheet, {
   BottomSheetView,
   BottomSheetHandleProps,
