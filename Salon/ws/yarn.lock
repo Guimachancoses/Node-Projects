@@ -737,6 +737,11 @@ engine.io@~6.6.0:
     engine.io-parser "~5.2.1"
     ws "~8.17.1"
 
+err-code@^2.0.2:
+  version "2.0.3"
+  resolved "https://registry.yarnpkg.com/err-code/-/err-code-2.0.3.tgz#23c2f3b756ffdfc608d30e27c9a941024807e7f9"
+  integrity sha512-2bmlRpNKBxT/CRmPOlyISQpNj+qSeYvcym/uT0Jx2bMOlKLtSy1ZmLuVxSEKKyor/N5yhvp/ZiG1oE3DEYMSFA==
+
 es-define-property@^1.0.0, es-define-property@^1.0.1:
   version "1.0.1"
   resolved "https://registry.npmjs.org/es-define-property/-/es-define-property-1.0.1.tgz"
@@ -783,6 +788,15 @@ events@1.1.1:
   version "1.1.1"
   resolved "https://registry.npmjs.org/events/-/events-1.1.1.tgz"
   integrity sha512-kEcvvCBByWXGnZy6JUlgAp2gBIUjfCAV6P6TgT1/aaQKcmuAEC4OZTV1I4EWQLz2gxZw76atuVyvHhTxvi0Flw==
+
+expo-server-sdk@^6.1.0:
+  version "6.1.0"
+  resolved "https://registry.yarnpkg.com/expo-server-sdk/-/expo-server-sdk-6.1.0.tgz#0bd6b2296a7f6d7e48fff9fc0e193e3e905ceca0"
+  integrity sha512-ISuax1AQ7cpM5RAqcu8gVcoLL0ZKskJ5OLoMWmdITBe9nYjTucjdGyBq817YkIvTcj1pAUwx+9toUT7l/V7thA==
+  dependencies:
+    promise-limit "^2.7.0"
+    promise-retry "^2.0.1"
+    undici "^7.2.0"
 
 express@^5.2.1:
   version "5.2.1"
@@ -1741,6 +1755,19 @@ process-nextick-args@~2.0.0:
   resolved "https://registry.npmjs.org/process-nextick-args/-/process-nextick-args-2.0.1.tgz"
   integrity sha512-3ouUOpQhtgrbOa17J7+uxOTpITYWaGP7/AhoR3+A+/1e9skrzelGi/dXzEYyvbxubEF6Wn2ypscTKiKJFFn1ag==
 
+promise-limit@^2.7.0:
+  version "2.7.0"
+  resolved "https://registry.yarnpkg.com/promise-limit/-/promise-limit-2.7.0.tgz#eb5737c33342a030eaeaecea9b3d3a93cb592b26"
+  integrity sha512-7nJ6v5lnJsXwGprnGXga4wx6d1POjvi5Qmf1ivTRxTjH4Z/9Czja/UCMLVmB9N93GeWOU93XaFaEt6jbuoagNw==
+
+promise-retry@^2.0.1:
+  version "2.0.1"
+  resolved "https://registry.yarnpkg.com/promise-retry/-/promise-retry-2.0.1.tgz#ff747a13620ab57ba688f5fc67855410c370da22"
+  integrity sha512-y+WKFlBR8BGXnsNlIHFGPZmyDf3DFMoLhaflAnyZgV6rG6xu+JwesTo2Q9R6XwYmtmwAFCkAk3e35jEdoeh/3g==
+  dependencies:
+    err-code "^2.0.2"
+    retry "^0.12.0"
+
 proxy-addr@^2.0.7:
   version "2.0.7"
   resolved "https://registry.npmjs.org/proxy-addr/-/proxy-addr-2.0.7.tgz"
@@ -1903,6 +1930,11 @@ restore-cursor@^2.0.0:
   dependencies:
     onetime "^2.0.0"
     signal-exit "^3.0.2"
+
+retry@^0.12.0:
+  version "0.12.0"
+  resolved "https://registry.yarnpkg.com/retry/-/retry-0.12.0.tgz#1b42a6266a21f07421d1b0b54b7dc167b01c013b"
+  integrity sha512-9LkiTwjUh6rT555DtE9rTX+BKByPfrMzEAtnlEtdEwr3Nkffwiihqe2bWADg+OQRjt9gl6ICdmB/ZFDCGAtSow==
 
 robust-predicates@^2.0.4:
   version "2.0.4"
@@ -2345,6 +2377,11 @@ undici-types@~6.21.0:
   version "6.21.0"
   resolved "https://registry.yarnpkg.com/undici-types/-/undici-types-6.21.0.tgz#691d00af3909be93a7faa13be61b3a5b50ef12cb"
   integrity sha512-iwDZqg0QAGrg9Rav5H4n0M64c3mkR59cJ6wQp+7C4nI0gsmExaedaYLNO44eT4AtBBwjbTiGPMlt2Md0T9H9JQ==
+
+undici@^7.2.0:
+  version "7.25.0"
+  resolved "https://registry.yarnpkg.com/undici/-/undici-7.25.0.tgz#7d72fc429a0421769ca2966fd07cac875c85b781"
+  integrity sha512-xXnp4kTyor2Zq+J1FfPI6Eq3ew5h6Vl0F/8d9XU5zZQf1tX9s2Su1/3PiMmUANFULpmksxkClamIZcaUqryHsQ==
 
 unpipe@~1.0.0:
   version "1.0.0"
