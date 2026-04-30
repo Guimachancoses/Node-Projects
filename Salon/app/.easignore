@@ -4,10 +4,13 @@
 node_modules/
 .env
 yarn.lock
-android/.gradle
-android/build
-android/app/build
-android/app/.cxx
+# Android build artifacts
+android/.gradle/
+android/build/
+android/app/build/
+android/app/.cxx/
+android/local.properties
+
 node_modules
 .expo
 
@@ -42,3 +45,8 @@ yarn-error.*
 
 # typescript
 *.tsbuildinfo
+
+.git
+ios/Pods
+ios/build
+*.log

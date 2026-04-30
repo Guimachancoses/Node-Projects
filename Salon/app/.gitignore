@@ -5,10 +5,6 @@ node_modules/
 .env
 /android
 yarn.lock
-android/.gradle/
-android/build/
-android/app/build/
-android/app/.cxx/
 
 # Expo
 .expo/
@@ -44,4 +40,17 @@ yarn-error.*
 
 # google services
 google-services.json
+
+# Android build artifacts
+android/.gradle/
+android/build/
+android/app/build/
+android/app/.cxx/
+android/local.properties
+
+# CMake / Ninja gerados
+**/build.ninja
+**/build_file_index.txt
+**/android_gradle_build.json
+**/android_gradle_build_mini.json
 
