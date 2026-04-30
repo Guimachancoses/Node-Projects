@@ -150,7 +150,7 @@ export default function BtSheetResume() {
     if (form.buttonCard) {
       return [495]; // Apenas um snap menor para ComoPagar
     }
-    return [94, Dimensions.get("window").height - 110]; // Tamanho padrão
+    return [125, Dimensions.get("window").height - 40]; // Tamanho padrão
   }, [form.buttonCard]);
 
   const handleSheetChanges = useCallback((index: number) => {
@@ -177,11 +177,16 @@ export default function BtSheetResume() {
         snapPoints={snapPoints}
         onChange={handleSheetChanges}
         enablePanDownToClose
-        backgroundStyle={{ backgroundColor: "transparent" }}
         handleComponent={Handle} // Passando o handle customizado
+        backgroundStyle={{
+          backgroundColor: colors.background,
+          borderTopLeftRadius: 30,
+          borderTopRightRadius: 30,
+          overflow: "hidden",
+        }}
       >
-        <DetalheHeader />
         <BottomSheetView style={{flex: 1 ,backgroundColor: colors.background }}>
+        <DetalheHeader />
           <ScrollView>
             <Details />
           </ScrollView>

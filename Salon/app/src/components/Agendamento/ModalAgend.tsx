@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useRef } from "react";
-import { TouchableWithoutFeedback, Dimensions, StyleSheet, View } from "react-native";
+import { TouchableWithoutFeedback, Dimensions, StyleSheet, View, TransformsStyle } from "react-native";
 import BottomSheet, {
   BottomSheetView,
   BottomSheetHandleProps,
@@ -44,7 +44,7 @@ const mercadoPagoKey =
 // Função para manipular a origem da transformação
 export const transformOrigin = (
   { x, y }: { x: number; y: number },
-  ...transformations: Animated.AnimateStyle<any>[]
+  ...transformations: any[]
 ) => {
   "worklet";
   return [
@@ -152,6 +152,17 @@ export default function AgendamentoBottomS() {
     (state: any) => state.salao
   );
 
+  const [headerHeight, setHeaderHeight] = React.useState(70);
+  const HANDLE_HEIGHT = 78;
+
+  const snapPoints = useMemo(() => {
+    const collapsed = Math.ceil(headerHeight + HANDLE_HEIGHT); // altura real da HeaderModal
+    const full = Dimensions.get("screen").height - 120;
+
+    if (form.buttonCard) return [collapsed, 455, full];
+    return [collapsed, full];
+  }, [headerHeight, form.buttonCard]);
+
   const { cliente } = useSelector((state: any) => state.cliente);
 
   const preferenciaPagamento = cliente?.prefPagamento;
@@ -166,10 +177,10 @@ export default function AgendamentoBottomS() {
   const servico = servicos.find((s: any) => s._id === agendamento?.servicoId);
   const bottomSheetRef = useRef<BottomSheet>(null);
 
-  const snapPoints = useMemo(() => {
-    if (form.buttonCard) return [455];
-    return [94, Dimensions.get("screen").height - 120];
-  }, [form.buttonCard, form.modalAgendamento]);
+  // const snapPoints = useMemo(() => {
+  //   if (form.buttonCard) return [455];
+  //   return [94, Dimensions.get("screen").height - 120];
+  // }, [form.buttonCard, form.modalAgendamento]);
 
   const handleSheetChanges = useCallback(
     (index: number) => {
@@ -184,7 +195,7 @@ export default function AgendamentoBottomS() {
   useFocusEffect(
     React.useCallback(() => {
       if (agendamento?.servicoId) {
-        bottomSheetRef.current?.expand();
+        bottomSheetRef.current?.snapToIndex(0); // começa colapsado no header
       }
     }, [agendamento?.servicoId])
   );
@@ -236,12 +247,22 @@ export default function AgendamentoBottomS() {
       snapPoints={snapPoints}
       onChange={handleSheetChanges}
       enablePanDownToClose
-      backgroundStyle={{ backgroundColor: "transparent" }}
       handleComponent={Handle}
+      backgroundStyle={{
+        backgroundColor: colors.background,
+        borderTopLeftRadius: 30,
+        borderTopRightRadius: 30,
+        overflow: "hidden",
+      }}
     >
-      <HeaderModal />
       <BottomSheetView style={{ flex: 1, backgroundColor: colors.background }}>
-        <ScrollView>
+      <HeaderModal
+        onLayout={(e) => {
+          const h = e.nativeEvent.layout.height;
+          if (h > 0 && h !== headerHeight) setHeaderHeight(h);
+        }}
+      />
+        <ScrollView >
           {form.buttonCard === true ? (
             <ComoPagar />
           ) : agenda.length === 0 ? (
@@ -323,6 +344,7 @@ export default function AgendamentoBottomS() {
           colaboradoresDia={colaboradoresDia}
         />
       </BottomSheetView>
+
     </BottomSheet>
   );
 }

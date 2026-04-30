@@ -17,7 +17,6 @@ interface NotificationContextType {
   clearNotification: () => void;
 }
 
-
 // Criação do contexto com valor inicial undefined
 const NotificationContext = createContext<NotificationContextType | undefined>(
   undefined
@@ -43,19 +42,23 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({
 }) => {
   // Estados para gerenciar token, notificações e erros
   const [expoPushToken, setExpoPushToken] = useState<string | null>(null);
-  const [notification, setNotification] = useState<Notifications.Notification | null>(null);
+  const [notification, setNotification] =
+    useState<Notifications.Notification | null>(null);
   const [error, setError] = useState<Error | null>(null);
 
   // Referências para os listeners de notificações
-  const notificationListener = useRef<any>();
-  const responseListener = useRef<any>();
+  const notificationListener =
+    useRef<Notifications.EventSubscription | null>(null);
+  const responseListener =
+    useRef<Notifications.EventSubscription | null>(null);
+
   const clearNotification = () => setNotification(null);
 
   useEffect(() => {
     const setupNotifications = async () => {
       try {
         const token = await registerForPushNotificationsAsync();
-        setExpoPushToken(token);
+        setExpoPushToken(token ?? null);
       } catch (err) {
         setError(
           err instanceof Error ? err : new Error("Erro ao registrar notificações")
@@ -68,16 +71,10 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({
           await Notifications.getLastNotificationResponseAsync();
 
         if (lastNotificationResponse) {
-          // console.log(
-          //   "🚀 Notificação que abriu o app:",
-          //   JSON.stringify(lastNotificationResponse, null, 2)
-          // );
           setNotification(lastNotificationResponse.notification);
-        } else {
-          // console.log("🚀 Nenhuma notificação abriu o app.");
         }
       } catch (err) {
-       //console.error("Erro ao verificar última notificação:", err);
+        // opcional: log
       }
     };
 
@@ -85,32 +82,20 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({
 
     // Configura listener para recebimento de notificações
     notificationListener.current =
-      Notifications.addNotificationReceivedListener((notification) => {
-        // console.log("📱 Notificação Recebida: ", notification);
-        setNotification(notification);
+      Notifications.addNotificationReceivedListener((incomingNotification) => {
+        setNotification(incomingNotification);
       });
 
     // Configura listener para resposta às notificações
     responseListener.current =
-      Notifications.addNotificationResponseReceivedListener((response) => {
-        // console.log(
-        //   "📱 Resposta da Notificação: ",
-        //   JSON.stringify(response, null, 2),
-        //   JSON.stringify(response.notification.request.content.data, null, 2)
-        // );
-        // Pode colocar lógica adicional aqui se quiser
+      Notifications.addNotificationResponseReceivedListener((_response) => {
+        // lógica opcional
       });
 
     // Limpeza dos listeners quando o componente é desmontado
     return () => {
-      if (notificationListener.current) {
-        Notifications.removeNotificationSubscription(
-          notificationListener.current
-        );
-      }
-      if (responseListener.current) {
-        Notifications.removeNotificationSubscription(responseListener.current);
-      }
+      notificationListener.current?.remove();
+      responseListener.current?.remove();
     };
   }, []);
 

@@ -23,7 +23,7 @@ import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { ThemeProvider as StyledThemeProvider } from "styled-components/native";
 import Toast from "react-native-toast-message";
 import { ClerkProvider } from "@clerk/clerk-expo";
-import { tokenCache } from "@clerk/clerk-expo/token-cache";
+import { tokenCache } from "@/src/utils/cache";
 import { NotificationProvider } from "@/src/context/NotificationContext";
 import Constants from "expo-constants";
 import * as Notifications from "expo-notifications";
@@ -33,6 +33,8 @@ Notifications.setNotificationHandler({
     shouldShowAlert: true,
     shouldPlaySound: true,
     shouldSetBadge: false,
+    shouldShowBanner: true,
+    shouldShowList: true,
   }),
 });
 

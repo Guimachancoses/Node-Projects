@@ -190,7 +190,7 @@ export default function Home() {
         style={{ backgroundColor: util.toAlpha(theme.colors.muted, 3) }}
         ListHeaderComponent={
           <>
-            <Box position="absolute" top="20px" left="20px" zIndex={1} width="auto">
+            <Box position="absolute" top="60px" left="20px" zIndex={1} width="auto">
               <Touchable
                 width="40px"
                 height="40px"

@@ -245,7 +245,6 @@ router.delete("/vinculo/:id", async (req, res) => {
   }
 });
 
-
 // Rota de atualização do cliente no banco de dados MongoDB
 router.put("/:clienteId", async (req, res) => {
   try {

@@ -77,7 +77,11 @@ const cliente = new Schema({
   },
   idChatBot: {
     type: String,
-    index: true, // opcional, mas ajuda na busca/delete
+    index: true,
+  },
+  idAppMobile: {
+    type: String,
+    index: true,
   },
   dataCadastro: {
     type: Date,
