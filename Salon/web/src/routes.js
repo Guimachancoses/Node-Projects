@@ -9,40 +9,46 @@ import Serviços from "./pages/Servicos";
 import Horarios from "./pages/Horarios";
 import Account from "./pages/Account";
 import Layout from "./components/HeaderSide";
+import FaleConosco from "./pages/FaleConosco";
+import TermosDeServico from "./pages/TermosDeServico";
+import PoliticaDePrivacidade from "./pages/PoliticaDePrivacidade";
 import "./styles.css";
 
 const Main = ({ toggleTheme, colorMode }) => {
   return (
-      <Routes>
-        {/* Página pública */}
-        <Route path="/" element={<Login />} />
+    <Routes>
+      {/* Página pública */}
+      <Route path="/" element={<Login />} />
+      <Route path="/fale-conosco" element={<FaleConosco />} />
+      <Route path="/termos-de-servico" element={<TermosDeServico />} />
+      <Route path="/politica-de-privacidade" element={<PoliticaDePrivacidade />} />
 
-        {/* Rotas privadas: só mostra se estiver logado */}
-        <Route
-          element={
-            <SignedIn>
-              <Layout toggleTheme={toggleTheme} colorMode={colorMode} />
-            </SignedIn>
-          }
-        >
-          <Route path="agendamentos" element={<Agendamentos />} />
-          <Route path="clientes" element={<Clientes />} />
-          <Route path="colaboradores" element={<Colaboradores />} />
-          <Route path="servicos" element={<Serviços />} />
-          <Route path="horarios" element={<Horarios />} />
-          <Route path="account" element={<Account />} />
-        </Route>
+      {/* Rotas privadas: só mostra se estiver logado */}
+      <Route
+        element={
+          <SignedIn>
+            <Layout toggleTheme={toggleTheme} colorMode={colorMode} />
+          </SignedIn>
+        }
+      >
+        <Route path="agendamentos" element={<Agendamentos />} />
+        <Route path="clientes" element={<Clientes />} />
+        <Route path="colaboradores" element={<Colaboradores />} />
+        <Route path="servicos" element={<Serviços />} />
+        <Route path="horarios" element={<Horarios />} />
+        <Route path="account" element={<Account />} />
+      </Route>
 
-        {/* Redireciona usuários não logados */}
-        <Route
-          path="*"
-          element={
-            <SignedOut>
-              <RedirectToSignIn />
-            </SignedOut>
-          }
-        />
-      </Routes>
+      {/* Redireciona usuários não logados */}
+      <Route
+        path="*"
+        element={
+          <SignedOut>
+            <RedirectToSignIn />
+          </SignedOut>
+        }
+      />
+    </Routes>
   );
 };
 

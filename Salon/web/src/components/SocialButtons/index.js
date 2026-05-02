@@ -1,7 +1,7 @@
-import React, { useState, useCallback, useMemo } from 'react';
+import { useState, useCallback, useMemo } from 'react';
 import { Button, CircularProgress } from '@mui/material';
 import GoogleIcon from '@mui/icons-material/Google';
-import FacebookIcon from '@mui/icons-material/Facebook';
+// import FacebookIcon from '@mui/icons-material/Facebook';
 // import AppleIcon from '@mui/icons-material/Apple';
 import { useSignIn } from '@clerk/clerk-react';
 
@@ -69,7 +69,7 @@ const SocialButtons = () => {
   return (
     <>
       <SocialButton strategy="google" icon={GoogleIcon} color="#DB4437" />
-      <SocialButton strategy="facebook" icon={FacebookIcon} color="#1977F3" />
+      {/* <SocialButton strategy="facebook" icon={FacebookIcon} color="#1977F3" /> */}
       {/* <SocialButton strategy="apple" icon={AppleIcon} color="#000000" /> */}
     </>
   );

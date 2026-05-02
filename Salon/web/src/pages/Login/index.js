@@ -20,6 +20,11 @@ import Snackbar from "@mui/material/Snackbar";
 import Slide from "@mui/material/Slide";
 
 import miniLogo from "../../assets/mini_logo.jpg";
+import FaleConoscoLink from "../../components/FooterLinks/FaleConoscoLink";
+import TermoServicoLink from "../../components/FooterLinks/TermoServicoLink";
+import PoliticaPrivacidadeLink from "../../components/FooterLinks/PoliticaPrivacidadeLink";
+
+import FooterSection from "../../components/FooterSection";
 
 const Alert = React.forwardRef(function Alert(props, ref) {
   return <MuiAlert elevation={6} ref={ref} variant="filled" {...props} />;
@@ -195,6 +200,27 @@ const Login = () => {
           </Typography> */}
         </Paper>
       </Container>
+      <Box
+          sx={{
+            position: "absolute",
+            bottom: 16,
+            left: 0,
+            right: 0,
+            display: "flex",
+            justifyContent: "center",
+            alignItems: "center",
+            gap: 1.5,
+            color: "#fff",
+            zIndex: 2,
+          }}
+        >
+          <FaleConoscoLink />
+          <Typography variant="caption" sx={{ opacity: 0.7 }}>|</Typography>
+          <TermoServicoLink />
+          <Typography variant="caption" sx={{ opacity: 0.7 }}>|</Typography>
+          <PoliticaPrivacidadeLink />
+        </Box>
+        <FooterSection />
       <Snackbar
         open={alerta.open}
         autoHideDuration={5000}
