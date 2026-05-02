@@ -129,7 +129,7 @@ const Login = () => {
           >
             <Avatar
               src={miniLogo}
-              alt="Parrudus Barbearia"
+              alt="Pro Agende"
               sx={{
                 width: "10%",
                 height: "auto",
@@ -145,7 +145,7 @@ const Login = () => {
               gutterBottom
               sx={{ color: "var(--primary)" }}
             >
-              Parrudus Barbearia
+              Pro Agende
             </Typography>
           </div>
 
