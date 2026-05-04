@@ -11,10 +11,12 @@ import {
   Avatar,
   Snackbar,
   Slide,
+  CircularProgress
 } from "@mui/material";
 import MuiAlert from "@mui/material/Alert";
-import { useUser, useClerk } from "@clerk/clerk-react";
+import { useUser, useClerk, useSignIn } from "@clerk/clerk-react";
 import { useDispatch, useSelector } from "react-redux";
+import { useNavigate } from 'react-router-dom'
 
 import ListImage from "../../components/ListImage";
 import SocialButtons from "../../components/SocialButtons";
@@ -29,6 +31,7 @@ import FaleConoscoLink from "../../components/FooterLinks/FaleConoscoLink";
 import TermoServicoLink from "../../components/FooterLinks/TermoServicoLink";
 import PoliticaPrivacidadeLink from "../../components/FooterLinks/PoliticaPrivacidadeLink";
 import FooterSection from "../../components/FooterSection"
+import { isValidEmail } from "../../utils/formValidators";
 
 const Alert = React.forwardRef(function Alert(props, ref) {
   return <MuiAlert elevation={6} ref={ref} variant="filled" {...props} />;
@@ -41,17 +44,31 @@ function SlideTransition(props) {
 const Login = () => {
   const dispatch = useDispatch();
   const alerta = useSelector((state) => state.colaborador.alerta);
+  const navigate = useNavigate();
+  const { isLoaded: signInLoaded, signIn } = useSignIn();
+  const { isLoaded: userLoaded, isSignedIn } = useUser();
+  const { setActive, user } = useClerk();
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-
-  const { isSignedIn } = useUser();
-  const { user } = useClerk();
 
   const firstName = user?.firstName ?? "";
   const lastName = user?.lastName ?? "";
   const imageUrl = user?.imageUrl ?? "";
   const emailAddress = user?.emailAddresses?.[0]?.emailAddress ?? "";
+
+  const emailTrim = email.trim();
+  const passwordTrim = password.trim();
+
+  const hasAnyInput = emailTrim.length > 0 || passwordTrim.length > 0;
+  const emailInvalid = emailTrim.length > 0 && !isValidEmail(emailTrim);
+
+  // botão desabilitado se:
+  // - não digitou nada
+  // - email inválido
+  // - senha vazia
+  const isSubmitDisabled = !hasAnyInput || emailInvalid || passwordTrim.length === 0;
 
   useEffect(() => {
     if (!isSignedIn || !emailAddress) return;
@@ -67,15 +84,50 @@ const Login = () => {
     dispatch(checkUser());
   }, [isSignedIn, emailAddress, firstName, lastName, imageUrl, dispatch]);
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    // Lógica de login aqui
+    if (!signInLoaded) return;
+
+    try {
+      setIsSubmitting(true);
+
+      const result = await signIn.create({
+        identifier: email.trim(),
+        password: password.trim(),
+      });
+
+      if (result.status === "complete") {
+        await setActive({  session: result.createdSessionId });
+        navigate("/agendamentos", { replace: true }); // <- importante
+        return;
+      }
+
+      dispatch(setAlerta({
+        open: true,
+        tipo: "warning",
+        mensagem: "Sua autenticação precisa de etapa adicional.",
+      }));
+    } catch (err) {
+      dispatch(setAlerta({
+        open: true,
+        tipo: "error",
+        mensagem: err?.errors?.[0]?.longMessage || "Falha ao entrar.",
+      }));
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const handleClose = (_, reason) => {
     if (reason === "clickaway") return;
     dispatch(setAlerta({ ...alerta, open: false }));
   };
+
+  useEffect(() => {
+    if (userLoaded && isSignedIn) {
+      navigate("/", { replace: true });
+    }
+  }, [userLoaded, isSignedIn, navigate]);
 
   return (
     <Box
@@ -189,6 +241,8 @@ const Login = () => {
                 margin="normal"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
+                error={emailInvalid}
+                helperText={emailInvalid ? "Digite um email válido." : ""}
               />
 
               <TextField
@@ -205,8 +259,16 @@ const Login = () => {
                 Esqueceu sua senha?
               </Link>
 
-              <Button type="submit" fullWidth variant="contained" size="large" sx={{ mt: 1 }}>
-                Entrar
+              <Button
+                type="submit"
+                fullWidth
+                variant="contained"
+                size="large"
+                disabled={isSubmitDisabled || isSubmitting}
+                sx={{ mt: 1 }}
+                startIcon={isSubmitting ? <CircularProgress size={18} color="inherit" /> : null}
+              >
+                {isSubmitting ? "Entrando..." : "Entrar"}
               </Button>
             </form>
 
@@ -253,7 +315,7 @@ const Login = () => {
         TransitionComponent={SlideTransition}
         anchorOrigin={{ vertical: "top", horizontal: "right" }}
       >
-        <Alert onClose={handleClose} severity={alerta?.tipo || "info"} sx={{ width: "100%" }}>
+        <Alert onClose={handleClose} severity={alerta?.tipo} sx={{ width: "100%" }}>
           {alerta?.mensagem || ""}
         </Alert>
       </Snackbar>

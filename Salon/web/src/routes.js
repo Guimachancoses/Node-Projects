@@ -1,5 +1,5 @@
-import { Routes, Route } from "react-router-dom";
-import { SignedIn, SignedOut, RedirectToSignIn } from "@clerk/clerk-react";
+import { Routes, Route, Navigate, Outlet } from "react-router-dom";
+import { SignedIn, SignedOut } from "@clerk/clerk-react";
 
 import Login from "./pages/Login";
 import Agendamentos from "./pages/Agendamentos";
@@ -14,38 +14,64 @@ import TermosDeServico from "./pages/TermosDeServico";
 import PoliticaDePrivacidade from "./pages/PoliticaDePrivacidade";
 import "./styles.css";
 
+// Guard de rota privada
+const PrivateRoute = ({ toggleTheme, colorMode }) => (
+  <>
+    <SignedIn>
+      <Layout toggleTheme={toggleTheme} colorMode={colorMode}>
+        <Outlet />
+      </Layout>
+    </SignedIn>
+
+    <SignedOut>
+      <Navigate to="/" replace />
+    </SignedOut>
+  </>
+);
+
 const Main = ({ toggleTheme, colorMode }) => {
   return (
     <Routes>
-      {/* Página pública */}
-      <Route path="/" element={<Login />} />
+      {/* Públicas */}
+      <Route
+        path="/"
+        element={
+          <>
+            <SignedOut>
+              <Login />
+            </SignedOut>
+            <SignedIn>
+              <Navigate to="/agendamentos" replace />
+            </SignedIn>
+          </>
+        }
+      />
       <Route path="/fale-conosco" element={<FaleConosco />} />
       <Route path="/termos-de-servico" element={<TermosDeServico />} />
       <Route path="/politica-de-privacidade" element={<PoliticaDePrivacidade />} />
 
-      {/* Rotas privadas: só mostra se estiver logado */}
-      <Route
-        element={
-          <SignedIn>
-            <Layout toggleTheme={toggleTheme} colorMode={colorMode} />
-          </SignedIn>
-        }
-      >
-        <Route path="agendamentos" element={<Agendamentos />} />
-        <Route path="clientes" element={<Clientes />} />
-        <Route path="colaboradores" element={<Colaboradores />} />
-        <Route path="servicos" element={<Serviços />} />
-        <Route path="horarios" element={<Horarios />} />
-        <Route path="account" element={<Account />} />
+      {/* Privadas */}
+      <Route element={<PrivateRoute toggleTheme={toggleTheme} colorMode={colorMode} />}>
+        <Route path="/agendamentos" element={<Agendamentos />} />
+        <Route path="/clientes" element={<Clientes />} />
+        <Route path="/colaboradores" element={<Colaboradores />} />
+        <Route path="/servicos" element={<Serviços />} />
+        <Route path="/horarios" element={<Horarios />} />
+        <Route path="/account" element={<Account />} />
       </Route>
 
-      {/* Redireciona usuários não logados */}
+      {/* Fallback geral */}
       <Route
         path="*"
         element={
-          <SignedOut>
-            <RedirectToSignIn />
-          </SignedOut>
+          <>
+            <SignedIn>
+              <Navigate to="/agendamentos" replace />
+            </SignedIn>
+            <SignedOut>
+              <Navigate to="/" replace />
+            </SignedOut>
+          </>
         }
       />
     </Routes>

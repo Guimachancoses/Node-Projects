@@ -25,7 +25,6 @@ import { useTheme } from "@mui/material/styles";
 
 import CustomDrawer from "../../components/Drawer";
 import CustomDialog from "../../components/DialogAlert";
-import PopSyncCalendarDrive from "../../components/pop-sync-calendarDrive";
 import MobileCalendarToolbar from "../../components/MobileCalendarToolbar"
 
 import {
@@ -371,8 +370,6 @@ const Agendamentos = () => {
         overflowX: "hidden",
       }}
     >
-      <PopSyncCalendarDrive />
-
       <Stack
         direction={{ xs: "column", sm: "row" }}
         justifyContent="space-between"
