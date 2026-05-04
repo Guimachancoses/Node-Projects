@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useMemo, useRef } from "react";
 import moment from "moment";
 import dayjs from "dayjs";
 import consts from "../../consts";
@@ -325,381 +325,454 @@ const Servicos = () => {
     }
   };
 
-  return (
-    <div className="col">
-      <TableComponent
-        loading={form.filtering}
-        title="Serviços"
-        rows={servicosProcessados}
-        columns={columns}
-        buttonLabel="Novo Serviço"
-        iconClass="mdi mdi-plus"
-        onButtonClick={handleNovoServico}
-        toolbarComponent={(selectedIds) => (
-          <>
-            {filtro}
-            <Button
-              variant="outlined"
-              color="error"
-              disabled={selectedIds.length === 0}
-              onClick={() => {
-                handleOpenDialog(selectedIds);
-                //console.log(selectedIds);
-              }}
-            >
-              Excluir
-            </Button>
-          </>
-        )}
-        onRowClick={(servico) => {
-          setImages([]);
-          dispatch(
-            updateServico({
-              behavior: "update",
-              servico,
-              form: {
-                ...servico.form,
-                disabled: false, // <- ativa edição manualmente aqui
-              },
-            })
-          );
-          setComponent("drawer", true);
-        }}
-        checkboxSelection={true}
-        renderExpandedRow={renderDetalhesServico}
-      />
-      {/* Drawer Component Controlado diretamente pelo estado do Redux */}
-      <div
-        style={{ display: "flex", flexDirection: "column", marginLeft: "16px" }}
+  const originalServicoRef = useRef(null);
+  const [snapshotReady, setSnapshotReady] = useState(false);
+
+  const normalizeServico = (s = {}) => ({
+    titulo: (s.titulo || "").trim(),
+    preco: String(s.preco ?? "").trim(),
+    recorrencia: String(s.recorrencia ?? "").trim(),
+    comissao: String(s.comissao ?? "").trim(),
+    status: (s.status || "").trim(),
+    tipoServico: (s.tipoServico || "").trim(),
+    duracao: s.duracao ? new Date(s.duracao).toISOString() : "",
+    descricao: (s.descricao || "").trim(),
+  });
+
+  // Campos obrigatórios (ajuste se quiser tirar descrição, por exemplo)
+  const requiredFilled = useMemo(() => {
+    const s = normalizeServico(servico);
+    return (
+      s.titulo &&
+      s.preco &&
+      s.recorrencia &&
+      s.comissao &&
+      s.status &&
+      s.tipoServico &&
+      s.duracao &&
+      s.descricao
+    );
+  }, [servico]);
+
+  // Snapshot original somente quando abre em update
+  useEffect(() => {
+    if (!components?.drawer || behavior !== "update" || snapshotReady) return;
+
+    const expectedSaved = servico?.arquivos?.length || 0;
+    const loadedSaved = images.filter((img) => !img.file).length;
+
+    // só tira snapshot quando imagens salvas já foram carregadas
+    if (loadedSaved !== expectedSaved) return;
+
+    originalServicoRef.current = {
+      _id: servico?._id || "",
+      data: normalizeServico(servico),
+      imageCount: images.length,
+    };
+
+    setSnapshotReady(true);
+  }, [components?.drawer, behavior, snapshotReady, servico, images]);
+
+  const hasChanges = useMemo(() => {
+    if (behavior === "create") return true;
+    if (!snapshotReady || !originalServicoRef.current) return false;
+
+    const current = {
+      data: normalizeServico(servico),
+      imageCount: images.length,
+    };
+
+    const original = {
+      data: originalServicoRef.current.data,
+      imageCount: originalServicoRef.current.imageCount,
+    };
+
+    return JSON.stringify(current) !== JSON.stringify(original);
+  }, [behavior, snapshotReady, servico, images]);
+
+  const isSaveDisabled =
+    loading ||
+    !requiredFilled ||
+    (behavior === "update" && !hasChanges);
+
+return (
+  <div className="col">
+    <TableComponent
+      loading={form.filtering}
+      title="Serviços"
+      rows={servicosProcessados}
+      columns={columns}
+      buttonLabel="Novo Serviço"
+      iconClass="mdi mdi-plus"
+      onButtonClick={handleNovoServico}
+      toolbarComponent={(selectedIds) => (
+        <>
+          {filtro}
+          <Button
+            variant="outlined"
+            color="error"
+            disabled={selectedIds.length === 0}
+            onClick={() => {
+              handleOpenDialog(selectedIds);
+              //console.log(selectedIds);
+            }}
+          >
+            Excluir
+          </Button>
+        </>
+      )}
+      onRowClick={(servico) => {
+        setImages([]);
+        setRemovedImagePreviews([]);
+        originalServicoRef.current = null;
+        setSnapshotReady(false);
+
+        dispatch(
+          updateServico({
+            behavior: "update",
+            servico,
+            form: {
+              ...servico.form,
+              disabled: false,
+            },
+          })
+        );
+        setComponent("drawer", true);
+      }}
+      checkboxSelection={true}
+      renderExpandedRow={renderDetalhesServico}
+    />
+    {/* Drawer Component Controlado diretamente pelo estado do Redux */}
+    <div
+      style={{ display: "flex", flexDirection: "column", marginLeft: "16px" }}
+    >
+      <CustomDrawer
+        show={components.drawer}
+        anchor={isMobile || isTablet ? "bottom" : "right"}
+        isOpen={components.drawer}
+        onClose={() => setComponent("drawer", false)}
       >
-        <CustomDrawer
-          show={components.drawer}
-          anchor={isMobile || isTablet ? "bottom" : "right"}
-          isOpen={components.drawer}
-          onClose={() => setComponent("drawer", false)}
-        >
-          <div className="col-12">
-            <h3>
-              {behavior === "create" ? "Criar Novo" : "Atualizar"} Serviço
-            </h3>
-            {/* Aqui você pode adicionar inputs, formulários, etc */}
-            <p>Verifique as informações antes de salvar:</p>
-            <div className="row mt-3">
-              <div className="form-group col-12 mb-3">
-                <TextField
-                  label="Título"
-                  type="text"
-                  fullWidth
-                  variant="outlined"
-                  value={servico?.titulo || ""}
-                  placeholder="Digite o título do serviço"
-                  onChange={(e) => setServico("titulo", e.target.value)}
-                  InputProps={{
-                    style: {
-                      fontSize: "0.8rem", // Altere esse valor conforme quiser
-                    },
-                    startAdornment: (
-                      <InputAdornment position="start">
-                        <SubtitlesIcon />
-                      </InputAdornment>
-                    ),
-                  }}
-                />
-              </div>
-              <div className="form-group col-12 mb-3">
-                <TextField
-                  label="R$ Preço"
-                  type="text"
-                  fullWidth
-                  variant="outlined"
-                  placeholder="Digite o preço do serviço"
-                  value={
-                    isFocused ? servico?.preco : formatPreco(servico?.preco)
-                  } // Exibe sem casas decimais quando em foco
-                  onChange={handlePrecoChange}
-                  onFocus={() => setIsFocused(true)} // Ao focar no campo, remove as casas decimais
-                  onBlur={() => setIsFocused(false)} // Ao sair do campo, exibe com 2 casas decimais
-                  InputProps={{
-                    startAdornment: (
-                      <InputAdornment position="start">
-                        <AttachMoneyIcon />
-                      </InputAdornment>
-                    ),
-                  }}
-                  inputProps={{
-                    style: {
-                      fontSize: "0.8rem", // Altere esse valor conforme quiser
-                    },
-                  }}
-                />
-              </div>
-              <div className="form-group col-12 mb-3">
-                <TextField
-                  label="Recorrência (dias)"
-                  type="number"
-                  fullWidth
-                  variant="outlined"
-                  placeholder="Digite a recorrência do serviço"
-                  value={servico?.recorrencia || ""}
-                  onChange={(e) => setServico("recorrencia", e.target.value)}
-                  InputProps={{
-                    startAdornment: (
-                      <InputAdornment position="start">
-                        <DateRangeIcon />
-                      </InputAdornment>
-                    ),
-                  }}
-                  inputProps={{
-                    style: {
-                      fontSize: "0.8rem", // Altere esse valor conforme quiser
-                    },
-                  }}
-                />
-              </div>
-              <div className="form-group col-12 mb-3">
-                <TextField
-                  label="% Comissão"
-                  type="number"
-                  fullWidth
-                  variant="outlined"
-                  placeholder="Digite a comissão do serviço"
-                  value={servico?.comissao || ""}
-                  onChange={(e) => setServico("comissao", e.target.value)}
-                  InputProps={{
-                    startAdornment: (
-                      <InputAdornment position="start">
-                        <PercentIcon />
-                      </InputAdornment>
-                    ),
-                  }}
-                  inputProps={{
-                    style: {
-                      fontSize: "0.8rem", // Altere esse valor conforme quiser
-                    },
-                  }}
-                />
-              </div>
-              <div className="form-group col-6 mb-2">
-                <FormControl fullWidth variant="outlined">
-                  <InputLabel>Status</InputLabel>
-                  <Select
-                    value={servico?.status || ""}
-                    onChange={(e) => setServico("status", e.target.value)}
-                    label="Status"
-                    startAdornment={
-                      <InputAdornment position="start">
-                        <AutorenewIcon />
-                      </InputAdornment>
-                    }
-                    sx={{ fontSize: "0.8rem" }} // Aplica no valor selecionado
-                    MenuProps={{
-                      PaperProps: {
-                        sx: {
-                          fontSize: "0.8rem", // Aplica no dropdown
-                        },
+        <div className="col-12">
+          <h3>
+            {behavior === "create" ? "Criar Novo" : "Atualizar"} Serviço
+          </h3>
+          {/* Aqui você pode adicionar inputs, formulários, etc */}
+          <p>Verifique as informações antes de salvar:</p>
+          <div className="row mt-3">
+            <div className="form-group col-12 mb-3">
+              <TextField
+                label="Título"
+                type="text"
+                fullWidth
+                variant="outlined"
+                value={servico?.titulo || ""}
+                placeholder="Digite o título do serviço"
+                onChange={(e) => setServico("titulo", e.target.value)}
+                InputProps={{
+                  style: {
+                    fontSize: "0.8rem", // Altere esse valor conforme quiser
+                  },
+                  startAdornment: (
+                    <InputAdornment position="start">
+                      <SubtitlesIcon />
+                    </InputAdornment>
+                  ),
+                }}
+              />
+            </div>
+            <div className="form-group col-12 mb-3">
+              <TextField
+                label="R$ Preço"
+                type="text"
+                fullWidth
+                variant="outlined"
+                placeholder="Digite o preço do serviço"
+                value={
+                  isFocused ? servico?.preco : formatPreco(servico?.preco)
+                } // Exibe sem casas decimais quando em foco
+                onChange={handlePrecoChange}
+                onFocus={() => setIsFocused(true)} // Ao focar no campo, remove as casas decimais
+                onBlur={() => setIsFocused(false)} // Ao sair do campo, exibe com 2 casas decimais
+                InputProps={{
+                  startAdornment: (
+                    <InputAdornment position="start">
+                      <AttachMoneyIcon />
+                    </InputAdornment>
+                  ),
+                }}
+                inputProps={{
+                  style: {
+                    fontSize: "0.8rem", // Altere esse valor conforme quiser
+                  },
+                }}
+              />
+            </div>
+            <div className="form-group col-12 mb-3">
+              <TextField
+                label="Recorrência (dias)"
+                type="number"
+                fullWidth
+                variant="outlined"
+                placeholder="Digite a recorrência do serviço"
+                value={servico?.recorrencia || ""}
+                onChange={(e) => setServico("recorrencia", e.target.value)}
+                InputProps={{
+                  startAdornment: (
+                    <InputAdornment position="start">
+                      <DateRangeIcon />
+                    </InputAdornment>
+                  ),
+                }}
+                inputProps={{
+                  style: {
+                    fontSize: "0.8rem", // Altere esse valor conforme quiser
+                  },
+                }}
+              />
+            </div>
+            <div className="form-group col-12 mb-3">
+              <TextField
+                label="% Comissão"
+                type="number"
+                fullWidth
+                variant="outlined"
+                placeholder="Digite a comissão do serviço"
+                value={servico?.comissao || ""}
+                onChange={(e) => setServico("comissao", e.target.value)}
+                InputProps={{
+                  startAdornment: (
+                    <InputAdornment position="start">
+                      <PercentIcon />
+                    </InputAdornment>
+                  ),
+                }}
+                inputProps={{
+                  style: {
+                    fontSize: "0.8rem", // Altere esse valor conforme quiser
+                  },
+                }}
+              />
+            </div>
+            <div className="form-group col-6 mb-2">
+              <FormControl fullWidth variant="outlined">
+                <InputLabel>Status</InputLabel>
+                <Select
+                  value={servico?.status || ""}
+                  onChange={(e) => setServico("status", e.target.value)}
+                  label="Status"
+                  startAdornment={
+                    <InputAdornment position="start">
+                      <AutorenewIcon />
+                    </InputAdornment>
+                  }
+                  sx={{ fontSize: "0.8rem" }} // Aplica no valor selecionado
+                  MenuProps={{
+                    PaperProps: {
+                      sx: {
+                        fontSize: "0.8rem", // Aplica no dropdown
                       },
-                    }}
-                  >
-                    <MenuItem value="A">Ativo</MenuItem>
-                    <MenuItem value="I">Inativo</MenuItem>
-                  </Select>
-                </FormControl>
-              </div>
-              <div className="form-group col-6 mb-2">
-                <FormControl fullWidth variant="outlined">
-                  <InputLabel>Tipo de Serviço</InputLabel>
-                  <Select
-                    value={servico?.tipoServico || ""}
-                    onChange={(e) => setServico("tipoServico", e.target.value)}
-                    label="Tipo de Serviço"
-                    startAdornment={
-                      <InputAdornment position="start">
-                        <ManageSearchIcon />
-                      </InputAdornment>
-                    }
-                    sx={{ fontSize: "0.8rem" }} // Aplica no valor selecionado
-                    MenuProps={{
-                      PaperProps: {
-                        sx: {
-                          fontSize: "0.8rem", // Aplica no dropdown
-                        },
+                    },
+                  }}
+                >
+                  <MenuItem value="A">Ativo</MenuItem>
+                  {behavior === "update" && (<MenuItem value="I">Inativo</MenuItem>)}
+                </Select>
+              </FormControl>
+            </div>
+            <div className="form-group col-6 mb-2">
+              <FormControl fullWidth variant="outlined">
+                <InputLabel>Tipo de Serviço</InputLabel>
+                <Select
+                  value={servico?.tipoServico || ""}
+                  onChange={(e) => setServico("tipoServico", e.target.value)}
+                  label="Tipo de Serviço"
+                  startAdornment={
+                    <InputAdornment position="start">
+                      <ManageSearchIcon />
+                    </InputAdornment>
+                  }
+                  sx={{ fontSize: "0.8rem" }} // Aplica no valor selecionado
+                  MenuProps={{
+                    PaperProps: {
+                      sx: {
+                        fontSize: "0.8rem", // Aplica no dropdown
                       },
-                    }}
-                  >
-                    <MenuItem value="Barbearia">Barbearia</MenuItem>
-                    {/* <MenuItem value="Cabeleireiro">Cabeleireiro</MenuItem>
+                    },
+                  }}
+                >
+                  <MenuItem value="Barbearia">Barbearia</MenuItem>
+                  {/* <MenuItem value="Cabeleireiro">Cabeleireiro</MenuItem>
                     <MenuItem value="Manicure">Manicure</MenuItem>
                     <MenuItem value="Pedicure">Pedicure</MenuItem> */}
-                    <MenuItem value="Cuidados">Cuidados</MenuItem>
-                    <MenuItem value="Crianças">Crianças</MenuItem>
-                    {/* <MenuItem value="Outros">Outros</MenuItem> */}
-                  </Select>
-                </FormControl>
-              </div>
-              <div className="form-group col-12 mb-3">
-                <LocalizationProvider dateAdapter={AdapterDayjs}>
-                  <DemoContainer components={["TimePicker"]}>
-                    <DemoItem>
-                      <TimePicker
-                        label="Duração"
-                        value={servico?.duracao ? dayjs(servico.duracao) : null}// Valor inicial
-                        onChange={(newValue) => {
-                          console.log("Novo valor de duração:", newValue); // Log do valor retornado
-                          setServico('duracao', newValue ? newValue.toDate() : null); // Atualizando o estado com o valor correto
-                        }}
-                        ampm={false} // Formato de 24 horas
-                        minutesStep={30} // Permitindo apenas 30 minutos, por exemplo
-                        fullWidth
-                        slotProps={{
-                          textField: {
-                            variant: "outlined",
-                            fullWidth: true,
-                            InputProps: {
-                              sx: {
-                                "& .MuiInputBase-input": {
-                                  padding: "10px 14px",
-                                  fontSize: "0.8rem",
-                                },
+                  <MenuItem value="Cuidados">Cuidados</MenuItem>
+                  <MenuItem value="Crianças">Crianças</MenuItem>
+                  {/* <MenuItem value="Outros">Outros</MenuItem> */}
+                </Select>
+              </FormControl>
+            </div>
+            <div className="form-group col-12 mb-3">
+              <LocalizationProvider dateAdapter={AdapterDayjs}>
+                <DemoContainer components={["TimePicker"]}>
+                  <DemoItem>
+                    <TimePicker
+                      label="Duração"
+                      value={servico?.duracao ? dayjs(servico.duracao) : null}// Valor inicial
+                      onChange={(newValue) => {
+                        console.log("Novo valor de duração:", newValue); // Log do valor retornado
+                        setServico('duracao', newValue ? newValue.toDate() : null); // Atualizando o estado com o valor correto
+                      }}
+                      ampm={false} // Formato de 24 horas
+                      minutesStep={30} // Permitindo apenas 30 minutos, por exemplo
+                      fullWidth
+                      slotProps={{
+                        textField: {
+                          variant: "outlined",
+                          fullWidth: true,
+                          InputProps: {
+                            sx: {
+                              "& .MuiInputBase-input": {
+                                padding: "10px 14px",
+                                fontSize: "0.8rem",
                               },
                             },
                           },
-                        }}
-                      />
-                    </DemoItem>
-                  </DemoContainer>
-                </LocalizationProvider>
-              </div>
-              <div className="form-group col-12 mb-3">
-                <TextField
-                  label="Descrição"
-                  type="text"
-                  multiline
-                  rows={5}
-                  fullWidth
-                  variant="outlined"
-                  placeholder="Digite a descrição do serviço"
-                  value={servico?.descricao || ""}
-                  onChange={(e) => setServico("descricao", e.target.value)}
-                  InputProps={{
-                    startAdornment: (
-                      <InputAdornment position="start">
-                        <DescriptionIcon />
-                      </InputAdornment>
-                    ),
-                  }}
-                  inputProps={{
-                    style: {
-                      fontSize: "0.8rem", // Altere esse valor conforme quiser
-                    },
-                  }}
-                />
-              </div>
-              <div className="form-group col-12 mb-3">
-                <Stack spacing={2} alignItems="center">
-                  {/* Preview das imagens em grid */}
-                  <Grid container spacing={2} justifyContent="center">
-                    {images.map((img, index) => (
-                      <Grid key={index} sx={{ position: "relative" }}>
-                        <Box
-                          sx={{ position: "relative", display: "inline-block" }}
-                        >
-                          <Avatar
-                            src={img.preview}
-                            alt={`Preview ${index}`}
-                            sx={{ width: 100, height: 100 }}
-                          />
-                          <IconButton
-                            size="small"
-                            onClick={() => handleRemoveImage(index)}
-                            sx={{
-                              position: "absolute",
-                              top: -8,
-                              right: -8,
-                              backgroundColor: "#fff",
-                              "&:hover": { backgroundColor: "#f5f5f5" },
-                              boxShadow: 1,
-                            }}
-                          >
-                            <CloseIcon fontSize="small" />
-                          </IconButton>
-                        </Box>
-                      </Grid>
-                    ))}
-                  </Grid>
-
-                  {/* Botão com ícone que abre o input de imagem */}
-                  <Button
-                    variant="contained"
-                    component="label"
-                    startIcon={<PhotoCamera />}
-                  >
-                    Imagens do Serviço
-                    <input
-                      type="file"
-                      accept="image/*"
-                      hidden
-                      multiple // ⬅️ permite múltiplas seleções
-                      onChange={handleImageChange}
+                        },
+                      }}
                     />
-                  </Button>
-                </Stack>
-              </div>
+                  </DemoItem>
+                </DemoContainer>
+              </LocalizationProvider>
+            </div>
+            <div className="form-group col-12 mb-3">
+              <TextField
+                label="Descrição"
+                type="text"
+                multiline
+                rows={5}
+                fullWidth
+                variant="outlined"
+                placeholder="Digite a descrição do serviço"
+                value={servico?.descricao || ""}
+                onChange={(e) => setServico("descricao", e.target.value)}
+                InputProps={{
+                  startAdornment: (
+                    <InputAdornment position="start">
+                      <DescriptionIcon />
+                    </InputAdornment>
+                  ),
+                }}
+                inputProps={{
+                  style: {
+                    fontSize: "0.8rem", // Altere esse valor conforme quiser
+                  },
+                }}
+              />
+            </div>
+            <div className="form-group col-12 mb-3">
+              <Stack spacing={2} alignItems="center">
+                {/* Preview das imagens em grid */}
+                <Grid container spacing={2} justifyContent="center">
+                  {images.map((img, index) => (
+                    <Grid key={index} sx={{ position: "relative" }}>
+                      <Box
+                        sx={{ position: "relative", display: "inline-block" }}
+                      >
+                        <Avatar
+                          src={img.preview}
+                          alt={`Preview ${index}`}
+                          sx={{ width: 100, height: 100 }}
+                        />
+                        <IconButton
+                          size="small"
+                          onClick={() => handleRemoveImage(index)}
+                          sx={{
+                            position: "absolute",
+                            top: -8,
+                            right: -8,
+                            backgroundColor: "#fff",
+                            "&:hover": { backgroundColor: "#f5f5f5" },
+                            boxShadow: 1,
+                          }}
+                        >
+                          <CloseIcon fontSize="small" />
+                        </IconButton>
+                      </Box>
+                    </Grid>
+                  ))}
+                </Grid>
+
+                {/* Botão com ícone que abre o input de imagem */}
+                <Button
+                  variant="contained"
+                  component="label"
+                  startIcon={<PhotoCamera />}
+                >
+                  Imagens do Serviço
+                  <input
+                    type="file"
+                    accept="image/*"
+                    hidden
+                    multiple // ⬅️ permite múltiplas seleções
+                    onChange={handleImageChange}
+                  />
+                </Button>
+              </Stack>
             </div>
           </div>
-          <Button
-            fullWidth
-            variant="contained"
-            onClick={handleClickSave}
-            loading={loading}
-            loadingPosition="start"
-            startIcon={<SaveIcon />}
-            size="large"
-            sx={{
+        </div>
+        <Button
+          fullWidth
+          variant="contained"
+          onClick={handleClickSave}
+          disabled={isSaveDisabled}
+          startIcon={<SaveIcon />}
+          size="large"
+          sx={{
+            mt: 3,
+            backgroundColor: behavior === "create" ? "#2e7d32" : "#1565c0",
+            "&:hover": {
               mt: 3,
-              backgroundColor: behavior === "create" ? "#2e7d32" : "#1565c0", // verde e azul
-              "&:hover": {
-                mt: 3,
-                backgroundColor: behavior === "create" ? "#1b5e20" : "#0d47a1",
-              },
-            }}
-          >
-            {behavior === "create" ? "Salvar" : "Salvar alterações"}
-          </Button>
-        </CustomDrawer>
-      </div>
-      <Snackbar
-        open={alerta.open}
-        autoHideDuration={5000}
-        onClose={handleClose}
-        TransitionComponent={SlideTransition}
-        anchorOrigin={{
-          vertical: "top",
-          horizontal: isMobile ? "center" : "right",
-        }}
-      >
-        <Alert onClose={handleClose} severity={alerta.severity}>
-          <strong>{alerta.title}</strong>
-          <br />
-          {alerta.message}
-        </Alert>
-      </Snackbar>
-      <CustomDialog
-        open={components.confirmDelete}
-        title="Confirmar exclusão"
-        content="Tem certeza que deseja excluir o serviço selecionado? Essa ação não poderá ser desfeita."
-        onClose={handleCloseDialog}
-        onConfirm={() => {
-          if (selectedId) {
-            const vinculoId = servicosProcessados[selectedId - 1]?.selectedIds;
-            // console.log("Excluir:", servicosProcessados[selectedId -1]?.selectedIds);
-            remove(vinculoId); // use o ID diretamente
-          }
-        }}
-        confirmLabel="Excluir"
-        cancelLabel="Cancelar"
-      />
+              backgroundColor: behavior === " create" ? "#1b5e20" : "#0d47a1",
+            },
+          }}
+        >
+          {behavior === "create" ? "Salvar" : "Salvar alterações"}
+        </Button>
+      </CustomDrawer>
     </div>
-  );
+    <Snackbar
+      open={alerta.open}
+      autoHideDuration={5000}
+      onClose={handleClose}
+      TransitionComponent={SlideTransition}
+      anchorOrigin={{
+        vertical: "top",
+        horizontal: isMobile ? "center" : "right",
+      }}
+    >
+      <Alert onClose={handleClose} severity={alerta.severity}>
+        <strong>{alerta.title}</strong>
+        <br />
+        {alerta.message}
+      </Alert>
+    </Snackbar>
+    <CustomDialog
+      open={components.confirmDelete}
+      title="Confirmar exclusão"
+      content="Tem certeza que deseja excluir o serviço selecionado? Essa ação não poderá ser desfeita."
+      onClose={handleCloseDialog}
+      onConfirm={() => {
+        if (selectedId) {
+          const vinculoId = servicosProcessados[selectedId - 1]?.selectedIds;
+          // console.log("Excluir:", servicosProcessados[selectedId -1]?.selectedIds);
+          remove(vinculoId); // use o ID diretamente
+        }
+      }}
+      confirmLabel="Excluir"
+      cancelLabel="Cancelar"
+    />
+  </div>
+);
 };
 
 export default Servicos;
