@@ -84,13 +84,23 @@ router.post("/colaboradores", async (req, res) => {
       colaboradorId: { $in: colaboradoresIds },
       status: "A",
     })
-      .populate("colaboradorId", "nome");
+      .populate("colaboradorId", "nome sobrenome")
 
     // Remove duplicados (caso tenha algum)
     const listaColaboradores = _.uniqBy(
       colaboradoresAtivos.filter((v) => v?.colaboradorId?._id),
       (v) => v.colaboradorId._id.toString()
-    )
+    ).map((v) => {
+      const nomeCompleto = [v?.colaboradorId?.nome, v?.colaboradorId?.sobrenome]
+        .filter(Boolean)
+        .join(" ")
+        .trim();
+
+      return {
+        label: nomeCompleto || `Colaborador ${v.colaboradorId._id.toString().slice(-4)}`,
+        value: v.colaboradorId._id.toString(),
+      };
+    });
 
     res.json({
       error: false,

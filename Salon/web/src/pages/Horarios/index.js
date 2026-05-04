@@ -322,6 +322,8 @@ const Horarios = () => {
     dispatch(filterColaboradores(especialidadesIds));
   }, [dispatch, especialidadesIds.join("|")]);
 
+  console.log("colaboradoresSafe", colaboradoresSafe)
+
   return (
     <Box sx={{ px: { xs: 1.5, sm: 2.5, md: 3 }, py: { xs: 1, sm: 2 }, height: "100%" }}>
       <CustomDrawer
@@ -342,7 +344,9 @@ const Horarios = () => {
             <Autocomplete
               multiple
               options={diasDaSemana.map((label, index) => ({ label, value: index }))}
-              getOptionLabel={(option) => option.label}
+              getOptionLabel={(option) =>
+                (option?.label || option?.nome || option?.value || "").toString()
+              }
               sx={{ fontSize: "0.8rem" }} // Aplica no valor selecionado
               value={(horario?.dias || []).map((diaIndex) => ({
                 label: diasDaSemana[diaIndex],

@@ -94,12 +94,11 @@ export function* filterColaboradores(action) {
     }
 
     const listaColaboradores = (res?.listaColaboradores || [])
-      .filter(Boolean)
+      .filter((c) => c?.value)
       .map((c) => ({
-        label: c?.label || c?.nome || "",
-        value: String(getId(c)), // funciona com {value} ou {_id}
-      }))
-      .filter((c) => c.value);
+        value: String(c.value),
+        label: (c.label || "").trim() || `Colaborador ${String(c.value).slice(-4)}`,
+      }));
 
     yield put(
       updateHorario({
