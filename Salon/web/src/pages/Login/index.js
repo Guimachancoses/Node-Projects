@@ -28,6 +28,7 @@ import miniLogo from "../../assets/mini_logo.jpg";
 import FaleConoscoLink from "../../components/FooterLinks/FaleConoscoLink";
 import TermoServicoLink from "../../components/FooterLinks/TermoServicoLink";
 import PoliticaPrivacidadeLink from "../../components/FooterLinks/PoliticaPrivacidadeLink";
+import FooterSection from "../../components/FooterSection"
 
 const Alert = React.forwardRef(function Alert(props, ref) {
   return <MuiAlert elevation={6} ref={ref} variant="filled" {...props} />;
@@ -242,6 +243,7 @@ const Login = () => {
           |
         </Typography>
         <PoliticaPrivacidadeLink />
+        <FooterSection />
       </Box>
 
       <Snackbar
