@@ -374,7 +374,7 @@ const Servicos = () => {
       >
         <CustomDrawer
           show={components.drawer}
-          anchor={isMobile ? "bottom" : "right"}
+          anchor={isMobile || isTablet ? "bottom" : "right"}
           isOpen={components.drawer}
           onClose={() => setComponent("drawer", false)}
         >
