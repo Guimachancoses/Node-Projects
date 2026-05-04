@@ -18,6 +18,8 @@ import {
   Stack,
   Grid,
   Box,
+  useTheme,
+  useMediaQuery,
 } from "@mui/material";
 import MuiAlert from "@mui/material/Alert";
 import Snackbar from "@mui/material/Snackbar";
@@ -67,6 +69,9 @@ function SlideTransition(props) {
 
 const Servicos = () => {
   const dispatch = useDispatch();
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
+  const isTablet = useMediaQuery(theme.breakpoints.between("sm", "md"));
   const { servico, servicos, behavior, form, components } = useSelector(
     (state) => state.servico
   );
@@ -369,7 +374,7 @@ const Servicos = () => {
       >
         <CustomDrawer
           show={components.drawer}
-          anchor="right"
+          anchor={isMobile ? "bottom" : "right"}
           isOpen={components.drawer}
           onClose={() => setComponent("drawer", false)}
         >
@@ -539,9 +544,9 @@ const Servicos = () => {
                         label="Duração"
                         value={servico?.duracao ? dayjs(servico.duracao) : null}// Valor inicial
                         onChange={(newValue) => {
-                            console.log("Novo valor de duração:", newValue); // Log do valor retornado
-                            setServico('duracao', newValue ? newValue.toDate() : null); // Atualizando o estado com o valor correto
-                          }}
+                          console.log("Novo valor de duração:", newValue); // Log do valor retornado
+                          setServico('duracao', newValue ? newValue.toDate() : null); // Atualizando o estado com o valor correto
+                        }}
                         ampm={false} // Formato de 24 horas
                         minutesStep={30} // Permitindo apenas 30 minutos, por exemplo
                         fullWidth
@@ -667,7 +672,10 @@ const Servicos = () => {
         autoHideDuration={5000}
         onClose={handleClose}
         TransitionComponent={SlideTransition}
-        anchorOrigin={{ vertical: "top", horizontal: "right" }}
+        anchorOrigin={{
+          vertical: "top",
+          horizontal: isMobile ? "center" : "right",
+        }}
       >
         <Alert onClose={handleClose} severity={alerta.severity}>
           <strong>{alerta.title}</strong>
@@ -682,7 +690,7 @@ const Servicos = () => {
         onClose={handleCloseDialog}
         onConfirm={() => {
           if (selectedId) {
-            const vinculoId = servicosProcessados[selectedId -1]?.selectedIds;
+            const vinculoId = servicosProcessados[selectedId - 1]?.selectedIds;
             // console.log("Excluir:", servicosProcessados[selectedId -1]?.selectedIds);
             remove(vinculoId); // use o ID diretamente
           }

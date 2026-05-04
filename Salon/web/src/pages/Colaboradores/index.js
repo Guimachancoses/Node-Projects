@@ -13,6 +13,8 @@ import {
   Select,
   Checkbox,
   ListItemText,
+  useTheme,
+  useMediaQuery,
 } from "@mui/material";
 import MuiAlert from "@mui/material/Alert";
 import Snackbar from "@mui/material/Snackbar";
@@ -77,6 +79,9 @@ function SlideTransition(props) {
 
 const Colaboradores = () => {
   const dispatch = useDispatch();
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
+  const isTablet = useMediaQuery(theme.breakpoints.between("sm", "md"));
   const { user: userStore, colaborador, colaboradores, behavior, form, components, servicos } =
     useSelector((state) => state.colaborador);
 
@@ -594,7 +599,7 @@ const Colaboradores = () => {
       >
         <CustomDrawer
           show={components.drawer}
-          anchor="right"
+          anchor={isMobile ? "bottom" : "right"}
           isOpen={components.drawer}
           onClose={handleCloseDrawer}
         >
@@ -1085,7 +1090,10 @@ const Colaboradores = () => {
         autoHideDuration={5000}
         onClose={handleClose}
         TransitionComponent={SlideTransition}
-        anchorOrigin={{ vertical: "top", horizontal: "right" }}
+        anchorOrigin={{
+          vertical: "top",
+          horizontal: isMobile ? "center" : "right",
+        }}
       >
         <Alert onClose={handleClose} severity={alerta.severity}>
           <strong>{alerta.title}</strong>

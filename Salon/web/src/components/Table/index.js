@@ -16,27 +16,31 @@ import {
   Typography,
   Checkbox,
   Toolbar,
+  Stack,
+  Card,
+  CardContent,
+  Chip,
+  Divider,
+  useMediaQuery,
+  CircularProgress,
 } from "@mui/material";
 import { useTheme } from "@mui/material/styles";
-import { Chip } from "@mui/material";
 import KeyboardArrowDownIcon from "@mui/icons-material/KeyboardArrowDown";
 import KeyboardArrowUpIcon from "@mui/icons-material/KeyboardArrowUp";
 import PropTypes from "prop-types";
 
 function descendingComparator(a, b, orderBy) {
-  if (b[orderBy] < a[orderBy]) return -1;
-  if (b[orderBy] > a[orderBy]) return 1;
+  if (b?.[orderBy] < a?.[orderBy]) return -1;
+  if (b?.[orderBy] > a?.[orderBy]) return 1;
   return 0;
 }
-
 function getComparator(order, orderBy) {
   return order === "desc"
     ? (a, b) => descendingComparator(a, b, orderBy)
     : (a, b) => -descendingComparator(a, b, orderBy);
 }
-
 function stableSort(array, comparator) {
-  return array.slice().sort(comparator);
+  return (array || []).slice().sort(comparator);
 }
 
 const TableComponent = ({
@@ -44,18 +48,24 @@ const TableComponent = ({
   rows = [],
   columns = [],
   buttonLabel = "",
-  onButtonClick = () => { },
-  onRowClick = () => { },
-  height = 400,
+  onButtonClick = () => {},
+  onRowClick = () => {},
+  height = 520,
   checkboxSelection = false,
   iconClass = "",
   toolbarComponent = null,
   renderExpandedRow = null,
+  loading = false,
 }) => {
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
+
   const [expandedRowId, setExpandedRowId] = React.useState(null);
   const [order, setOrder] = React.useState("asc");
   const [orderBy, setOrderBy] = React.useState(columns[0]?.field || "");
   const [selectedIds, setSelectedIds] = React.useState([]);
+
+  const sortedRows = stableSort(rows, getComparator(order, orderBy));
 
   const handleSort = (property) => {
     const isAsc = orderBy === property && order === "asc";
@@ -69,194 +79,228 @@ const TableComponent = ({
     );
   };
 
-  // const handleSelectAll = (event) => {
-  //   if (event.target.checked) {
-  //     setSelectedIds(rows.map((r) => r.id));
-  //   } else {
-  //     setSelectedIds([]);
-  //   }
-  // };
-
-  const handleRowClick = (row) => {
-    onRowClick(row); // só ação externa (ex.: abrir drawer)
+  const renderCellValue = (row, col) => {
+    if (col.field === "statusFormat") {
+      return (
+        <Chip
+          label={row[col.field]}
+          color={row[col.field] === "Ativo" ? "success" : "error"}
+          size="small"
+        />
+      );
+    }
+    if (col.field === "chatbotStatus") {
+      return row[col.field] ? <Chip label="ChatBot" color="success" size="small" /> : "-";
+    }
+    return row[col.field] ?? "-";
   };
 
-  const theme = useTheme();
-
   return (
-    <Container maxWidth="lg" sx={{ px: 5, backgroundColor: "inquerit" }}>
-      <Box display="flex" justifyContent="space-between" mb={3}>
-        <Box variant="h4" component="h2" sx={{ color: "white" }}>
+    <Container maxWidth={false} sx={{ px: { xs: 1, sm: 2, md: 3 } }}>
+      <Stack
+        direction={{ xs: "column", sm: "row" }}
+        justifyContent="space-between"
+        alignItems={{ xs: "stretch", sm: "center" }}
+        gap={1.5}
+        mb={2}
+      >
+        <Typography variant="h5" sx={{ color: "white", fontWeight: 700 }}>
           {title}
-        </Box>
-        {buttonLabel && (
+        </Typography>
+
+        {!!buttonLabel && (
           <Button
             variant="contained"
-            size="medium"
             onClick={onButtonClick}
+            fullWidth={isMobile}
             startIcon={iconClass ? <span className={iconClass} /> : null}
-            sx={{
-              textTransform: "none",
-              minHeight: 36,
-              py: 0,
-              fontSize: "0.875rem",
-              fontWeight: 500,
-              lineHeight: 1.75,
-            }}
+            sx={{ textTransform: "none", minHeight: 40, fontWeight: 600 }}
           >
             {buttonLabel}
           </Button>
         )}
-      </Box>
+      </Stack>
 
       {toolbarComponent && (
-        <Toolbar sx={{ justifyContent: "space-between", mb: 2 }}>
+        <Toolbar sx={{ justifyContent: "space-between", px: 0, mb: 1 }}>
           {selectedIds.length > 0 ? (
-            <Typography sx={{ color: "white" }}>
-              {selectedIds.length} selecionado(s)
-            </Typography>
+            <Typography sx={{ color: "white" }}>{selectedIds.length} selecionado(s)</Typography>
           ) : (
-            ""
+            <Box />
           )}
           {toolbarComponent(selectedIds)}
         </Toolbar>
       )}
 
-      <TableContainer
-        component={Paper}
-        sx={{
-          maxHeight: height,
-          backgroundColor:
-            theme.palette.mode === "dark"
-              ? "rgba(47, 50, 67, 0.5)"
-              : "rgba(255, 255, 255, 0.7)", // ajuste aqui a opacidade como quiser
-          backdropFilter: "blur(4px)", // opcional: efeito de vidro fosco bonito
-          borderRadius: 2,
-          boxShadow: theme.shadows[3],
-        }}
-      >
-        <Table stickyHeader>
-          <TableHead>
-            <TableRow>
-              {<TableCell></TableCell>}
-              {columns.map((column) => (
-                <TableCell
-                  key={column.field}
-                  align={column.align || "left"}
-                  sortDirection={orderBy === column.field ? order : false}
-                  sx={{ fontWeight: "bold" }}
-                >
-                  <TableSortLabel
-                    active={orderBy === column.field}
-                    direction={orderBy === column.field ? order : "asc"}
-                    onClick={() => handleSort(column.field)}
-                  >
-                    {column.headerName}
-                  </TableSortLabel>
-                </TableCell>
-              ))}
-              <TableCell />
-            </TableRow>
-          </TableHead>
+      {loading ? (
+        <Paper sx={{ p: 4, textAlign: "center" }}>
+          <CircularProgress />
+        </Paper>
+      ) : isMobile ? (
+        <Stack spacing={1.2}>
+          {sortedRows.map((row) => (
+            <Card
+              key={row.id}
+              sx={{
+                backgroundColor:
+                  theme.palette.mode === "dark"
+                    ? "rgba(47,50,67,.6)"
+                    : "rgba(255,255,255,.9)",
+                backdropFilter: "blur(4px)",
+                borderRadius: 2,
+              }}
+            >
+              <CardContent sx={{ pb: "12px !important" }}>
+                <Stack direction="row" justifyContent="space-between" alignItems="center">
+                  <Typography variant="subtitle2" fontWeight={700}>
+                    {row.nome || `#${row.id}`}
+                  </Typography>
 
-          <TableBody>
-            {stableSort(rows, getComparator(order, orderBy)).map((row) => (
-              <React.Fragment key={row.id}>
-                <TableRow
-                  hover
-                  sx={{
-                    cursor: "pointer",
-                  }}
-                  selected={selectedIds.includes(row.id)}
-                  key={`row-${row.id}`}
-                  onClick={() => handleRowClick(row)}
-                >
-                  {checkboxSelection && (
-                    <TableCell padding="checkbox" key={`checkbox-${row.id}`}>
+                  <Stack direction="row" alignItems="center" spacing={0.5}>
+                    {checkboxSelection && (
                       <Checkbox
                         checked={selectedIds.includes(row.id)}
-                        onClick={(e) => {
-                          e.stopPropagation(); // Impede que o clique na checkbox abra o drawer
-                          handleSelectRow(row.id);
-                        }}
+                        onChange={() => handleSelectRow(row.id)}
                       />
-                    </TableCell>
-                  )}
-
-                  {columns.map((col) => (
-                    <TableCell
-                      key={`cell-${row.id}-${col.field}`}
-                      align={col.align || "left"}
-                      style={{ width: col.width || "auto" }}
-                    >
-                      {col.field === "statusFormat" ? (
-                        <Chip
-                          label={row[col.field]}
-                          color={row[col.field] === "Ativo" ? "success" : "error"}
-                          size="small"
-                        />
-                      ) : col.field === "chatbotStatus" ? (
-                        row[col.field] ? (
-                          <Chip label="ChatBot" color="success" size="small" />
-                        ) : null
-                      ) : (
-                        row[col.field]
-                      )}
-                    </TableCell>
-                  ))}
-
-                  <TableCell align="right" key={`expand-btn-${row.id}`}>
+                    )}
                     <IconButton
                       size="small"
-                      id={`flecha-expand-icon-btn-${row.id}`}
-                      onClick={(e) => {
-                        e.stopPropagation(); // Evita que o clique no botão propague
-                        setExpandedRowId((prev) =>
-                          prev === row.id ? null : row.id
-                        );
-                      }}
+                      onClick={() =>
+                        setExpandedRowId((prev) => (prev === row.id ? null : row.id))
+                      }
                     >
-                      {expandedRowId === row.id ? (
-                        <KeyboardArrowUpIcon />
-                      ) : (
-                        <KeyboardArrowDownIcon />
-                      )}
+                      {expandedRowId === row.id ? <KeyboardArrowUpIcon /> : <KeyboardArrowDownIcon />}
                     </IconButton>
-                  </TableCell>
-                </TableRow>
+                  </Stack>
+                </Stack>
 
-                <TableRow key={`row-expanded-${row.id}`}>
+                <Divider sx={{ my: 1 }} />
+
+                {columns.slice(0, 3).map((col) => (
+                  <Typography key={`${row.id}-${col.field}`} variant="body2" sx={{ mb: 0.4 }}>
+                    <strong>{col.headerName}:</strong> {renderCellValue(row, col)}
+                  </Typography>
+                ))}
+
+                <Button
+                  size="small"
+                  sx={{ mt: 1, textTransform: "none" }}
+                  onClick={() => onRowClick(row)}
+                >
+                  Ver / Editar
+                </Button>
+
+                <Collapse in={expandedRowId === row.id} timeout="auto" unmountOnExit>
+                  <Box mt={1.2}>
+                    {renderExpandedRow ? (
+                      renderExpandedRow(row)
+                    ) : (
+                      <Typography variant="body2">Detalhes: {JSON.stringify(row)}</Typography>
+                    )}
+                  </Box>
+                </Collapse>
+              </CardContent>
+            </Card>
+          ))}
+        </Stack>
+      ) : (
+        <TableContainer
+          component={Paper}
+          sx={{
+            maxHeight: height,
+            overflowX: "auto",
+            backgroundColor:
+              theme.palette.mode === "dark"
+                ? "rgba(47, 50, 67, 0.5)"
+                : "rgba(255, 255, 255, 0.75)",
+            backdropFilter: "blur(4px)",
+            borderRadius: 2,
+            boxShadow: theme.shadows[3],
+          }}
+        >
+          <Table stickyHeader size="small">
+            <TableHead>
+              <TableRow>
+                <TableCell />
+                {columns.map((column) => (
                   <TableCell
-                    colSpan={columns.length + (checkboxSelection ? 2 : 1)}
-                    style={{ paddingBottom: 0, paddingTop: 0 }}
+                    key={column.field}
+                    align={column.align || "left"}
+                    sortDirection={orderBy === column.field ? order : false}
+                    sx={{ fontWeight: "bold", whiteSpace: "nowrap" }}
                   >
-                    <Collapse
-                      in={expandedRowId === row.id}
-                      timeout="auto"
-                      unmountOnExit
+                    <TableSortLabel
+                      active={orderBy === column.field}
+                      direction={orderBy === column.field ? order : "asc"}
+                      onClick={() => handleSort(column.field)}
                     >
-                      <Box margin={2}>
-                        {renderExpandedRow ? (
-                          renderExpandedRow(row)
-                        ) : (
-                          <>
-                            <Typography variant="subtitle1" gutterBottom>
-                              Detalhes do Cliente
-                            </Typography>
-                            <Typography>
-                              Nome completo: {JSON.stringify(row)}
-                            </Typography>
-                          </>
-                        )}
-                      </Box>
-                    </Collapse>
+                      {column.headerName}
+                    </TableSortLabel>
                   </TableCell>
-                </TableRow>
-              </React.Fragment>
-            ))}
-          </TableBody>
-        </Table>
-      </TableContainer>
+                ))}
+                <TableCell />
+              </TableRow>
+            </TableHead>
+
+            <TableBody>
+              {sortedRows.map((row) => (
+                <React.Fragment key={row.id}>
+                  <TableRow
+                    hover
+                    selected={selectedIds.includes(row.id)}
+                    sx={{ cursor: "pointer" }}
+                    onClick={() => onRowClick(row)}
+                  >
+                    {checkboxSelection && (
+                      <TableCell padding="checkbox">
+                        <Checkbox
+                          checked={selectedIds.includes(row.id)}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleSelectRow(row.id);
+                          }}
+                        />
+                      </TableCell>
+                    )}
+
+                    {columns.map((col) => (
+                      <TableCell key={`${row.id}-${col.field}`} sx={{ whiteSpace: "nowrap" }}>
+                        {renderCellValue(row, col)}
+                      </TableCell>
+                    ))}
+
+                    <TableCell align="right">
+                      <IconButton
+                        size="small"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setExpandedRowId((prev) => (prev === row.id ? null : row.id));
+                        }}
+                      >
+                        {expandedRowId === row.id ? <KeyboardArrowUpIcon /> : <KeyboardArrowDownIcon />}
+                      </IconButton>
+                    </TableCell>
+                  </TableRow>
+
+                  <TableRow>
+                    <TableCell colSpan={columns.length + (checkboxSelection ? 2 : 1)} sx={{ py: 0 }}>
+                      <Collapse in={expandedRowId === row.id} timeout="auto" unmountOnExit>
+                        <Box m={2}>
+                          {renderExpandedRow ? (
+                            renderExpandedRow(row)
+                          ) : (
+                            <Typography>Detalhes: {JSON.stringify(row)}</Typography>
+                          )}
+                        </Box>
+                      </Collapse>
+                    </TableCell>
+                  </TableRow>
+                </React.Fragment>
+              ))}
+            </TableBody>
+          </Table>
+        </TableContainer>
+      )}
     </Container>
   );
 };
@@ -273,6 +317,7 @@ TableComponent.propTypes = {
   iconClass: PropTypes.string,
   toolbarComponent: PropTypes.oneOfType([PropTypes.node, PropTypes.func]),
   renderExpandedRow: PropTypes.func,
+  loading: PropTypes.bool,
 };
 
 export default TableComponent;

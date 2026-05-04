@@ -11,6 +11,8 @@ import {
   InputLabel,
   MenuItem,
   Select,
+  useTheme,
+  useMediaQuery
 } from "@mui/material";
 import MuiAlert from "@mui/material/Alert";
 import Snackbar from "@mui/material/Snackbar";
@@ -70,6 +72,9 @@ function SlideTransition(props) {
 
 const Clientes = () => {
   const dispatch = useDispatch();
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
+  const isTablet = useMediaQuery(theme.breakpoints.between("sm", "md"));
   const { cliente, clientes, behavior, form, components } = useSelector(
     (state) => state.cliente
   );
@@ -488,7 +493,7 @@ const Clientes = () => {
       >
         <CustomDrawer
           show={components.drawer}
-          anchor="right"
+          anchor={isMobile ? "bottom" : "right"}
           isOpen={components.drawer}
           onClose={handleCloseDrawer}
         >
@@ -896,7 +901,10 @@ const Clientes = () => {
         autoHideDuration={5000}
         onClose={handleClose}
         TransitionComponent={SlideTransition}
-        anchorOrigin={{ vertical: "top", horizontal: "right" }}
+        anchorOrigin={{
+          vertical: "top",
+          horizontal: isMobile ? "center" : "right",
+        }}
       >
         <Alert onClose={handleClose} severity={alerta.severity}>
           <strong>{alerta.title}</strong>
