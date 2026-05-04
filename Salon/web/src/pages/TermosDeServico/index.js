@@ -1,4 +1,3 @@
-import React from "react";
 import {
   Alert,
   Box,
@@ -137,8 +136,8 @@ const TermosDeServico = () => {
             </Typography>
 
             <Stack direction="row" spacing={1} sx={{ mt: 2, flexWrap: "wrap", gap: 1 }}>
-              <Chip icon={<PrivacyTipIcon />} label="LGPD" size="small" />
-              <Chip icon={<SecurityIcon />} label="Boas práticas de segurança" size="small" />
+              <Chip icon={<PrivacyTipIcon />} label="LGPD" size="small" sx={{ color: "#fff" }} />
+              <Chip icon={<SecurityIcon />} label="Boas práticas de segurança" size="small" sx={{ color: "#fff" }} />
             </Stack>
           </Box>
 

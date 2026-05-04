@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState, forwardRef } from "react";
+import { useEffect, useMemo, useState, forwardRef, useRef } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { Calendar, momentLocalizer } from "react-big-calendar";
 import "react-big-calendar/lib/css/react-big-calendar.css";
@@ -190,6 +190,7 @@ const Agendamentos = () => {
   };
 
   const handleEditar = () => {
+    if (isLockedForEdit) return;
     dispatch(
       updateAgendamentoState({
         behavior: "update",
@@ -221,17 +222,30 @@ const Agendamentos = () => {
     setComponent("drawer", false);
   };
 
-  const eventStyleGetter = (event) => ({
-    style: {
-      backgroundColor: event.status === "confirmado" ? "#2e7d32" : "#ef6c00",
-      color: "#fff",
-      borderRadius: 8,
-      border: "none",
-      padding: isMobile ? "2px 4px" : "4px 6px",
-      fontSize: isMobile ? "0.72rem" : "0.82rem",
-      lineHeight: 1.2,
-    },
-  });
+  const eventStyleGetter = (event) => {
+    // considera fim do evento; se não tiver, usa start
+    const eventEnd = moment(event?.end || event?.start);
+    const isPast = eventEnd.isBefore(moment());
+
+    const backgroundColor = isPast
+      ? "#d9d9d9" // cinza claro para evento passado
+      : event?.status === "confirmado"
+        ? "#2e7d32" // verde
+        : "#ef6c00"; // laranja
+
+    return {
+      style: {
+        backgroundColor,
+        color: isPast ? "#4a4a4a" : "#fff",
+        borderRadius: 8,
+        border: "none",
+        padding: isMobile ? "2px 4px" : "4px 6px",
+        fontSize: isMobile ? "0.72rem" : "0.82rem",
+        lineHeight: 1.2,
+        opacity: isPast ? 0.9 : 1,
+      },
+    };
+  };
 
   const calendarStyles = {
     cursor: "pointer",
@@ -273,7 +287,80 @@ const Agendamentos = () => {
       ? agendamento?.colaboradorId?._id || ""
       : agendamento?.colaboradorId || "";
 
+  const originalAgendamentoRef = useRef(null);
 
+  const normalizeAgendamento = (a = {}) => ({
+    data: a?.data ? String(a.data) : "",
+    clienteId: typeof a?.clienteId === "object" ? a?.clienteId?._id || "" : a?.clienteId || "",
+    colaboradorId: typeof a?.colaboradorId === "object" ? a?.colaboradorId?._id || "" : a?.colaboradorId || "",
+    servicoId: typeof a?.servicoId === "object" ? a?.servicoId?._id || "" : a?.servicoId || "",
+    status: a?.status || "",
+    statusPagamento: a?.statusPagamento || "",
+  });
+
+  useEffect(() => {
+    // quando abrir para visualizar/editar, salva snapshot
+    if (components?.drawer && (behavior === "view" || behavior === "update")) {
+      originalAgendamentoRef.current = normalizeAgendamento(agendamento);
+    }
+  }, [components?.drawer, behavior, agendamento]);
+
+  const hasChanges = useMemo(() => {
+    if (behavior === "create") return true;
+    if (!originalAgendamentoRef.current) return false;
+    return (
+      JSON.stringify(normalizeAgendamento(agendamento)) !==
+      JSON.stringify(originalAgendamentoRef.current)
+    );
+  }, [agendamento, behavior]);
+
+  const agendamentoMoment = useMemo(() => {
+    // usa data (persistida) e fallback para start (evento do calendário)
+    return moment(agendamento?.data || agendamento?.start);
+  }, [agendamento?.data, agendamento?.start]);
+
+  const isLockedForEdit = useMemo(() => {
+    if (!agendamentoMoment.isValid()) return false;
+
+    const now = moment();
+    const isBeforeToday = agendamentoMoment.isBefore(now, "day");
+    const isTodayWithPastHour =
+      agendamentoMoment.isSame(now, "day") &&
+      agendamentoMoment.hour() < now.hour();
+
+    return isBeforeToday || isTodayWithPastHour;
+  }, [agendamentoMoment]);
+
+  const isFormReadOnly =
+    form?.disabled || (behavior === "update" && isLockedForEdit);
+
+  const normalizeStatus = (status) => {
+    const s = String(status || "").trim().toLowerCase();
+    if (["a", "agendado", "pendente"].includes(s)) return "A";
+    if (["c", "confirmado"].includes(s)) return "C";
+    if (["f", "finalizado"].includes(s)) return "F";
+    if (["x", "cancelado"].includes(s)) return "X";
+    return "";
+  };
+
+  const statusValue = normalizeStatus(agendamento?.status);
+
+  const isFilled = (v) => String(v ?? "").trim() !== "";
+
+  const requiredFilled = useMemo(() => {
+    const clienteId = normalizeId(agendamento?.clienteId);
+    const servicoId = normalizeId(agendamento?.servicoId);
+    const colaboradorId = normalizeId(agendamento?.colaboradorId);
+
+    return (
+      isFilled(agendamento?.data) &&
+      isFilled(clienteId) &&
+      isFilled(servicoId) &&
+      isFilled(colaboradorId) &&
+      isFilled(agendamento?.status) &&
+      isFilled(agendamento?.statusPagamento)
+    );
+  }, [agendamento]);
 
   return (
     <Box
@@ -365,15 +452,21 @@ const Agendamentos = () => {
         <Typography variant="h6" gutterBottom>
           {behavior === "create" ? "Novo Agendamento" : "Detalhes do Agendamento"}
         </Typography>
+        <p>Verifique as informações antes de salvar:</p>
 
         <TextField
           label="Data e Hora"
           type="datetime-local"
           fullWidth
           margin="normal"
+          disabled={isFormReadOnly}
           value={agendamento?.data ? moment(agendamento.data).format("YYYY-MM-DDTHH:mm") : ""}
           onChange={(e) => setAgendamento("data", e.target.value)}
-          disabled={form.disabled}
+          InputProps={{
+            style: {
+              fontSize: "0.8rem", // Altere esse valor conforme quiser
+            }
+          }}
         />
 
         <FormControl fullWidth margin="normal">
@@ -381,8 +474,17 @@ const Agendamentos = () => {
           <Select
             labelId="servico-label"
             label="Serviço"
+            disabled={isFormReadOnly}
             value={servicoSelecionadoId}
             onChange={(e) => setAgendamento("servicoId", e.target.value)}
+            sx={{ fontSize: "0.8rem" }} // Aplica no valor selecionado
+            MenuProps={{
+              PaperProps: {
+                sx: {
+                  fontSize: "0.8rem", // Aplica no dropdown
+                },
+              },
+            }}
           >
             {servicosOptions.map((s) => (
               <MenuItem key={s.value} value={s.value}>
@@ -397,8 +499,17 @@ const Agendamentos = () => {
           <Select
             labelId="cliente-label"
             label="Cliente"
+            disabled={isFormReadOnly}
             value={clienteSelecionadoId}
             onChange={(e) => setAgendamento("clienteId", e.target.value)}
+            sx={{ fontSize: "0.8rem" }} // Aplica no valor selecionado
+            MenuProps={{
+              PaperProps: {
+                sx: {
+                  fontSize: "0.8rem", // Aplica no dropdown
+                },
+              },
+            }}
           >
             {clientesOptions.map((c) => (
               <MenuItem key={c.value} value={c.value}>
@@ -414,7 +525,16 @@ const Agendamentos = () => {
             labelId="colaborador-label"
             label="Colaborador"
             value={colaboradorSelecionadoId}
+            disabled={isFormReadOnly}
             onChange={(e) => setAgendamento("colaboradorId", e.target.value)}
+            sx={{ fontSize: "0.8rem" }} // Aplica no valor selecionado
+            MenuProps={{
+              PaperProps: {
+                sx: {
+                  fontSize: "0.8rem", // Aplica no dropdown
+                },
+              },
+            }}
           >
             {colaboradoresOptions.map((c) => (
               <MenuItem key={c.value} value={c.value}>
@@ -424,15 +544,71 @@ const Agendamentos = () => {
           </Select>
         </FormControl>
 
+        <FormControl fullWidth margin="normal">
+          <InputLabel id="status-agendamento-label">Status do Agendamento</InputLabel>
+          <Select
+            labelId="status-agendamento-label"
+            label="Status do Agendamento"
+            value={statusValue}
+            onChange={(e) => setAgendamento("status", e.target.value)}
+            disabled={isFormReadOnly}
+            sx={{ fontSize: "0.8rem" }} // Aplica no valor selecionado
+            MenuProps={{
+              PaperProps: {
+                sx: {
+                  fontSize: "0.8rem", // Aplica no dropdown
+                },
+              },
+            }}
+          >
+            <MenuItem value="A">Agendado</MenuItem>
+            <MenuItem value="C" disabled={behavior !== "update"}>Confirmado</MenuItem>
+            <MenuItem value="F" disabled={behavior !== "update"}>Finalizado</MenuItem>
+            <MenuItem value="X" disabled={behavior !== "update"}>Cancelado</MenuItem>
+          </Select>
+        </FormControl>
+
+        <FormControl fullWidth margin="normal">
+          <InputLabel id="status-pagamento-label">Status do Pagamento</InputLabel>
+          <Select
+            labelId="status-pagamento-label"
+            label="Status do Pagamento"
+            value={agendamento?.statusPagamento || ""}
+            onChange={(e) => setAgendamento("statusPagamento", e.target.value)}
+            disabled={isFormReadOnly}
+            sx={{ fontSize: "0.8rem" }} // Aplica no valor selecionado
+            MenuProps={{
+              PaperProps: {
+                sx: {
+                  fontSize: "0.8rem", // Aplica no dropdown
+                },
+              },
+            }}
+          >
+            <MenuItem value="P">Pendente</MenuItem>
+            <MenuItem value="PG">Pago</MenuItem>
+            <MenuItem value="E">Estornado</MenuItem>
+            <MenuItem value="N">Não se aplica</MenuItem>
+          </Select>
+        </FormControl>
+
         <Stack direction={{ xs: "column", sm: "row" }} gap={1.2} mt={3}>
           {behavior === "view" && (
-            <Button variant="outlined" onClick={handleEditar}>
+            <Button variant="outlined" onClick={handleEditar} disabled={isLockedForEdit}>
               Alterar agendamento
             </Button>
           )}
 
           {(behavior === "create" || behavior === "update") && (
-            <Button variant="contained" onClick={handleSalvar} disabled={form.loading}>
+            <Button
+              variant="contained"
+              onClick={handleSalvar}
+              disabled={
+                form.loading ||
+                !requiredFilled ||
+                (behavior === "update" && (!hasChanges || isLockedForEdit))
+              }
+            >
               Salvar
             </Button>
           )}
