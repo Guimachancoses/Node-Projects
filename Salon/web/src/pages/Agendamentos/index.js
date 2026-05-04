@@ -1,4 +1,4 @@
-import { useEffect, useMemo, forwardRef } from "react";
+import { useEffect, useMemo, useState, forwardRef } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { Calendar, momentLocalizer } from "react-big-calendar";
 import "react-big-calendar/lib/css/react-big-calendar.css";
@@ -7,6 +7,7 @@ import "moment/locale/pt-br";
 import util from "../../util";
 
 import {
+  Box,
   Button,
   Typography,
   TextField,
@@ -16,6 +17,8 @@ import {
   InputLabel,
   Select,
   MenuItem,
+  Stack,
+  useMediaQuery,
 } from "@mui/material";
 import MuiAlert from "@mui/material/Alert";
 import { useTheme } from "@mui/material/styles";
@@ -23,6 +26,7 @@ import { useTheme } from "@mui/material/styles";
 import CustomDrawer from "../../components/Drawer";
 import CustomDialog from "../../components/DialogAlert";
 import PopSyncCalendarDrive from "../../components/pop-sync-calendarDrive";
+import MobileCalendarToolbar from "../../components/MobileCalendarToolbar"
 
 import {
   filterAgendamentos,
@@ -35,6 +39,7 @@ import {
   allClientes,
   allColaboradores,
 } from "../../store/modules/agendamento/actions";
+
 
 moment.locale("pt-br");
 const localizer = momentLocalizer(moment);
@@ -49,7 +54,29 @@ function SlideTransition(props) {
 
 const Agendamentos = () => {
   const dispatch = useDispatch();
+
+  // ...
   const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
+  const isTablet = useMediaQuery(theme.breakpoints.between("sm", "md"));
+
+  const views = useMemo(() => {
+    if (isMobile) return { day: true, agenda: true };
+    if (isTablet) return { day: true, week: true, agenda: true };
+    return { month: true, week: true, day: true, agenda: true };
+  }, [isMobile, isTablet]);
+
+  const fallbackView = isMobile ? "day" : "week";
+  const [currentDate, setCurrentDate] = useState(new Date());
+  const [currentView, setCurrentView] = useState(fallbackView);
+
+  // Garante que a view atual sempre existe no conjunto de views permitido
+  useEffect(() => {
+    const allowed = Object.keys(views);
+    if (!allowed.includes(currentView)) {
+      setCurrentView(fallbackView);
+    }
+  }, [views, currentView, fallbackView]);
 
   const {
     agendamentos,
@@ -60,8 +87,14 @@ const Agendamentos = () => {
     alerta,
     servicos,
     clientes,
-    colaboradores
+    colaboradores,
   } = useSelector((state) => state.agendamento);
+
+  useEffect(() => {
+    if (isMobile) setCurrentView("day");
+    else if (isTablet) setCurrentView("week");
+    else setCurrentView("week");
+  }, [isMobile, isTablet]);
 
   useEffect(() => {
     dispatch(
@@ -76,12 +109,17 @@ const Agendamentos = () => {
   }, [dispatch]);
 
   const formatEventos = useMemo(() => {
-    return agendamentos.map((item) => ({
+    return (agendamentos || []).map((item) => ({
       ...item,
-      title: `${item.servicoId?.titulo} - ${item.clienteId?.nome} ${item.clienteId?.sobrenome?.charAt(0) || ""}. - ${item.colaboradorId?.nome} ${item.colaboradorId?.sobrenome?.charAt(0) || ""}.`,
+      title: item?.servicoId?.titulo
+        ? `${item.servicoId.titulo} - ${item?.clienteId?.nome || ""}`
+        : "Agendamento",
       start: moment(item.data).toDate(),
       end: moment(item.data)
-        .add(util.hourToMinutes(moment(item.servicoId?.duracao).format("HH:mm")), "minutes")
+        .add(
+          util.hourToMinutes(moment(item?.servicoId?.duracao).format("HH:mm")),
+          "minutes"
+        )
         .toDate(),
     }));
   }, [agendamentos]);
@@ -114,6 +152,14 @@ const Agendamentos = () => {
       })
     );
   };
+
+  const getId = (field) => {
+    if (!field) return "";
+    if (typeof field === "string") return field;
+    return field._id || field.id || field.value || "";
+  };
+
+  const normalizeId = (field) => (typeof field === "object" ? field?._id : field);
 
   const handleNovoAgendamento = () => {
     dispatch(
@@ -157,9 +203,6 @@ const Agendamentos = () => {
     );
   };
 
-  const normalizeId = (field) =>
-    typeof field === "object" ? field?._id : field;
-
   const handleSalvar = () => {
     const payload = {
       ...agendamento,
@@ -168,11 +211,8 @@ const Agendamentos = () => {
       colaboradorId: normalizeId(agendamento.colaboradorId),
     };
 
-    if (behavior === "create") {
-      dispatch(createAgendamentoRequest(payload));
-    } else {
-      dispatch(editAgendamentoRequest(payload));
-    }
+    if (behavior === "create") dispatch(createAgendamentoRequest(payload));
+    else dispatch(editAgendamentoRequest(payload));
   };
 
   const handleExcluir = () => {
@@ -183,30 +223,29 @@ const Agendamentos = () => {
 
   const eventStyleGetter = (event) => ({
     style: {
-      backgroundColor: event.status === "confirmado" ? "#28a745" : "#ff5722",
+      backgroundColor: event.status === "confirmado" ? "#2e7d32" : "#ef6c00",
       color: "#fff",
-      borderRadius: "4px",
+      borderRadius: 8,
       border: "none",
-      padding: "5px",
-      fontSize: "0.875rem",
+      padding: isMobile ? "2px 4px" : "4px 6px",
+      fontSize: isMobile ? "0.72rem" : "0.82rem",
+      lineHeight: 1.2,
     },
   });
 
   const calendarStyles = {
     cursor: "pointer",
     backgroundColor:
-      theme.palette.mode === "dark" ? "rgba(47, 50, 67, 0.5)" : "rgba(255, 255, 255, 0.8)",
+      theme.palette.mode === "dark"
+        ? "rgba(47, 50, 67, 0.5)"
+        : "rgba(255, 255, 255, 0.85)",
     backdropFilter: "blur(4px)",
     color: theme.palette.mode === "dark" ? "#fff" : "#000",
-    height: "600px",
-    borderRadius: 2,
+    height: isMobile ? "calc(100dvh - 230px)" : "calc(100dvh - 220px)",
+    minHeight: 420,
+    borderRadius: 12,
     boxShadow: theme.shadows[3],
-  };
-
-  const getId = (field) => {
-    if (!field) return "";
-    if (typeof field === "string") return field;
-    return field._id || field.id || field.value || "";
+    padding: isMobile ? 4 : 8,
   };
 
   const servicosOptions = (servicos || []).map((s) => ({
@@ -214,79 +253,92 @@ const Agendamentos = () => {
     label: s.label || s.titulo || s.nome || "Sem nome",
   }));
 
-  const servicoSelecionadoId = getId(agendamento?.servicoId);
-
-  const servicoSelecionadoTitulo =
-    typeof agendamento?.servicoId === "object"
-      ? agendamento?.servicoId?.titulo || agendamento?.servicoId?.label
-      : servicosOptions.find((s) => String(s.value) === String(agendamento?.servicoId))?.label;
-
   const clientesOptions = (clientes || []).map((c) => ({
     value: c.value || c._id,
     label: c.label || `${c.nome || ""} ${c.sobrenome || ""}`.trim(),
   }));
-
-  const clienteSelecionadoId =
-    typeof agendamento?.clienteId === "object"
-      ? agendamento?.clienteId?._id || ""
-      : agendamento?.clienteId || "";
-
-  const clienteNomeExibicao =
-    typeof agendamento?.clienteId === "object"
-      ? `${agendamento?.clienteId?.nome || ""} ${agendamento?.clienteId?.sobrenome || ""}`.trim()
-      : clientesOptions.find((c) => c.value === agendamento?.clienteId)?.label || "";
 
   const colaboradoresOptions = (colaboradores || []).map((c) => ({
     value: c.value || c._id,
     label: c.label || `${c.nome || ""} ${c.sobrenome || ""}`.trim(),
   }));
 
+  const servicoSelecionadoId = getId(agendamento?.servicoId);
+  const clienteSelecionadoId =
+    typeof agendamento?.clienteId === "object"
+      ? agendamento?.clienteId?._id || ""
+      : agendamento?.clienteId || "";
   const colaboradorSelecionadoId =
     typeof agendamento?.colaboradorId === "object"
       ? agendamento?.colaboradorId?._id || ""
       : agendamento?.colaboradorId || "";
 
-  const colaboradorNomeExibicao =
-    typeof agendamento?.colaboradorId === "object"
-      ? `${agendamento?.colaboradorId?.nome || ""} ${agendamento?.colaboradorId?.sobrenome || ""}`.trim()
-      : colaboradoresOptions.find((c) => String(c.value) === String(agendamento?.colaboradorId))?.label || "";
+
 
   return (
-    <div className="col px-5 overflow-auto h-100">
+    <Box
+      sx={{
+        width: "100%",
+        px: { xs: 1.5, sm: 2, md: 3 },
+        py: { xs: 1, sm: 2 },
+        overflowX: "hidden",
+      }}
+    >
       <PopSyncCalendarDrive />
 
-      <div className="d-flex justify-content-between align-items-center mb-4">
-        <h2 className="m-0" style={{ color: "white" }}>Agendamentos</h2>
+      <Stack
+        direction={{ xs: "column", sm: "row" }}
+        justifyContent="space-between"
+        alignItems={{ xs: "stretch", sm: "center" }}
+        gap={1.5}
+        mb={2}
+      >
+        <Typography
+          variant={isMobile ? "h6" : "h5"}
+          sx={{ color: "white", fontWeight: 700 }}
+        >
+          Agendamentos
+        </Typography>
+
         <Button
           variant="contained"
-          size="medium"
           onClick={handleNovoAgendamento}
           startIcon={<span className="mdi mdi-plus" />}
+          fullWidth={isMobile}
           sx={{
             textTransform: "none",
-            minHeight: 36,      // altura padrão visual do buttonLabel
-            py: 0,              // padding horizontal
-            fontSize: "0.875rem",
-            fontWeight: 500,
-            lineHeight: 1.75,
+            minHeight: 40,
+            fontSize: "0.9rem",
+            fontWeight: 600,
+            alignSelf: { xs: "stretch", sm: "auto" },
           }}
         >
-          Agendamento
+          Novo Agendamento
         </Button>
-      </div>
+      </Stack>
 
       <Calendar
         localizer={localizer}
+        date={currentDate}
+        events={(formatEventos || []).filter((e) => e?.start && e?.end)}
+        titleAccessor={(event) => event?.title || "Agendamento"}
+        view={currentView}
+        onView={(nextView) => setCurrentView(nextView)}
+        onNavigate={(newDate) => setCurrentDate(newDate)}
+        components={isMobile ? { toolbar: MobileCalendarToolbar } : undefined}
+        views={views}
+        defaultView={fallbackView}
+        selectable
+        popup
+        step={30}
+        timeslots={2}
         onRangeChange={(periodo) => {
           const { start, end } = formatRange(periodo);
           dispatch(filterAgendamentos(start, end));
         }}
-        events={formatEventos}
-        defaultView="week"
-        selectable
-        popup
         onSelectEvent={handleSelectEvent}
         eventPropGetter={eventStyleGetter}
+        scrollToTime={moment().hour(8).minute(0).toDate()}
         style={calendarStyles}
         messages={{
           next: "Próximo",
@@ -300,12 +352,13 @@ const Agendamentos = () => {
           time: "Hora",
           event: "Evento",
           showMore: (total) => `+ ver mais (${total})`,
+          noEventsInRange: "Sem agendamentos nesse período",
         }}
       />
 
       <CustomDrawer
         show={components.drawer}
-        anchor="right"
+        anchor={isMobile ? "bottom" : "right"}
         isOpen={components.drawer}
         onClose={() => setComponent("drawer", false)}
       >
@@ -322,6 +375,7 @@ const Agendamentos = () => {
           onChange={(e) => setAgendamento("data", e.target.value)}
           disabled={form.disabled}
         />
+
         <FormControl fullWidth margin="normal">
           <InputLabel id="servico-label">Serviço</InputLabel>
           <Select
@@ -329,13 +383,6 @@ const Agendamentos = () => {
             label="Serviço"
             value={servicoSelecionadoId}
             onChange={(e) => setAgendamento("servicoId", e.target.value)}
-            displayEmpty
-            renderValue={(selected) => {
-              const found = servicosOptions.find(
-                (s) => String(s.value) === String(selected)
-              );
-              return found?.label || servicoSelecionadoTitulo || "";
-            }}
           >
             {servicosOptions.map((s) => (
               <MenuItem key={s.value} value={s.value}>
@@ -344,6 +391,7 @@ const Agendamentos = () => {
             ))}
           </Select>
         </FormControl>
+
         <FormControl fullWidth margin="normal">
           <InputLabel id="cliente-label">Cliente</InputLabel>
           <Select
@@ -351,13 +399,6 @@ const Agendamentos = () => {
             label="Cliente"
             value={clienteSelecionadoId}
             onChange={(e) => setAgendamento("clienteId", e.target.value)}
-            displayEmpty
-            renderValue={(selected) => {
-              const found = clientesOptions.find(
-                (c) => String(c.value) === String(selected)
-              );
-              return found?.label || clienteNomeExibicao || "";
-            }}
           >
             {clientesOptions.map((c) => (
               <MenuItem key={c.value} value={c.value}>
@@ -366,6 +407,7 @@ const Agendamentos = () => {
             ))}
           </Select>
         </FormControl>
+
         <FormControl fullWidth margin="normal">
           <InputLabel id="colaborador-label">Colaborador</InputLabel>
           <Select
@@ -373,13 +415,6 @@ const Agendamentos = () => {
             label="Colaborador"
             value={colaboradorSelecionadoId}
             onChange={(e) => setAgendamento("colaboradorId", e.target.value)}
-            displayEmpty
-            renderValue={(selected) => {
-              const found = colaboradoresOptions.find(
-                (c) => String(c.value) === String(selected)
-              );
-              return found?.label || colaboradorNomeExibicao || "";
-            }}
           >
             {colaboradoresOptions.map((c) => (
               <MenuItem key={c.value} value={c.value}>
@@ -388,7 +423,8 @@ const Agendamentos = () => {
             ))}
           </Select>
         </FormControl>
-        <div className="d-flex gap-2 mt-4">
+
+        <Stack direction={{ xs: "column", sm: "row" }} gap={1.2} mt={3}>
           {behavior === "view" && (
             <Button variant="outlined" onClick={handleEditar}>
               Alterar agendamento
@@ -410,7 +446,7 @@ const Agendamentos = () => {
               Excluir
             </Button>
           )}
-        </div>
+        </Stack>
       </CustomDrawer>
 
       <CustomDialog
@@ -428,14 +464,22 @@ const Agendamentos = () => {
         autoHideDuration={5000}
         onClose={() => dispatch(setAlerta({ ...alerta, open: false }))}
         TransitionComponent={SlideTransition}
-        anchorOrigin={{ vertical: "top", horizontal: "right" }}
+        anchorOrigin={{
+          vertical: "top",
+          horizontal: isMobile ? "center" : "right",
+        }}
       >
-        <Alert onClose={() => dispatch(setAlerta({ ...alerta, open: false }))} severity={alerta.severity}>
-          <strong>{alerta.title}</strong><br />
+        <Alert
+          onClose={() => dispatch(setAlerta({ ...alerta, open: false }))}
+          severity={alerta.severity}
+          sx={{ width: "100%" }}
+        >
+          <strong>{alerta.title}</strong>
+          <br />
           {alerta.message}
         </Alert>
       </Snackbar>
-    </div>
+    </Box>
   );
 };
 

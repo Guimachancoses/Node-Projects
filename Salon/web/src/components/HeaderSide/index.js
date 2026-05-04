@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { Outlet, Link, useLocation } from "react-router-dom";
 import {
   AppBar,
@@ -13,153 +13,180 @@ import {
   CssBaseline,
   Box,
   useTheme,
+  useMediaQuery,
   Avatar,
   Tooltip,
   Menu,
   MenuItem,
 } from "@mui/material";
+
 import MenuIcon from "@mui/icons-material/Menu";
+import MenuOpenIcon from "@mui/icons-material/MenuOpen";
 import CalendarTodayIcon from "@mui/icons-material/CalendarToday";
 import GroupIcon from "@mui/icons-material/Group";
 import DarkModeIcon from "@mui/icons-material/DarkMode";
 import LightModeIcon from "@mui/icons-material/LightMode";
-import MenuOpenIcon from "@mui/icons-material/MenuOpen";
 import SwitchAccountIcon from "@mui/icons-material/SwitchAccount";
 import AutoFixHighIcon from "@mui/icons-material/AutoFixHigh";
 import MoreTimeIcon from "@mui/icons-material/MoreTime";
-import { useClerk } from "@clerk/clerk-react";
 
+import { useClerk } from "@clerk/clerk-react";
 import logo from "../../assets/logo_parrudus.png";
 import miniLogo from "../../assets/mini_logo.jpg";
 
-const drawerWidth = 240;
-const collapsedWidth = 60;
+const DRAWER_EXPANDED = 240;
+const DRAWER_COLLAPSED = 72;
 
 const navItems = [
   { text: "Agendamentos", icon: <CalendarTodayIcon />, path: "/agendamentos" },
   { text: "Clientes", icon: <GroupIcon />, path: "/clientes" },
-  {
-    text: "Colaboradores",
-    icon: <SwitchAccountIcon />,
-    path: "/colaboradores",
-  },
+  { text: "Colaboradores", icon: <SwitchAccountIcon />, path: "/colaboradores" },
   { text: "Serviços", icon: <AutoFixHighIcon />, path: "/servicos" },
   { text: "Horários", icon: <MoreTimeIcon />, path: "/horarios" },
 ];
 
 export default function Layout({ toggleTheme }) {
+  const theme = useTheme();
+  const location = useLocation();
+  const { signOut, user } = useClerk();
+
+  // Desktop: drawer fixo. Mobile/tablet: drawer temporário.
+  const isDesktop = useMediaQuery(theme.breakpoints.up("md")); // troque para "lg" se quiser desktop só em telas maiores
+
   const [mobileOpen, setMobileOpen] = useState(false);
   const [collapsed, setCollapsed] = useState(false);
   const [anchorElUser, setAnchorElUser] = useState(null);
-  const location = useLocation();
-  const theme = useTheme();
-  const { signOut, user } = useClerk();
 
-  const handleDrawerToggle = () => {
-    setMobileOpen(!mobileOpen);
-  };
+  const currentDrawerWidth = useMemo(() => {
+    if (!isDesktop) return DRAWER_EXPANDED;
+    return collapsed ? DRAWER_COLLAPSED : DRAWER_EXPANDED;
+  }, [isDesktop, collapsed]);
 
-  const handleOpenUserMenu = (event) => {
-    setAnchorElUser(event.currentTarget);
-  };
+  useEffect(() => {
+    // Fecha menu quando trocar de rota em mobile/tablet
+    if (!isDesktop) setMobileOpen(false);
+  }, [location.pathname, isDesktop]);
 
-  const handleCloseUserMenu = () => {
-    setAnchorElUser(null);
-  };
+  const handleDrawerToggle = () => setMobileOpen((prev) => !prev);
+  const handleOpenUserMenu = (event) => setAnchorElUser(event.currentTarget);
+  const handleCloseUserMenu = () => setAnchorElUser(null);
 
-  const currentDrawerWidth = collapsed ? collapsedWidth : drawerWidth;
+  const showTextInDesktop = isDesktop && !collapsed;
+  const showTextInTemporary = !isDesktop; // em mobile/tablet sempre mostra texto
 
-  const drawer = (
-    <div>
-      {/* Linha fina acima dos itens do menu */}
+  const drawerContent = (
+    <Box sx={{ height: "100%", backgroundColor: "var(--dark)", color: "white" }}>
+      <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", px: 1, py: 1 }}>
+        <IconButton
+          onClick={() => {
+            if (isDesktop) setCollapsed((prev) => !prev);
+            else setMobileOpen(false);
+          }}
+          sx={{ color: "var(--white)" }}
+        >
+          {isDesktop ? (collapsed ? <MenuIcon /> : <MenuOpenIcon />) : <MenuOpenIcon />}
+        </IconButton>
+      </Box>
+
       <Box
+        component="img"
+        src={logo}
+        alt="Logo"
         sx={{
-          opacity: 0.4, // Defina a opacidade para um valor entre 0 e 1
-          backgroundColor: "#b0b0b0",
-          borderTop: `1px solid ${theme.palette.divider}`,
-          marginTop: 1,
+          display: showTextInDesktop || showTextInTemporary ? "block" : "none",
+          width: "100%",
+          maxWidth: 180,
+          mx: "auto",
+          mb: 2,
+          px: 2,
         }}
       />
 
-      <List>
-        {navItems.map((item, index) => (
+      <Box
+        sx={{
+          opacity: 0.4,
+          borderTop: `1px solid ${theme.palette.divider}`,
+          mb: 0.5,
+        }}
+      />
+
+      <List sx={{ px: 1 }}>
+        {navItems.map((item) => (
           <ListItemButton
-            key={index}
+            key={item.path}
             component={Link}
             to={item.path}
             selected={location.pathname === item.path}
-            onClick={() => setMobileOpen(false)}
             sx={{
               color: "white",
-              opacity: 0.6,
-              transition: "0.5s",
-              borderRadius: "5px",
+              opacity: 0.7,
+              borderRadius: "8px",
+              mb: 0.3,
+              minHeight: 44,
+              justifyContent:
+                showTextInDesktop || showTextInTemporary ? "initial" : "center",
+              px: 1.2,
               "&:hover": {
                 backgroundColor: "var(--dark-light)",
                 opacity: 1,
-                "& .MuiListItemIcon-root": {
-                  color: "var(--primary)",
-                },
               },
               "&.Mui-selected": {
                 backgroundColor: "var(--dark-light)",
                 opacity: 1,
-                "& .MuiListItemIcon-root": {
-                  color: "var(--primary)",
-                },
               },
             }}
           >
-            <ListItemIcon sx={{ color: "white" }}>{item.icon}</ListItemIcon>
-            {!collapsed && <ListItemText primary={item.text} />}
+            <ListItemIcon
+              sx={{
+                color: "white",
+                minWidth: 0,
+                mr: showTextInDesktop || showTextInTemporary ? 1.5 : 0,
+                justifyContent: "center",
+              }}
+            >
+              {item.icon}
+            </ListItemIcon>
+
+            {(showTextInDesktop || showTextInTemporary) && (
+              <ListItemText primary={item.text} />
+            )}
           </ListItemButton>
         ))}
       </List>
 
-      {/* Linha fina abaixo dos itens do menu */}
       <Box
         sx={{
-          opacity: 0.4, // Defina a opacidade para um valor entre 0 e 1
-          backgroundColor: "#b0b0b0",
+          opacity: 0.4,
           borderTop: `1px solid ${theme.palette.divider}`,
-          marginTop: 0,
+          mt: 0.5,
         }}
       />
-    </div>
+    </Box>
   );
 
   return (
-    <Box sx={{ display: "flex" }}>
+    <Box sx={{ display: "flex", minHeight: "100dvh" }}>
       <CssBaseline />
 
-      {/* AppBar */}
+      {/* Topbar */}
       <AppBar
         position="fixed"
         sx={{
-          width: { sm: `calc(100% - ${currentDrawerWidth}px)` },
-          ml: { sm: `${currentDrawerWidth}px` },
+          width: isDesktop ? `calc(100% - ${currentDrawerWidth}px)` : "100%",
+          ml: isDesktop ? `${currentDrawerWidth}px` : 0,
           backgroundColor: "var(--primary)",
-          transition: "width 0.3s, margin-left 0.3s",
+          transition: "width .25s ease, margin-left .25s ease",
         }}
       >
-        <Toolbar sx={{ marginRight: 3, p: 0 }}>
-          <IconButton
-            color="inherit"
-            edge="start"
-            onClick={handleDrawerToggle}
-            sx={{ mr: 2, display: { sm: "none" } }}
-          >
-            <MenuIcon />
-          </IconButton>
-          <Box
-            sx={{
-              display: "flex",
-              flexDirection: "column",
-              alignItems: "flex-end",
-              flexGrow: 1,
-            }}
-          >
-            <Typography variant="h6" noWrap sx={{ color: "var(--white)" }}>
+        <Toolbar sx={{ px: { xs: 1.5, sm: 2 } }}>
+          {!isDesktop && (
+            <IconButton color="inherit" edge="start" onClick={handleDrawerToggle} sx={{ mr: 1 }}>
+              <MenuIcon />
+            </IconButton>
+          )}
+
+          <Box sx={{ display: "flex", flexDirection: "column", alignItems: "flex-end", flexGrow: 1 }}>
+            <Typography variant="h6" noWrap sx={{ color: "var(--white)", fontSize: { xs: "1rem", sm: "1.15rem" } }}>
               Parrudus Barbearia
             </Typography>
             <Typography variant="caption" sx={{ color: "var(--Gold)" }}>
@@ -168,132 +195,95 @@ export default function Layout({ toggleTheme }) {
           </Box>
 
           <IconButton sx={{ ml: 1 }} onClick={toggleTheme} color="inherit">
-            {theme.palette.mode === "dark" ? (
-              <LightModeIcon />
-            ) : (
-              <DarkModeIcon />
-            )}
+            {theme.palette.mode === "dark" ? <LightModeIcon /> : <DarkModeIcon />}
           </IconButton>
 
-          <Box sx={{ flexGrow: 0 }}>
+          <Box sx={{ flexGrow: 0, ml: 1 }}>
             <Tooltip title="Configurações">
-              <IconButton onClick={handleOpenUserMenu} sx={{ p: 0, marginLeft: 1 }}>
+              <IconButton onClick={handleOpenUserMenu} sx={{ p: 0 }}>
                 <Avatar
                   sx={{ border: "2px solid", borderColor: "var(--Gold)" }}
-                  src={ user.imageUrl || miniLogo}
-                  alt="Logo"
+                  src={user?.imageUrl || miniLogo}
+                  alt="Avatar"
                 />
               </IconButton>
             </Tooltip>
+
             <Menu
               sx={{ mt: "45px" }}
-              id="menu-appbar"
               anchorEl={anchorElUser}
-              anchorOrigin={{
-                vertical: "top",
-                horizontal: "right",
-              }}
-              keepMounted
-              transformOrigin={{
-                vertical: "top",
-                horizontal: "right",
-              }}
+              anchorOrigin={{ vertical: "top", horizontal: "right" }}
+              transformOrigin={{ vertical: "top", horizontal: "right" }}
               open={Boolean(anchorElUser)}
               onClose={handleCloseUserMenu}
+              keepMounted
             >
               <MenuItem onClick={handleCloseUserMenu} component={Link} to="/account">
-                <Typography sx={{ textAlign: "center" }}>
-                  Minha Conta
-                </Typography>
+                <Typography>Minha Conta</Typography>
               </MenuItem>
-              {/* <MenuItem onClick={handleCloseUserMenu}>
-                <Typography sx={{ textAlign: "center" }}>Dashboard</Typography>
-              </MenuItem> */}
+
               <MenuItem
                 onClick={() => {
                   handleCloseUserMenu();
                   signOut({ redirectUrl: "/" });
                 }}
               >
-                <Typography sx={{ textAlign: "center" }}>Sair</Typography>
+                <Typography>Sair</Typography>
               </MenuItem>
             </Menu>
           </Box>
         </Toolbar>
       </AppBar>
 
-      {/* Drawer para mobile */}
-      <Drawer
-        variant="temporary"
-        open={mobileOpen}
-        onClose={handleDrawerToggle}
-        ModalProps={{ keepMounted: true }}
-        sx={{
-          display: { xs: "block", sm: "none" },
-          "& .MuiDrawer-paper": { boxSizing: "border-box", width: drawerWidth },
-        }}
-      >
-        <IconButton
-          className="d-flex justify-content-start"
-          onClick={() => setCollapsed(!collapsed)}
-          sx={{ ml: 2, m: 1, color: "var(--white)" }}
-        >
-          {collapsed ? <MenuIcon /> : <MenuOpenIcon />}
-        </IconButton>
-
-        {drawer}
-      </Drawer>
-
-      {/* Drawer permanente para desktop */}
-      <Drawer
-        variant="permanent"
-        sx={{
-          display: { xs: "none", sm: "block" },
-          width: currentDrawerWidth,
-          flexShrink: 0,
-          "& .MuiDrawer-paper": {
-            width: currentDrawerWidth,
-            boxSizing: "border-box",
-            overflowX: "hidden",
-            transition: "width 0.3s",
-            backgroundColor: "var(--dark)",
-          },
-        }}
-        open
-      >
-        <IconButton
-          className="d-flex justify-content-start"
-          onClick={() => setCollapsed(!collapsed)}
-          sx={{ ml: 2, m: 1, color: "var(--white)" }}
-        >
-          {collapsed ? <MenuIcon /> : <MenuOpenIcon />}
-        </IconButton>
-
-        <Box
-          className="img-fluid px-3 py-4"
-          component="img"
-          src={logo}
-          alt="Logo"
+      {/* Drawer mobile/tablet */}
+      {!isDesktop && (
+        <Drawer
+          variant="temporary"
+          open={mobileOpen}
+          onClose={handleDrawerToggle}
+          ModalProps={{ keepMounted: true }}
           sx={{
-            display: collapsed ? "none" : "block",
-            width: "auto",
-            height: "auto",
-            m: 0,
-            p: 0,
+            "& .MuiDrawer-paper": {
+              width: DRAWER_EXPANDED,
+              boxSizing: "border-box",
+            },
           }}
-        />
+        >
+          {drawerContent}
+        </Drawer>
+      )}
 
-        {drawer}
-      </Drawer>
+      {/* Drawer desktop */}
+      {isDesktop && (
+        <Drawer
+          variant="permanent"
+          open
+          sx={{
+            width: currentDrawerWidth,
+            flexShrink: 0,
+            "& .MuiDrawer-paper": {
+              width: currentDrawerWidth,
+              boxSizing: "border-box",
+              overflowX: "hidden",
+              transition: "width .25s ease",
+              backgroundColor: "var(--dark)",
+            },
+          }}
+        >
+          {drawerContent}
+        </Drawer>
+      )}
 
-      {/* Conteúdo principal */}
+      {/* Conteúdo */}
       <Box
         component="main"
         sx={{
           flexGrow: 1,
-          p: 3,
-          width: { sm: `calc(100% - ${currentDrawerWidth}px)` },
-          transition: "width 0.3s",
+          minWidth: 0,
+          p: { xs: 2, sm: 3 },
+          width: isDesktop ? `calc(100% - ${currentDrawerWidth}px)` : "100%",
+          transition: "width .25s ease",
+          overflowX: "auto",
         }}
       >
         <Toolbar />
