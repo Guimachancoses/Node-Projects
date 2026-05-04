@@ -17,7 +17,7 @@ const INITIAL_STATE = {
   servicos: [],
   horarios: [],
   horario: {
-    diasi: [],
+    dias: [],
     inicio: "",
     fim: "",
     especialidades: [],

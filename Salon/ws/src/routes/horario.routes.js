@@ -74,7 +74,9 @@ router.post("/colaboradores", async (req, res) => {
       .select("colaboradorId");
 
     // Pegamos só os IDs dos colaboradores
-    const colaboradoresIds = colaboradoresServico.map((v) => v.colaboradorId._id);
+    const colaboradoresIds = colaboradoresServico
+      .map((v) => v?.colaboradorId?._id)
+      .filter(Boolean);
 
     // Agora filtramos no SalaoColaborador para ver se eles estão ativos no salão
     const colaboradoresAtivos = await SalaoColaborador.find({
@@ -85,11 +87,10 @@ router.post("/colaboradores", async (req, res) => {
       .populate("colaboradorId", "nome");
 
     // Remove duplicados (caso tenha algum)
-    const listaColaboradores = _.uniqBy(colaboradoresAtivos, (v) => v.colaboradorId._id.toString())
-      .map((v) => ({
-        label: v.colaboradorId.nome,
-        value: v.colaboradorId._id,
-      }));
+    const listaColaboradores = _.uniqBy(
+      colaboradoresAtivos.filter((v) => v?.colaboradorId?._id),
+      (v) => v.colaboradorId._id.toString()
+    )
 
     res.json({
       error: false,

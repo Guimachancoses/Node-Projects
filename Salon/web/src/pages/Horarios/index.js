@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState, forwardRef } from "react";
+import { useEffect, useMemo, useState, forwardRef, useRef } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { Calendar, momentLocalizer } from "react-big-calendar";
 import "react-big-calendar/lib/css/react-big-calendar.css";
@@ -62,6 +62,18 @@ const Horarios = () => {
   const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
   const isTablet = useMediaQuery(theme.breakpoints.between("sm", "md"));
 
+  const getId = (item) => {
+    if (!item) return "";
+    if (typeof item === "string") return item;
+    return item.value || item._id || item.id || "";
+  };
+
+  const toIdArray = (arr) =>
+    (arr || [])
+      .map(getId)
+      .filter(Boolean)
+      .map(String);
+
   const { horario, horarios, servicos, colaboradores, components, behavior, alerta } =
     useSelector((state) => state.horario);
 
@@ -76,7 +88,7 @@ const Horarios = () => {
 
   useEffect(() => {
     if ((horario?.especialidades || []).length > 0) {
-      dispatch(filterColaboradores());
+      dispatch(filterColaboradores(especialidadesIds));
     }
   }, [dispatch, horario?.especialidades]);
 
@@ -230,6 +242,86 @@ const Horarios = () => {
       capitalize(localizer.format(date, "dddd", culture)),
   };
 
+  const originalHorarioRef = useRef(null);
+  const lastUpdateKeyRef = useRef("");
+
+  // Normaliza dados para comparar mudanças reais
+  const normalizeHorario = (h = {}) => ({
+    dias: [...(h?.dias || [])].sort((a, b) => a - b),
+    inicio: h?.inicio && moment(h.inicio).isValid() ? moment(h.inicio).format("HH:mm") : "",
+    fim: h?.fim && moment(h.fim).isValid() ? moment(h.fim).format("HH:mm") : "",
+    especialidades: [...(h?.especialidades || [])].sort(),
+    colaboradores: [...(h?.colaboradores || [])].sort(),
+  });
+
+  // chave para detectar troca de registro em update
+  const updateKey = useMemo(() => {
+    const id = horario?._id || "sem-id";
+    const ini = horario?.inicio ? moment(horario.inicio).valueOf() : "";
+    const fim = horario?.fim ? moment(horario.fim).valueOf() : "";
+    const dias = (horario?.dias || []).join(",");
+    return `${id}|${ini}|${fim}|${dias}`;
+  }, [horario?._id, horario?.inicio, horario?.fim, horario?.dias]);
+
+  // snapshot original só quando entra/troca update
+  useEffect(() => {
+    if (!components?.drawer || behavior !== "update") return;
+    if (lastUpdateKeyRef.current !== updateKey) {
+      originalHorarioRef.current = normalizeHorario(horario);
+      lastUpdateKeyRef.current = updateKey;
+    }
+  }, [components?.drawer, behavior, updateKey, horario]);
+
+  const hasChanges = useMemo(() => {
+    if (behavior === "create") return true;
+    if (!originalHorarioRef.current) return false;
+
+    const current = normalizeHorario(horario);
+    return JSON.stringify(current) !== JSON.stringify(originalHorarioRef.current);
+  }, [behavior, horario]);
+
+  // Campos obrigatórios preenchidos
+  const requiredFilled = useMemo(() => {
+    const inicioValido = horario?.inicio && moment(horario.inicio).isValid();
+    const fimValido = horario?.fim && moment(horario.fim).isValid();
+
+    return (
+      (horario?.dias || []).length > 0 &&
+      inicioValido &&
+      fimValido &&
+      (horario?.especialidades || []).length > 0 &&
+      (horario?.colaboradores || []).length > 0
+    );
+  }, [horario]);
+
+  const isSaveDisabled =
+    loading ||
+    !requiredFilled ||
+    (behavior === "update" && !hasChanges);
+
+  const servicosSafe = (servicos || []).filter(Boolean);
+  const colaboradoresSafe = (colaboradores || []).filter(Boolean);
+
+  const colaboradoresIds = useMemo(
+    () => toIdArray(horario?.colaboradores),
+    [horario?.colaboradores, toIdArray]
+  );
+
+  const especialidadesIds = useMemo(
+    () => toIdArray(horario?.especialidades),
+    [horario?.especialidades]
+  );
+
+  useEffect(() => {
+    if (!especialidadesIds.length) {
+      setHorario("colaboradores", []);
+      return;
+    }
+
+    // passe os IDs já normalizados
+    dispatch(filterColaboradores(especialidadesIds));
+  }, [dispatch, especialidadesIds.join("|")]);
+
   return (
     <Box sx={{ px: { xs: 1.5, sm: 2.5, md: 3 }, py: { xs: 1, sm: 2 }, height: "100%" }}>
       <CustomDrawer
@@ -251,6 +343,7 @@ const Horarios = () => {
               multiple
               options={diasDaSemana.map((label, index) => ({ label, value: index }))}
               getOptionLabel={(option) => option.label}
+              sx={{ fontSize: "0.8rem" }} // Aplica no valor selecionado
               value={(horario?.dias || []).map((diaIndex) => ({
                 label: diasDaSemana[diaIndex],
                 value: diaIndex,
@@ -305,13 +398,19 @@ const Horarios = () => {
           <Grid item xs={12}>
             <Autocomplete
               multiple
-              options={servicos || []}
-              getOptionLabel={(option) => option.label || option.nome || ""}
-              value={(servicos || []).filter((s) =>
-                (horario?.especialidades || []).includes(s.value)
+              options={servicosSafe}
+              getOptionLabel={(option) => option?.label || option?.nome || ""}
+              isOptionEqualToValue={(option, value) =>
+                String(getId(option)) === String(getId(value))
+              }
+              value={servicosSafe.filter((s) =>
+                especialidadesIds.includes(String(getId(s)))
               )}
               onChange={(e, newValue) =>
-                setHorario("especialidades", newValue.map((v) => v.value))
+                setHorario(
+                  "especialidades",
+                  newValue.map(getId).filter(Boolean)
+                )
               }
               renderInput={(params) => (
                 <TextField {...params} label="Especialidades" fullWidth />
@@ -323,10 +422,7 @@ const Horarios = () => {
                   checked={(horario?.especialidades || []).length === (servicos || []).length}
                   onChange={(e) => {
                     if (e.target.checked) {
-                      setHorario(
-                        "especialidades",
-                        (servicos || []).map((s) => s.value)
-                      );
+                      setHorario("especialidades", servicosSafe.map(getId).filter(Boolean));
                     } else {
                       setHorario("especialidades", []);
                     }
@@ -340,18 +436,19 @@ const Horarios = () => {
           <Grid item xs={12}>
             <Autocomplete
               multiple
-              options={colaboradores || []}
-              getOptionLabel={(option) => option.label || option.nome || ""}
-              value={(colaboradores || []).filter((c) =>
-                (horario?.colaboradores || []).includes(c.value)
-              )}
-              disabled={(horario?.especialidades || []).length === 0}
-              onChange={(e, newValue) =>
-                setHorario("colaboradores", newValue.map((v) => v.value))
+              options={colaboradoresSafe}
+              getOptionLabel={(option) => option?.label || option?.nome || ""}
+              isOptionEqualToValue={(option, value) =>
+                String(getId(option)) === String(getId(value))
               }
-              renderInput={(params) => (
-                <TextField {...params} label="Colaboradores" fullWidth />
+              value={colaboradoresSafe.filter((c) =>
+                colaboradoresIds.includes(String(getId(c)))
               )}
+              disabled={especialidadesIds.length === 0}
+              onChange={(e, newValue) =>
+                setHorario("colaboradores", newValue.map(getId).filter(Boolean))
+              }
+              renderInput={(params) => <TextField {...params} label="Colaboradores" fullWidth />}
             />
             <FormControlLabel
               control={
@@ -363,10 +460,7 @@ const Horarios = () => {
                   }
                   onChange={(e) => {
                     if (e.target.checked) {
-                      setHorario(
-                        "colaboradores",
-                        (colaboradores || []).map((c) => c.value)
-                      );
+                      setHorario("colaboradores", colaboradoresSafe.map(getId).filter(Boolean));
                     } else {
                       setHorario("colaboradores", []);
                     }
@@ -383,7 +477,7 @@ const Horarios = () => {
           variant="contained"
           onClick={handleClickSave}
           startIcon={<SaveIcon />}
-          disabled={loading}
+          disabled={isSaveDisabled}
           size="large"
           sx={{
             mt: 2,
@@ -450,8 +544,19 @@ const Horarios = () => {
         formats={mobileFormats}
         length={6}
         onSelectEvent={(e) => {
-          dispatch(updateHorario({ behavior: "update" }));
-          dispatch(updateHorario({ horario: e?.resource || {} }));
+          const r = e?.resource || {};
+
+          dispatch(
+            updateHorario({
+              behavior: "update",
+              horario: {
+                ...r,
+                especialidades: toIdArray(r?.especialidades),
+                colaboradores: toIdArray(r?.colaboradores),
+              },
+            })
+          );
+
           setComponent("drawer", true);
         }}
         onSelectSlot={(slotInfo) => {

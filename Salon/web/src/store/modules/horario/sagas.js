@@ -10,6 +10,16 @@ import api from "../../../services/api";
 
 const SALAOID = `${process.env.REACT_APP_SALAO_ID}`;
 
+const getId = (item) => {
+  if (!item) return "";
+  if (typeof item === "string") return item;
+  return item._id || item.id || item.value || "";
+};
+
+function toIdArray(arr) {
+  return (arr || []).map(getId).filter(Boolean).map(String);
+}
+
 export function* allHorarios() {
   const { form } = yield select((state) => state.horario);
 
@@ -36,34 +46,83 @@ export function* allHorarios() {
   }
 }
 
-export function* filterColaboradores() {
+export function* filterColaboradores(action) {
   const { form, horario } = yield select((state) => state.horario);
 
   try {
     yield put(updateHorario({ form: { ...form, filtering: true } }));
 
+    // pode vir da action ou do estado
+    const filtrosDaAction = action?.payload?.filters || action?.filters || [];
+    const especialidades = toIdArray(
+      filtrosDaAction.length ? filtrosDaAction : horario?.especialidades
+    );
+
+    // sem especialidade => limpa colaboradores e sai
+    if (!especialidades.length) {
+      yield put(
+        updateHorario({
+          colaboradores: [],
+          form: { ...form, filtering: false },
+        })
+      );
+      return;
+    }
+
     const { data: res } = yield call(api.post, "/horario/colaboradores", {
-      especialidades: horario.especialidades,
+      especialidades,
       salaoId: SALAOID,
     });
-    yield put(updateHorario({ form: { ...form, filtering: false } }));
 
-    //console.log("Resposta da API:", res);
+    if (res?.error) {
+      yield put(
+        updateHorario({
+          colaboradores: [],
+          form: { ...form, filtering: false },
+        })
+      );
 
-    if (res.error) {
-      alert(res.message);
-      return false;
+      yield put(
+        setAlerta({
+          open: true,
+          severity: "error",
+          title: "Erro",
+          message: res?.message || "Erro ao filtrar colaboradores.",
+        })
+      );
+      return;
     }
+
+    const listaColaboradores = (res?.listaColaboradores || [])
+      .filter(Boolean)
+      .map((c) => ({
+        label: c?.label || c?.nome || "",
+        value: String(getId(c)), // funciona com {value} ou {_id}
+      }))
+      .filter((c) => c.value);
 
     yield put(
       updateHorario({
-        colaboradores: res.listaColaboradores,
-        form: { ...form, filtering: false, disabled: true },
+        colaboradores: listaColaboradores,
+        form: { ...form, filtering: false },
       })
     );
   } catch (err) {
-    alert(err.message);
-    yield put(updateHorario({ form: { ...form, filtering: false } }));
+    yield put(
+      updateHorario({
+        colaboradores: [],
+        form: { ...form, filtering: false },
+      })
+    );
+
+    yield put(
+      setAlerta({
+        open: true,
+        severity: "error",
+        title: "Erro",
+        message: err?.message || "Erro ao filtrar colaboradores.",
+      })
+    );
   }
 }
 

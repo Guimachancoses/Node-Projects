@@ -24,8 +24,11 @@ export function removeHorario() {
   return { type: types.REMOVE_HORARIO };
 }
 
-export function filterColaboradores(filters) {
-  return { type: types.FILTER_COLABORADORES, filters };
+export function filterColaboradores(filters = []) {
+  return {
+    type: types.FILTER_COLABORADORES,
+    payload: { filters },
+  };
 }
 
 export function setAlerta(alerta) {

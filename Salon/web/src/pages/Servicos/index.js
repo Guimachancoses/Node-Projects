@@ -612,7 +612,7 @@ return (
             </div>
             <div className="form-group col-12 mb-3">
               <LocalizationProvider dateAdapter={AdapterDayjs}>
-                <DemoContainer components={["TimePicker"]}>
+                <DemoContainer components={["TimePicker"]} >
                   <DemoItem>
                     <TimePicker
                       label="Duração"
@@ -621,6 +621,7 @@ return (
                         console.log("Novo valor de duração:", newValue); // Log do valor retornado
                         setServico('duracao', newValue ? newValue.toDate() : null); // Atualizando o estado com o valor correto
                       }}
+                      sx={{ fontSize: "0.8rem" }} // Aplica no valor selecionado
                       ampm={false} // Formato de 24 horas
                       minutesStep={30} // Permitindo apenas 30 minutos, por exemplo
                       fullWidth
