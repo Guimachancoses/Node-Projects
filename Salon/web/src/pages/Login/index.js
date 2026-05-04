@@ -219,7 +219,6 @@ const Login = () => {
       <Box
         sx={{
           position: "absolute",
-          bottom: 12,
           left: 0,
           right: 0,
           display: "flex",
