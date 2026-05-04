@@ -47,6 +47,18 @@ import "moment/locale/pt-br";
 moment.locale("pt-br");
 const localizer = momentLocalizer(moment);
 
+const getId = (item) => {
+  if (!item) return "";
+  if (typeof item === "string") return item;
+  return item.value || item._id || item.id || "";
+};
+
+const toIdArray = (arr) =>
+  (arr || [])
+    .map(getId)
+    .filter(Boolean)
+    .map(String);
+
 const Alert = forwardRef(function Alert(props, ref) {
   return <MuiAlert elevation={6} ref={ref} variant="filled" {...props} />;
 });
@@ -62,18 +74,6 @@ const Horarios = () => {
   const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
   const isTablet = useMediaQuery(theme.breakpoints.between("sm", "md"));
 
-  const getId = (item) => {
-    if (!item) return "";
-    if (typeof item === "string") return item;
-    return item.value || item._id || item.id || "";
-  };
-
-  const toIdArray = (arr) =>
-    (arr || [])
-      .map(getId)
-      .filter(Boolean)
-      .map(String);
-
   const { horario, horarios, servicos, colaboradores, components, behavior, alerta } =
     useSelector((state) => state.horario);
 
@@ -85,12 +85,6 @@ const Horarios = () => {
     dispatch(allHorarios());
     dispatch(allServicos());
   }, [dispatch]);
-
-  useEffect(() => {
-    if ((horario?.especialidades || []).length > 0) {
-      dispatch(filterColaboradores(especialidadesIds));
-    }
-  }, [dispatch, horario?.especialidades]);
 
   const views = useMemo(() => {
     if (isMobile) return { day: true, agenda: true };
@@ -302,25 +296,25 @@ const Horarios = () => {
   const servicosSafe = (servicos || []).filter(Boolean);
   const colaboradoresSafe = (colaboradores || []).filter(Boolean);
 
-  const colaboradoresIds = useMemo(
-    () => toIdArray(horario?.colaboradores),
-    [horario?.colaboradores, toIdArray]
-  );
-
   const especialidadesIds = useMemo(
     () => toIdArray(horario?.especialidades),
     [horario?.especialidades]
   );
 
-  useEffect(() => {
-    if (!especialidadesIds.length) {
-      setHorario("colaboradores", []);
-      return;
-    }
+  const especialidadesKey = useMemo(
+    () => especialidadesIds.join("|"),
+    [especialidadesIds]
+  );
 
-    // passe os IDs já normalizados
+  const colaboradoresIds = useMemo(
+    () => toIdArray(horario?.colaboradores),
+    [horario?.colaboradores]
+  );
+
+  useEffect(() => {
+    if (!especialidadesIds.length) return;
     dispatch(filterColaboradores(especialidadesIds));
-  }, [dispatch, especialidadesIds.join("|")]);
+  }, [dispatch, especialidadesKey, especialidadesIds]);
 
   console.log("colaboradoresSafe", colaboradoresSafe)
 
@@ -348,6 +342,13 @@ const Horarios = () => {
                 (option?.label || option?.nome || option?.value || "").toString()
               }
               sx={{ fontSize: "0.8rem" }} // Aplica no valor selecionado
+              MenuProps={{
+                PaperProps: {
+                  sx: {
+                    fontSize: "0.8rem", // Aplica no dropdown
+                  },
+                },
+              }}
               value={(horario?.dias || []).map((diaIndex) => ({
                 label: diasDaSemana[diaIndex],
                 value: diaIndex,
@@ -363,6 +364,14 @@ const Horarios = () => {
               control={
                 <Checkbox
                   checked={(horario?.dias || []).length === diasDaSemana.length}
+                  sx={{ fontSize: "0.8rem" }} // Aplica no valor selecionado
+                  MenuProps={{
+                    PaperProps: {
+                      sx: {
+                        fontSize: "0.8rem", // Aplica no dropdown
+                      },
+                    },
+                  }}
                   onChange={(e) => {
                     if (e.target.checked) setHorario("dias", diasDaSemana.map((_, i) => i));
                     else setHorario("dias", []);
@@ -382,6 +391,14 @@ const Horarios = () => {
                 minutesStep={30}
                 ampm={false}
                 slotProps={{ textField: { fullWidth: true } }}
+                sx={{ fontSize: "0.8rem" }} // Aplica no valor selecionado
+                MenuProps={{
+                  PaperProps: {
+                    sx: {
+                      fontSize: "0.8rem", // Aplica no dropdown
+                    },
+                  },
+                }}
               />
             </LocalizationProvider>
           </Grid>
@@ -395,6 +412,14 @@ const Horarios = () => {
                 minutesStep={30}
                 ampm={false}
                 slotProps={{ textField: { fullWidth: true } }}
+                sx={{ fontSize: "0.8rem" }} // Aplica no valor selecionado
+                MenuProps={{
+                  PaperProps: {
+                    sx: {
+                      fontSize: "0.8rem", // Aplica no dropdown
+                    },
+                  },
+                }}
               />
             </LocalizationProvider>
           </Grid>
@@ -404,18 +429,25 @@ const Horarios = () => {
               multiple
               options={servicosSafe}
               getOptionLabel={(option) => option?.label || option?.nome || ""}
+              sx={{ fontSize: "0.8rem" }} // Aplica no valor selecionado
+              MenuProps={{
+                PaperProps: {
+                  sx: {
+                    fontSize: "0.8rem", // Aplica no dropdown
+                  },
+                },
+              }}
               isOptionEqualToValue={(option, value) =>
                 String(getId(option)) === String(getId(value))
               }
               value={servicosSafe.filter((s) =>
                 especialidadesIds.includes(String(getId(s)))
               )}
-              onChange={(e, newValue) =>
-                setHorario(
-                  "especialidades",
-                  newValue.map(getId).filter(Boolean)
-                )
-              }
+              onChange={(e, newValue) => {
+                const ids = newValue.map(getId).filter(Boolean);
+                setHorario("especialidades", ids);
+                setHorario("colaboradores", []); // evita seleção inconsistente
+              }}
               renderInput={(params) => (
                 <TextField {...params} label="Especialidades" fullWidth />
               )}
@@ -442,6 +474,14 @@ const Horarios = () => {
               multiple
               options={colaboradoresSafe}
               getOptionLabel={(option) => option?.label || option?.nome || ""}
+              sx={{ fontSize: "0.8rem" }} // Aplica no valor selecionado
+              MenuProps={{
+                PaperProps: {
+                  sx: {
+                    fontSize: "0.8rem", // Aplica no dropdown
+                  },
+                },
+              }}
               isOptionEqualToValue={(option, value) =>
                 String(getId(option)) === String(getId(value))
               }
@@ -458,6 +498,14 @@ const Horarios = () => {
               control={
                 <Checkbox
                   disabled={(horario?.especialidades || []).length === 0}
+                  sx={{ fontSize: "0.8rem" }} // Aplica no valor selecionado
+                  MenuProps={{
+                    PaperProps: {
+                      sx: {
+                        fontSize: "0.8rem", // Aplica no dropdown
+                      },
+                    },
+                  }}
                   checked={
                     (horario?.colaboradores || []).length === (colaboradores || []).length &&
                     (colaboradores || []).length > 0
