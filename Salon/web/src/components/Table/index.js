@@ -48,8 +48,8 @@ const TableComponent = ({
   rows = [],
   columns = [],
   buttonLabel = "",
-  onButtonClick = () => {},
-  onRowClick = () => {},
+  onButtonClick = () => { },
+  onRowClick = () => { },
   height = 520,
   checkboxSelection = false,
   iconClass = "",
@@ -153,7 +153,7 @@ const TableComponent = ({
               <CardContent sx={{ pb: "12px !important" }}>
                 <Stack direction="row" justifyContent="space-between" alignItems="center">
                   <Typography variant="subtitle2" fontWeight={700}>
-                    {row.nome || `#${row.id}`}
+                    {[row.nome, row.sobrenome].filter(Boolean).join(" ") || `${row.titulo}` ||  `#${row.id}`}
                   </Typography>
 
                   <Stack direction="row" alignItems="center" spacing={0.5}>

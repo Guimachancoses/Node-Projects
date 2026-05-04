@@ -231,6 +231,7 @@ const Login = () => {
           color: "#fff",
           zIndex: 2,
           textAlign: "center",
+          bottom: { xs: 22, md: 12 }
         }}
       >
         <FaleConoscoLink />

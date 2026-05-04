@@ -1,4 +1,3 @@
-import React from "react";
 import { Box, Link, Typography } from "@mui/material";
 
 const FooterSection = () => {
@@ -7,10 +6,16 @@ const FooterSection = () => {
       component="footer"
       sx={{
         position: "fixed",
-        right: 16,
-        bottom: 12,
-        zIndex: 9999, // sobrepõe tudo
+        zIndex: 9999,
         pointerEvents: "auto",
+
+        // Mobile: centralizado embaixo
+        left: { xs: "50%", md: "auto" },
+        right: { xs: "auto", md: 16 },
+        transform: { xs: "translateX(-50%)", md: "none" },
+        bottom: { xs: 4, md: 12 },
+        width: { xs: "100%", md: "auto" },
+        textAlign: { xs: "center", md: "right" },
       }}
     >
       <Typography
@@ -23,11 +28,7 @@ const FooterSection = () => {
         }}
       >
         © {new Date().getFullYear()} — Criado por{" "}
-        <Link
-          href="#"
-          underline="hover"
-          sx={{ color: "#fff", fontWeight: 600 }}
-        >
+        <Link href="#" underline="hover" sx={{ color: "#fff", fontWeight: 600 }}>
           GuiMac
         </Link>{" "}
         🪓
