@@ -187,9 +187,11 @@ router.post("/filter", async (req, res) => {
 });
 
 // Rota para verificar os dias diponiveis
+// Rota para verificar os dias diponiveis
 router.post("/dias-disponiveis", async (req, res) => {
   try {
     const { data, salaoId, servicoId } = req.body;
+    console.log("📥 REQUEST:", { data, salaoId, servicoId });
 
     const horarios = await Horario.find({ salaoId });
     const servico = await Servico.findById(servicoId).select("duracao");
@@ -202,17 +204,27 @@ router.post("/dias-disponiveis", async (req, res) => {
     const agoraSP = moment.tz(TZ);
     const hojeSP = agoraSP.format("YYYY-MM-DD");
 
-    const servicoMinutos = util.hourToMinutes(
-      moment(servico.duracao).format("HH:mm")
-    );
+    console.log("🕒 HOJE:", hojeSP, "| AGORA:", agoraSP.format("HH:mm"), "| TZ:", TZ);
+
+    // duração serviço (usar UTC para não deslocar duração por timezone)
+    const servicoDuracaoHHmm = moment.utc(servico.duracao).format("HH:mm");
+    const servicoMinutos = util.hourToMinutes(servicoDuracaoHHmm);
     const servicoSlots = util.sliceMinutes(
-      servico.duracao,
-      moment(servico.duracao).add(servicoMinutos, "minutes"),
+      moment.utc(servico.duracao),
+      moment.utc(servico.duracao).add(servicoMinutos, "minutes"),
       util.SLOT_DURATION
     ).length;
 
+    console.log("⏱️ SERVIÇO:", {
+      duracao: servico.duracao,
+      duracaoHHmm: servicoDuracaoHHmm,
+      minutos: servicoMinutos,
+      slots: servicoSlots,
+    });
+
     for (let i = 0; i <= 365 && agenda.length <= 7; i++) {
       const dataFormatada = lastDay.format("YYYY-MM-DD");
+      console.log("\n📅 DIA:", dataFormatada);
 
       const espacosValidos = horarios.filter((horario) => {
         const diaSemanaDisponivel = horario.dias.includes(lastDay.day());
@@ -220,19 +232,30 @@ router.post("/dias-disponiveis", async (req, res) => {
         return diaSemanaDisponivel && servicoDisponivel;
       });
 
+      console.log("🧩 ESPAÇOS VÁLIDOS:", espacosValidos.length);
+
       if (espacosValidos.length > 0) {
         let todosHorariosDia = {};
 
         for (let espaco of espacosValidos) {
+          console.log("⏰ ESPAÇO:", { inicio: espaco.inicio, fim: espaco.fim });
+
+          // DEBUG de conversão
+          console.log("🌎 ESPAÇO UTC->SP:", {
+            inicioUTC: moment.utc(espaco.inicio).format(),
+            fimUTC: moment.utc(espaco.fim).format(),
+            inicioSP: moment(espaco.inicio).tz(TZ).format(),
+            fimSP: moment(espaco.fim).tz(TZ).format(),
+          });
+
           for (let colaboradorId of espaco.colaboradores) {
             if (!todosHorariosDia[colaboradorId]) {
               todosHorariosDia[colaboradorId] = [];
             }
 
-            // horário template salvo como Date -> extrai hora/minuto em UTC
-            // (mantém a "hora de relógio" que você cadastrou)
-            const inicioTpl = moment.utc(espaco.inicio);
-            const fimTpl = moment.utc(espaco.fim);
+            // ✅ CORREÇÃO: extrair hora/minuto no fuso de São Paulo
+            const inicioTpl = moment(espaco.inicio).tz(TZ);
+            const fimTpl = moment(espaco.fim).tz(TZ);
 
             const inicio = lastDay
               .clone()
@@ -250,16 +273,17 @@ router.post("/dias-disponiveis", async (req, res) => {
 
             let slots = util.sliceMinutes(inicio, fim, util.SLOT_DURATION);
 
-            // filtro de "não mostrar passado" APENAS para hoje em SP
+            // 🔥 FILTRO DE HORA ATUAL (APENAS HOJE)
             if (dataFormatada === hojeSP) {
               slots = slots.filter((hora) => {
-                const slotSP = moment.tz(
+                const horarioMoment = moment.tz(
                   `${dataFormatada} ${hora}`,
                   "YYYY-MM-DD HH:mm",
                   TZ
                 );
-                return slotSP.isAfter(agoraSP); // estritamente maior que agora
+                return horarioMoment.isAfter(agoraSP);
               });
+              console.log("🧹 FILTRADO (HOJE):", slots);
             }
 
             todosHorariosDia[colaboradorId] = [
@@ -274,6 +298,8 @@ router.post("/dias-disponiveis", async (req, res) => {
         const fimDiaUTC = lastDay.clone().endOf("day").utc().toDate();
 
         for (let colaboradorId of Object.keys(todosHorariosDia)) {
+          console.log("\n👤 COLAB:", colaboradorId);
+
           const agendamentos = await Agendamento.find({
             colaboradorId,
             data: { $gte: inicioDiaUTC, $lte: fimDiaUTC },
@@ -282,15 +308,17 @@ router.post("/dias-disponiveis", async (req, res) => {
             .select("data servicoId -_id")
             .populate("servicoId", "duracao");
 
+          console.log("📌 AGENDAMENTOS:", agendamentos.length);
+
           let horariosOcupados = agendamentos
             .map((agendamento) =>
               util.sliceMinutes(
-                moment(agendamento.data).tz(TZ), // converte agendamento para SP
+                moment(agendamento.data).tz(TZ),
                 moment(agendamento.data)
                   .tz(TZ)
                   .add(
                     util.hourToMinutes(
-                      moment(agendamento.servicoId.duracao).format("HH:mm")
+                      moment.utc(agendamento.servicoId.duracao).format("HH:mm")
                     ),
                     "minutes"
                   ),
@@ -298,6 +326,8 @@ router.post("/dias-disponiveis", async (req, res) => {
               )
             )
             .flat();
+
+          console.log("⛔ OCUPADOS:", horariosOcupados);
 
           let horariosLivres = util
             .sliptByValue(
@@ -307,6 +337,8 @@ router.post("/dias-disponiveis", async (req, res) => {
               "-"
             )
             .filter((space) => space.length > 0);
+
+          console.log("🟢 LIVRES INICIAL:", horariosLivres);
 
           horariosLivres = horariosLivres.filter((h) => h.length >= servicoSlots);
 
@@ -337,6 +369,8 @@ router.post("/dias-disponiveis", async (req, res) => {
             });
           }
 
+          console.log("✅ FINAL:", horariosLivres);
+
           if (horariosLivres.length === 0) {
             delete todosHorariosDia[colaboradorId];
           } else {
@@ -345,6 +379,8 @@ router.post("/dias-disponiveis", async (req, res) => {
         }
 
         const total = Object.keys(todosHorariosDia).length;
+        console.log("👥 DISPONÍVEIS NO DIA:", total);
+
         if (total > 0) {
           colaboradores.push(Object.keys(todosHorariosDia));
           agenda.push({ [dataFormatada]: todosHorariosDia });
@@ -358,6 +394,10 @@ router.post("/dias-disponiveis", async (req, res) => {
     colaboradores = await Colaborador.find({ _id: { $in: colaboradores } }).select(
       "nome sobrenome foto"
     );
+
+    console.log("\n🎯 RESULTADO FINAL:");
+    console.log("📅 Agenda:", agenda.length);
+    console.log("👥 Colaboradores:", colaboradores.length);
 
     res.json({ error: false, colaboradores, agenda });
   } catch (err) {
