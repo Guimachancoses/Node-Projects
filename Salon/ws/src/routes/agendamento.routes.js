@@ -249,9 +249,19 @@ router.post("/dias-disponiveis", async (req, res) => {
               todosHorariosDia[colaboradorId] = [];
             }
 
+            const inicio = moment(lastDay)
+              .hour(moment(espaco.inicio).hour())
+              .minute(moment(espaco.inicio).minute())
+              .second(0);
+
+            const fim = moment(lastDay)
+              .hour(moment(espaco.fim).hour())
+              .minute(moment(espaco.fim).minute())
+              .second(0);
+
             let slots = util.sliceMinutes(
-              util.mergeDateTime(lastDay, espaco.inicio),
-              util.mergeDateTime(lastDay, espaco.fim),
+              inicio,
+              fim,
               util.SLOT_DURATION
             );
 
