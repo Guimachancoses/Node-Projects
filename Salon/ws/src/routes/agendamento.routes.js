@@ -187,7 +187,6 @@ router.post("/filter", async (req, res) => {
 });
 
 // Rota para verificar os dias diponiveis
-// Rota para verificar os dias diponiveis
 router.post("/dias-disponiveis", async (req, res) => {
   try {
     const { data, salaoId, servicoId } = req.body;
@@ -207,8 +206,11 @@ router.post("/dias-disponiveis", async (req, res) => {
     console.log("🕒 HOJE:", hojeSP, "| AGORA:", agoraSP.format("HH:mm"), "| TZ:", TZ);
 
     // duração serviço (usar UTC para não deslocar duração por timezone)
-    const servicoDuracaoHHmm = moment.utc(servico.duracao).format("HH:mm");
-    const servicoMinutos = util.hourToMinutes(servicoDuracaoHHmm);
+    const getDuracaoMinutos = (duracaoDate) => {
+      const m = moment(duracaoDate).tz(TZ);
+      return m.hours() * 60 + m.minutes();
+    };
+    const servicoMinutos = getDuracaoMinutos(servico.duracao);
     const servicoSlots = util.sliceMinutes(
       moment.utc(servico.duracao),
       moment.utc(servico.duracao).add(servicoMinutos, "minutes"),
@@ -316,12 +318,7 @@ router.post("/dias-disponiveis", async (req, res) => {
                 moment(agendamento.data).tz(TZ),
                 moment(agendamento.data)
                   .tz(TZ)
-                  .add(
-                    util.hourToMinutes(
-                      moment.utc(agendamento.servicoId.duracao).format("HH:mm")
-                    ),
-                    "minutes"
-                  ),
+                  .add(getDuracaoMinutos(agendamento.servicoId.duracao), "minutes"),
                 util.SLOT_DURATION
               )
             )
