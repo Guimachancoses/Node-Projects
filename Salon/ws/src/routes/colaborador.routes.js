@@ -120,29 +120,76 @@ router.post("/", async (req, res) => {
 // Rota de atualização do colaborador no banco de dados MongoDB e no MercadoPago
 router.put("/:colaboradorId", async (req, res) => {
   try {
-    const { vinculo, vinculoId, especialidades } = req.body;
     const { colaboradorId } = req.params;
 
-    // 1º Atualizar vinculo pelo ID do vinculo
-    await SalaoColaborador.findByIdAndUpdate(vinculoId, { status: vinculo });
+    // 🔥 suporta JSON e FormData
+    const body =
+      typeof req.body.colaborador === "string"
+        ? JSON.parse(req.body.colaborador)
+        : req.body;
 
-    // 2º Atualizar especialidades pelo ID de especialidades
-    // Primeiro deleta todos os serviços do colaborador que serão atualizados
-    await ColaboradorServico.deleteMany({
+    const {
+      vinculo,
+      vinculoId,
+      especialidades = [],
+      ...perfil
+    } = body;
+
+    // =============================
+    // 1. Atualiza dados do colaborador
+    // =============================
+    await Colaborador.findByIdAndUpdate(
       colaboradorId,
-    });
-
-    // Agora atualiza os serviços desse colaborador
-    await ColaboradorServico.insertMany(
-      especialidades.map((servicoId) => ({
-        servicoId,
-        colaboradorId,
-      }))
+      {
+        ...perfil,
+      },
+      { new: true }
     );
 
-    res.json({ error: false });
+    // =============================
+    // 2. Atualiza vínculo
+    // =============================
+    if (vinculoId) {
+      await SalaoColaborador.findByIdAndUpdate(vinculoId, {
+        status: vinculo,
+      });
+    }
+
+    // =============================
+    // 3. Atualiza especialidades
+    // =============================
+    await ColaboradorServico.deleteMany({ colaboradorId });
+
+    if (especialidades.length) {
+      await ColaboradorServico.insertMany(
+        especialidades.map((servicoId) => ({
+          servicoId,
+          colaboradorId,
+        }))
+      );
+    }
+
+    // =============================
+    // 4. (Opcional) atualizar foto
+    // =============================
+    if (req.file) {
+      await Colaborador.findByIdAndUpdate(colaboradorId, {
+        foto: req.file.filename,
+      });
+    }
+
+    // =============================
+    // 5. Retorna atualizado
+    // =============================
+    const colaboradorAtualizado = await Colaborador.findById(colaboradorId);
+
+    return res.json({
+      error: false,
+      colaborador: colaboradorAtualizado,
+    });
+
   } catch (err) {
-    res.json({ error: true, message: err.message });
+    return res.json({ error: true, message: err.message });
   }
 });
 

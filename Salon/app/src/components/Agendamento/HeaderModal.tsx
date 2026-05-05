@@ -16,6 +16,7 @@ const styles = StyleSheet.create({
     borderTopRightRadius: 30,
     overflow: "hidden",
     flex: 1,
+    marginBottom: 40
   },
 });
 

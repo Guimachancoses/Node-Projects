@@ -30,7 +30,7 @@ import {
   updateForm,
 } from "@/src/store/modules/salao/actions";
 import {
-    filterClinte,
+  filterClinte,
   getCliente,
   pushToken,
 } from "@/src/store/modules/cliente/action";
@@ -168,7 +168,7 @@ export default function Home() {
 
   if (loadingInitial) {
     return (
-      <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
+      <View style={{ flex: 1, justifyContent: "center", alignItems: "center"}}>
         <ActivityIndicator size="large" color={theme.colors.primary} />
       </View>
     );
@@ -221,7 +221,7 @@ export default function Home() {
       )}
 
       <FlatList
-        style={{ backgroundColor: util.toAlpha(theme.colors.muted, 3) }}
+        style={{ backgroundColor: util.toAlpha(theme.colors.muted, 3) , marginBottom: 60 }}
         ListHeaderComponent={
           <>
             <Box position="absolute" top="60px" left="20px" zIndex={1} width="auto">
@@ -283,7 +283,7 @@ export default function Home() {
         data={finalServicos}
         keyExtractor={(item: any) => item._id}
         renderItem={({ item }) => <Servico servico={item} />}
-        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} progressViewOffset={40} />}
         ListEmptyComponent={
           <Box align="center" justify="center" height="200px">
             {loading ? (
@@ -320,8 +320,6 @@ export default function Home() {
             alignItems: "center",
           }}
         >
-          <ActivityIndicator size="large" color="#FFF" />
-          <Text style={{ color: "#FFF", marginTop: 10 }}>Atualizando dados...</Text>
         </View>
       </Modal>
 

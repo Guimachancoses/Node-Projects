@@ -168,11 +168,11 @@ export default function Login() {
           background="light"
           border="light"
         />
-        <SocialLoginButton
+        {/* <SocialLoginButton
           strategy="facebook"
           background="light"
           border="light"
-        />
+        /> */}
       </ScrollView>
     </ImageBackground>
   );

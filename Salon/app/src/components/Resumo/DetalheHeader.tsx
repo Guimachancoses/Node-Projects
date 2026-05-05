@@ -11,6 +11,7 @@ const styles = StyleSheet.create({
     borderTopLeftRadius: 30,
     borderTopRightRadius: 30,
     overflow: "hidden",
+    marginBottom: 10
   },
 });
 

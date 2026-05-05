@@ -49,8 +49,8 @@ export default function Especialistas({ colaboradores, agendamento }: Especialis
             <Button
               disabled={agendamento?.data === null}
               uppercase={false}
-              textColor="muted"
-              background={util.toAlpha(theme.colors.muted, 15)}
+              textColor="light"
+              background={util.toAlpha(theme.colors.primary, 95)}
               mode="contained"
               block
               onPress={() =>

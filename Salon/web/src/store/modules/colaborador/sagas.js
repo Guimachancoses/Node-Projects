@@ -194,6 +194,7 @@ export function* addColaborador() {
       res = response.data;
     } else {
       const response = yield call(api.put, `/colaborador/${colaborador._id}`, {
+        ...colaborador,
         vinculo: colaborador.vinculo,
         vinculoId: colaborador.vinculoId,
         especialidades: colaborador.especialidades,
@@ -423,13 +424,26 @@ export function* updateMyAccount({ payload, fotoFile }) {
   try {
     yield put(updateColaborador({ form: { ...form, saving: true } }));
 
-    let res = {};
+    const especialidadesNormalizadas = (
+      Array.isArray(payload?.especialidades) && payload.especialidades.length
+        ? payload.especialidades
+        : (user?.especialidades || [])
+    )
+      .map((x) => String(x))
+      .filter(Boolean);
 
-    // corpo base (sem email)
-    const colaboradorPayload = {
-      nome: payload.nome,
-      sobrenome: payload.sobrenome,
-      sexo: payload.sexo || "",
+    // mesmo núcleo do update de colaboradores
+    const baseUpdate = {
+      vinculo: payload?.vinculo || user?.vinculo || "A",
+      vinculoId: payload?.vinculoId || user?.vinculoId,
+      especialidades: especialidadesNormalizadas,
+    };
+
+    // se seu backend também atualiza dados de perfil nessa rota, mantenha:
+    const perfil = {
+      nome: payload?.nome || "",
+      sobrenome: payload?.sobrenome || "",
+      sexo: payload?.sexo || "",
       telefone: {
         area: payload?.telefone?.area || "",
         numero: payload?.telefone?.numero || "",
@@ -443,69 +457,48 @@ export function* updateMyAccount({ payload, fotoFile }) {
         logradouro: payload?.endereco?.logradouro || "",
         numero: payload?.endereco?.numero || "",
         bairro: payload?.endereco?.bairro || "",
-        cidade: {
-          nome: payload?.endereco?.cidade?.nome || "",
-        },
+        cidade: { nome: payload?.endereco?.cidade?.nome || "" },
       },
     };
 
+    let res;
     if (fotoFile) {
-      // mesmo padrão do serviço (FormData)
       const formData = new FormData();
       formData.append("salaoId", SALAOID);
-      formData.append("colaborador", JSON.stringify(colaboradorPayload));
+      formData.append("colaborador", JSON.stringify({ ...baseUpdate, ...perfil }));
       formData.append("arquivo_0", fotoFile);
+
+      console.log("formData", formData)
 
       const response = yield call(api.put, `/colaborador/${user._id}`, formData);
       res = response.data;
-      console.log("API: ", res)
     } else {
-      const response = yield call(api.put, `/colaborador/${user._id}`, colaboradorPayload);
+      const response = yield call(api.put, `/colaborador/${user._id}`, {
+        ...baseUpdate,
+        ...perfil,
+      });
       res = response.data;
-      console.log("API: ", res)
     }
 
     yield put(updateColaborador({ form: { ...form, saving: false } }));
 
     if (res.error) {
-      yield put(setAlerta({
-        open: true,
-        severity: "error",
-        title: "Erro",
-        message: res.message,
-      }));
+      yield put(setAlerta({ open: true, severity: "error", title: "Erro", message: res.message }));
       return;
     }
 
-    // preserva foto do clerk como fallback
     const updatedUser = {
-      ...user,
       ...res.colaborador,
-      foto:
-        res?.colaborador?.foto ||
-        res?.colaborador?.fotoUrl ||
-        user?.foto ||
-        user?.imageUrl ||
-        "",
+      especialidades: especialidadesNormalizadas,
+      foto: res?.colaborador?.foto || res?.colaborador?.fotoUrl || "",
     };
 
     yield put(updateUser({ user: updatedUser }));
     yield put(updateMyAccountSuccess(updatedUser));
-
-    yield put(setAlerta({
-      open: true,
-      severity: "success",
-      title: "Sucesso",
-      message: "Conta atualizada com sucesso!",
-    }));
+    yield put(setAlerta({ open: true, severity: "success", title: "Sucesso", message: "Conta atualizada com sucesso!" }));
   } catch (err) {
     yield put(updateColaborador({ form: { ...form, saving: false } }));
-    yield put(setAlerta({
-      open: true,
-      severity: "error",
-      title: "Erro",
-      message: err.message,
-    }));
+    yield put(setAlerta({ open: true, severity: "error", title: "Erro", message: err.message }));
   }
 }
 

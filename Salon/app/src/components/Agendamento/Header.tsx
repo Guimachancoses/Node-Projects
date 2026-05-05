@@ -42,6 +42,24 @@ export default function Header() {
     return servicos?.filter((s: any) => s.tipoServico === tipo)?.length || 0;
   };
 
+  const WHATSAPP_NUMBER = "5519981955602"; // 55 + DDD + número
+  const WHATSAPP_MESSAGE = encodeURIComponent(
+    `Olá, tudo bem? Vim pelo app e gostaria de agendar um horário.`
+  );
+
+  const handleWhatsAppPress = async () => {
+    const appUrl = `whatsapp://send?phone=${WHATSAPP_NUMBER}&text=${WHATSAPP_MESSAGE}`;
+    const webUrl = `https://wa.me/${WHATSAPP_NUMBER}?text=${WHATSAPP_MESSAGE}`;
+
+    try {
+      // tenta abrir no app
+      await Linking.openURL(appUrl);
+    } catch {
+      // fallback web
+      await Linking.openURL(webUrl);
+    }
+  };
+
   return (
     <>
       <Box align="center" width="50%">
@@ -91,20 +109,23 @@ export default function Header() {
             </Text>
           </Touchable>
         </Box>
-
         <Box hasPadding direction="column" align="center" justify="center">
-          <Touchable>
-            <Button
-              icon="clock-check-outline"
-              background="primary"
+          <Touchable onPress={handleWhatsAppPress}>
+            <ButtonPaper
               mode="contained"
+              icon="whatsapp"
+              buttonColor="#25D366"
+              textColor="#FFFFFF"
               uppercase={false}
+              style={{ borderRadius: 10, minWidth: 170 }}
+              contentStyle={{ height: 48 }}
             >
-              Agendar Agora
-            </Button>
+              Chamar no WhatsApp
+            </ButtonPaper>
           </Touchable>
+
           <Text small spacing="10px 0 0" color={textColor}>
-            Horários disponíveis
+            Atendimento rápido
           </Text>
         </Box>
       </Box>

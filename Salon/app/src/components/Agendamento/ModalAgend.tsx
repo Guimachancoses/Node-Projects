@@ -152,8 +152,8 @@ export default function AgendamentoBottomS() {
     (state: any) => state.salao
   );
 
-  const [headerHeight, setHeaderHeight] = React.useState(70);
-  const HANDLE_HEIGHT = 78;
+  const [headerHeight, setHeaderHeight] = React.useState(78);
+  const HANDLE_HEIGHT = 88;
 
   const snapPoints = useMemo(() => {
     const collapsed = Math.ceil(headerHeight + HANDLE_HEIGHT); // altura real da HeaderModal

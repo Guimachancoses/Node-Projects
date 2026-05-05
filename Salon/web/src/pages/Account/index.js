@@ -450,38 +450,6 @@ export default function Account() {
     return () => clearTimeout(timeoutId);
   }, [waStatus]);
 
-
-  useEffect(() => {
-    // só hidrata quando houver dados reais do colaborador
-    if (!userStore || (!userStore._id && !userStore.vinculoId)) return;
-
-    setAccountForm({
-      nome: userStore?.nome ?? "",
-      sobrenome: userStore?.sobrenome ?? "",
-      email: userStore?.email ?? (user?.emailAddresses?.[0]?.emailAddress ?? ""),
-      sexo: userStore?.sexo ?? "",
-      telefone: {
-        area: userStore?.telefone?.area ?? "",
-        numero: userStore?.telefone?.numero ?? "",
-      },
-      identificacao: {
-        tipoD: userStore?.identificacao?.tipoD ?? "",
-        numero: userStore?.identificacao?.numero ?? "",
-      },
-      endereco: {
-        cep: userStore?.endereco?.cep ?? "",
-        logradouro: userStore?.endereco?.logradouro ?? "",
-        numero: userStore?.endereco?.numero ?? "",
-        bairro: userStore?.endereco?.bairro ?? "",
-        cidade: {
-          nome: userStore?.endereco?.cidade?.nome ?? "",
-        },
-      },
-      especialidades: (userStore?.especialidades || []).map((x) => String(x)),
-    });
-
-  }, [userStore, user]);
-
   const setCampo = (key, value) => {
     setAccountForm((prev) => ({ ...prev, [key]: value }));
   };
@@ -525,7 +493,13 @@ export default function Account() {
   };
 
   const handleSalvarConta = () => {
-    dispatch(updateMyAccountRequest(accountForm, fotoFile));
+    const fileToSend = fotoFile || fotoExibicao;
+
+    dispatch(updateMyAccountRequest(accountForm, fileToSend));
+
+    console.log("accountForm", accountForm);
+    console.log("fotoFile", fotoFile);
+    console.log("fotoExibicao", fotoExibicao);
   };
 
   useEffect(() => {
