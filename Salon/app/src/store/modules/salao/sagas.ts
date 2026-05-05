@@ -98,10 +98,10 @@ export function* filterAgenda({ payload }: any) {
       }
     );
 
-    console.log(
-      "dias-disponiveis",
-      JSON.stringify(res.agenda, null, 2)
-    );
+    // console.log(
+    //   "dias-disponiveis",
+    //   JSON.stringify(res.agenda, null, 2)
+    // );
 
     if (res.error) {
       Toast.show({
@@ -318,7 +318,7 @@ export function* updateStatusAgendamento({ status }: any) {
     }
 
     yield put(updateAgendamentoCliente(res.agendamento));
-    console.log("agendamento: ", agendamento);
+    //console.log("agendamento: ", agendamento);
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
     Toast.show({

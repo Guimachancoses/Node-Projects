@@ -20,9 +20,9 @@ async function atualizarAgendamentos() {
       }
     );
 
-    console.log(
-      `[Scheduler] Agendamentos finalizados: ${resultado.modifiedCount} (matched: ${resultado.matchedCount})`
-    );
+    // console.log(
+    //   `[Scheduler] Agendamentos finalizados: ${resultado.modifiedCount} (matched: ${resultado.matchedCount})`
+    // );
   } catch (error) {
     console.error("[Scheduler] Erro ao atualizar agendamentos:", error);
   } finally {

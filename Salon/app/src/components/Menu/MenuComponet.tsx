@@ -94,7 +94,7 @@ const MenuComponent = () => {
             if (supported) {
               await Linking.openURL(url);
             } else {
-              console.log("Não foi possível abrir a URL: ", url);
+              //console.log("Não foi possível abrir a URL: ", url);
             }
           }}
         />

@@ -16,7 +16,7 @@ const SCHEME = "parrudus-app";
 const DEFAULT_COLOR = "#02555d";
 
 export default ({ config }: ConfigContext): ExpoConfig => {
-  console.log("⚙️ Building app for environment:", process.env.APP_ENV);
+  //console.log("⚙️ Building app for environment:", process.env.APP_ENV);
 
   const { name, bundleIdentifier, packageName, icon, adaptiveIcon, scheme } =
     getDynamicAppConfig(

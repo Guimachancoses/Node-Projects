@@ -64,12 +64,12 @@ export default function SignUpScreen() {
 
       router.push("/verify");
     } catch (err) {
-      console.log("Sign up error: ", err);
+      //console.log("Sign up error: ", err);
       if (isClerkAPIResponseError(err)) {
         err.errors.forEach((error) => {
-          console.log("Error: ", JSON.stringify(error, null, 2));
+          //console.log("Error: ", JSON.stringify(error, null, 2));
           const fieldName = mapClerkErrorToFormField(error);
-          console.log("Field name: ", fieldName);
+          //console.log("Field name: ", fieldName);
           setError(fieldName, {
             message: error.longMessage,
           });

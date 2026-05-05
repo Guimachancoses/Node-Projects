@@ -370,7 +370,7 @@ export function* checkUser() {
   const { user } = yield select((state) => state.colaborador);
 
   try {
-    console.log("userSagas: ", user);
+    //console.log("userSagas: ", user);
     const { data: res } = yield call(api.get, `/colaborador/check/${user.email}`);
 
     if (res.error) {
@@ -421,7 +421,7 @@ export function* checkUser() {
 export function* updateMyAccount({ payload, fotoFile }) {
   const { form, user } = yield select((state) => state.colaborador);
 
-  console.log("fotoFile", fotoFile)
+  //console.log("fotoFile", fotoFile)
 
   try {
     yield put(updateColaborador({ form: { ...form, saving: true } }));
@@ -471,7 +471,7 @@ export function* updateMyAccount({ payload, fotoFile }) {
       formData.append("colaborador", JSON.stringify({ ...baseUpdate, ...perfil }));
 
       for (let [key, value] of formData.entries()) {
-        console.log(key, value);
+        //console.log(key, value);
       }
 
       const response = yield call(api.put, `/colaborador/${user._id}`, formData);

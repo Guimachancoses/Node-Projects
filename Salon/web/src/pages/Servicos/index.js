@@ -126,7 +126,7 @@ const Servicos = () => {
   // Casp clique em remover a imagem
   const handleRemoveImage = (indexToRemove) => {
     const imagemRemovida = images[indexToRemove];
-    console.log("Removendo imagem:", imagemRemovida);
+    //console.log("Removendo imagem:", imagemRemovida);
 
     // Adiciona à lista de removidos, se for imagem do banco (sem `file`)
     if (behavior === "update" && !imagemRemovida.file) {
@@ -618,7 +618,7 @@ return (
                       label="Duração"
                       value={servico?.duracao ? dayjs(servico.duracao) : null}// Valor inicial
                       onChange={(newValue) => {
-                        console.log("Novo valor de duração:", newValue); // Log do valor retornado
+                        //console.log("Novo valor de duração:", newValue); // Log do valor retornado
                         setServico('duracao', newValue ? newValue.toDate() : null); // Atualizando o estado com o valor correto
                       }}
                       sx={{ fontSize: "0.8rem" }} // Aplica no valor selecionado

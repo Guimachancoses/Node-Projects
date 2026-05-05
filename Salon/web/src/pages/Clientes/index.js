@@ -443,7 +443,7 @@ const Clientes = () => {
 
   const isReativar = behavior !== "create" && cliente?.vinculo === "E";
 
-  console.log("clientes", clientes)
+  //console.log("clientes", clientes)
 
   return (
     <div className="col">

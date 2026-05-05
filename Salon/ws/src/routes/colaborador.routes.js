@@ -52,10 +52,10 @@ router.post("/", async (req, res) => {
         },
       }, "post");
 
-      console.log(
-        "response mercadoPago:",
-        JSON.stringify(mercadoPgAccount, null, 2)
-      );
+      // console.log(
+      //   "response mercadoPago:",
+      //   JSON.stringify(mercadoPgAccount, null, 2)
+      // );
 
       if (mercadoPgAccount.error) {
         throw new Error("Erro no Mercado Pago: " + mercadoPgAccount.message);

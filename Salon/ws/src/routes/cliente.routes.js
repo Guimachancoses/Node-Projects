@@ -94,7 +94,7 @@ router.post("/", async (req, res) => {
 
     const clienteId = existenteCliente ? existenteCliente._id : newCliente._id;
 
-    console.log(clienteId)
+    //console.log(clienteId)
 
     const existentRelationship = await SalaoCliente.findOne({
       salaoId,
@@ -129,7 +129,7 @@ router.post("/", async (req, res) => {
     await session.abortTransaction();
     session.endSession();
     res.json({ error: true, message: err.message });
-    console.log("Erro: ", err.message)
+    //console.log("Erro: ", err.message)
   }
 });
 
@@ -218,7 +218,7 @@ router.get("/salao/:salaoId", async (req, res) => {
 // Rota para deletar o vínculo do cliente com o salão
 router.delete("/vinculo/:id", async (req, res) => {
   try {
-    console.log("Deletando vínculo do cliente:", req.params.id);
+    //console.log("Deletando vínculo do cliente:", req.params.id);
 
     // Corrigido nome do campo e uso de findOne
     const vinculo = await SalaoCliente.findOne({ clienteId: req.params.id });

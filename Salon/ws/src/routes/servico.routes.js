@@ -12,7 +12,7 @@ router.post("/", async (req, res) => {
     const { salaoId, servico } = req.body;
     let errors = [];
 
-    console.log("peguei: ", salaoId);
+    //console.log("peguei: ", salaoId);
 
     // Processando os arquivos
     if (req.files && Object.keys(req.files).length > 0) {
@@ -23,7 +23,7 @@ router.post("/", async (req, res) => {
         const fileName = `${new Date().getTime()}.${
           nameParts[nameParts.length - 1]
         }`;
-        console.log("ainda estou com ele: ", salaoId);
+        //console.log("ainda estou com ele: ", salaoId);
 
         const path = `servicos/${salaoId}${fileName}`;
 

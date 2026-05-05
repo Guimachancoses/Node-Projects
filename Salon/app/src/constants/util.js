@@ -35,7 +35,7 @@ export default {
       data = data || Object.keys(agenda?.[0])?.[0];
       const dia = agenda.filter((a) => Object.keys(a)[0] === data)?.[0];
       const diaObject = dia?.[data];
-      console.log("diaObject", diaObject)
+      //console.log("diaObject", diaObject)
       if (diaObject) {
         colaboradorId = colaboradorId || Object.keys(diaObject)?.[0];
         colaboradoresDia = diaObject;

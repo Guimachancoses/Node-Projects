@@ -27,7 +27,7 @@ module.exports = {
 
       s3.upload(params, function (err, data) {
         if (err) {
-          console.log(err);
+          //console.log(err);
           return resolve({ error: true, message: err.message });
         }
         return resolve({ error: false, message: data });

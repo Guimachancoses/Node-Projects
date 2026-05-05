@@ -157,7 +157,7 @@ router.post("/", async (req, res) => {
   } catch (err) {
     await session.abortTransaction();
     session.endSession();
-    console.error("Erro ao criar agendamento:", err);
+    //console.error("Erro ao criar agendamento:", err);
     res.status(400).json({ success: false, error: err.message });
   }
 });
@@ -190,7 +190,7 @@ router.post("/filter", async (req, res) => {
 router.post("/dias-disponiveis", async (req, res) => {
   try {
     const { data, salaoId, servicoId } = req.body;
-    console.log("📥 REQUEST:", { data, salaoId, servicoId });
+    //console.log("📥 REQUEST:", { data, salaoId, servicoId });
 
     const horarios = await Horario.find({ salaoId });
     const servico = await Servico.findById(servicoId).select("duracao");
@@ -203,10 +203,10 @@ router.post("/dias-disponiveis", async (req, res) => {
     const agoraSP = moment.tz(TZ);
     const hojeSP = agoraSP.format("YYYY-MM-DD");
 
-    console.log("🕒 HOJE:", hojeSP, "| AGORA:", agoraSP.format("HH:mm"), "| TZ:", TZ);
+    //console.log("🕒 HOJE:", hojeSP, "| AGORA:", agoraSP.format("HH:mm"), "| TZ:", TZ);
 
     // duração serviço (usar UTC para não deslocar duração por timezone)
-    const servicoDuracaoHHmm = moment.utc(servico.duracao).format("HH:mm");
+    //const servicoDuracaoHHmm = moment.utc(servico.duracao).format("HH:mm");
     const getDuracaoMinutos = (duracaoDate) => {
       const m = moment(duracaoDate).tz(TZ);
       return m.hours() * 60 + m.minutes();
@@ -218,16 +218,16 @@ router.post("/dias-disponiveis", async (req, res) => {
       util.SLOT_DURATION
     ).length;
 
-    console.log("⏱️ SERVIÇO:", {
-      duracao: servico.duracao,
-      duracaoHHmm: servicoDuracaoHHmm,
-      minutos: servicoMinutos,
-      slots: servicoSlots,
-    });
+    // console.log("⏱️ SERVIÇO:", {
+    //   duracao: servico.duracao,
+    //   duracaoHHmm: servicoDuracaoHHmm,
+    //   minutos: servicoMinutos,
+    //   slots: servicoSlots,
+    // });
 
     for (let i = 0; i <= 365 && agenda.length <= 7; i++) {
       const dataFormatada = lastDay.format("YYYY-MM-DD");
-      console.log("\n📅 DIA:", dataFormatada);
+      //console.log("\n📅 DIA:", dataFormatada);
 
       const espacosValidos = horarios.filter((horario) => {
         const diaSemanaDisponivel = horario.dias.includes(lastDay.day());
@@ -235,21 +235,21 @@ router.post("/dias-disponiveis", async (req, res) => {
         return diaSemanaDisponivel && servicoDisponivel;
       });
 
-      console.log("🧩 ESPAÇOS VÁLIDOS:", espacosValidos.length);
+      //console.log("🧩 ESPAÇOS VÁLIDOS:", espacosValidos.length);
 
       if (espacosValidos.length > 0) {
         let todosHorariosDia = {};
 
         for (let espaco of espacosValidos) {
-          console.log("⏰ ESPAÇO:", { inicio: espaco.inicio, fim: espaco.fim });
+          //console.log("⏰ ESPAÇO:", { inicio: espaco.inicio, fim: espaco.fim });
 
           // DEBUG de conversão
-          console.log("🌎 ESPAÇO UTC->SP:", {
-            inicioUTC: moment.utc(espaco.inicio).format(),
-            fimUTC: moment.utc(espaco.fim).format(),
-            inicioSP: moment(espaco.inicio).tz(TZ).format(),
-            fimSP: moment(espaco.fim).tz(TZ).format(),
-          });
+          // console.log("🌎 ESPAÇO UTC->SP:", {
+          //   inicioUTC: moment.utc(espaco.inicio).format(),
+          //   fimUTC: moment.utc(espaco.fim).format(),
+          //   inicioSP: moment(espaco.inicio).tz(TZ).format(),
+          //   fimSP: moment(espaco.fim).tz(TZ).format(),
+          // });
 
           for (let colaboradorId of espaco.colaboradores) {
             if (!todosHorariosDia[colaboradorId]) {
@@ -286,7 +286,7 @@ router.post("/dias-disponiveis", async (req, res) => {
                 );
                 return horarioMoment.isAfter(agoraSP);
               });
-              console.log("🧹 FILTRADO (HOJE):", slots);
+              //console.log("🧹 FILTRADO (HOJE):", slots);
             }
 
             todosHorariosDia[colaboradorId] = [
@@ -301,7 +301,7 @@ router.post("/dias-disponiveis", async (req, res) => {
         const fimDiaUTC = lastDay.clone().endOf("day").utc().toDate();
 
         for (let colaboradorId of Object.keys(todosHorariosDia)) {
-          console.log("\n👤 COLAB:", colaboradorId);
+          //console.log("\n👤 COLAB:", colaboradorId);
 
           const agendamentos = await Agendamento.find({
             colaboradorId,
@@ -311,7 +311,7 @@ router.post("/dias-disponiveis", async (req, res) => {
             .select("data servicoId -_id")
             .populate("servicoId", "duracao");
 
-          console.log("📌 AGENDAMENTOS:", agendamentos.length);
+          //console.log("📌 AGENDAMENTOS:", agendamentos.length);
 
           let horariosOcupados = agendamentos
           .map((agendamento) =>
@@ -325,7 +325,7 @@ router.post("/dias-disponiveis", async (req, res) => {
           )
           .flat();
 
-          console.log("⛔ OCUPADOS:", horariosOcupados);
+          //console.log("⛔ OCUPADOS:", horariosOcupados);
 
           let horariosLivres = util
             .sliptByValue(
@@ -336,7 +336,7 @@ router.post("/dias-disponiveis", async (req, res) => {
             )
             .filter((space) => space.length > 0);
 
-          console.log("🟢 LIVRES INICIAL:", horariosLivres);
+          //console.log("🟢 LIVRES INICIAL:", horariosLivres);
 
           horariosLivres = horariosLivres.filter((h) => h.length >= servicoSlots);
 
@@ -367,7 +367,7 @@ router.post("/dias-disponiveis", async (req, res) => {
             });
           }
 
-          console.log("✅ FINAL:", horariosLivres);
+          //console.log("✅ FINAL:", horariosLivres);
 
           if (horariosLivres.length === 0) {
             delete todosHorariosDia[colaboradorId];
@@ -377,7 +377,7 @@ router.post("/dias-disponiveis", async (req, res) => {
         }
 
         const total = Object.keys(todosHorariosDia).length;
-        console.log("👥 DISPONÍVEIS NO DIA:", total);
+        //console.log("👥 DISPONÍVEIS NO DIA:", total);
 
         if (total > 0) {
           colaboradores.push(Object.keys(todosHorariosDia));
@@ -393,9 +393,9 @@ router.post("/dias-disponiveis", async (req, res) => {
       "nome sobrenome foto"
     );
 
-    console.log("\n🎯 RESULTADO FINAL:");
-    console.log("📅 Agenda:", agenda.length);
-    console.log("👥 Colaboradores:", colaboradores.length);
+    // console.log("\n🎯 RESULTADO FINAL:");
+    // console.log("📅 Agenda:", agenda.length);
+    // console.log("👥 Colaboradores:", colaboradores.length);
 
     res.json({ error: false, colaboradores, agenda });
   } catch (err) {
@@ -419,7 +419,7 @@ router.put("/status/:agendamentoId", async (req, res) => {
     const { agendamentoId } = req.params;
     const updateData = req.body;
 
-    console.log("updateData:", updateData);
+    //console.log("updateData:", updateData);
 
     const agendamento = await Agendamento.findByIdAndUpdate(
       agendamentoId,

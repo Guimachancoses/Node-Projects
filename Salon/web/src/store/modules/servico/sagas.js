@@ -174,7 +174,7 @@ export function* removeServico({ vinculoId }) {
 }
 
 export function* removeArquivo({ key }) {
-  console.log("Está removendo: " + key)
+  //console.log("Está removendo: " + key)
   const { form, components } = yield select((state) => state.servico);
 
   try {

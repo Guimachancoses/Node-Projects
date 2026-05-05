@@ -45,7 +45,7 @@ router.post("/", express.json(), async (req, res) => {
 
       // Outros tipos de evento podem ser tratados aqui
       default:
-        console.log("Unhandled event type:", type);
+        //console.log("Unhandled event type:", type);
     }
 
     return res.status(200).json({ received: true });

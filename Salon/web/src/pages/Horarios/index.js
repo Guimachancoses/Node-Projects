@@ -316,7 +316,7 @@ const Horarios = () => {
     dispatch(filterColaboradores(especialidadesIds));
   }, [dispatch, especialidadesKey, especialidadesIds]);
 
-  console.log("colaboradoresSafe", colaboradoresSafe)
+  //console.log("colaboradoresSafe", colaboradoresSafe)
 
   return (
     <Box sx={{ px: { xs: 1.5, sm: 2.5, md: 3 }, py: { xs: 1, sm: 2 }, height: "100%" }}>

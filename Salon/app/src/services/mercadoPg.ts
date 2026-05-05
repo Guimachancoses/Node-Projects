@@ -29,11 +29,11 @@ export const handleIntegrationMP = async () => {
 
     const data = await response.json()
 
-    console.log(data)
+    //console.log(data)
 
     return data.init_point
 
   } catch (err) {
-    console.log(err)
+    //console.log(err)
   }
 };

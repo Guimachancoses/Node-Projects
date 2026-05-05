@@ -12,10 +12,10 @@ async function handleMercadoPagoPayment(paymentData) {
   // - enviar e-mail para o usuário
   // - registrar no banco
   // - liberar acesso a um serviço, etc.
-  console.log("Id: ", id)
-  console.log(paymentData);
-  console.log("Pagamento aprovado:");
-  console.log({ userEmail, testeId });
+  // console.log("Id: ", id)
+  // console.log(paymentData);
+  // console.log("Pagamento aprovado:");
+  // console.log({ userEmail, testeId });
 
   // Exemplo:
   // await sendConfirmationEmail(userEmail);

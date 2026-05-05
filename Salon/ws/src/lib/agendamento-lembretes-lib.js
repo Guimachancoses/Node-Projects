@@ -125,9 +125,9 @@ async function processarLembretes() {
       }
     }
 
-    console.log(
-      `[LEMBRETES] rodada ok | ${agora.toISO()} | 24h: ${ag24h.length} | 3h: ${ag3h.length}`
-    );
+    // console.log(
+    //   `[LEMBRETES] rodada ok | ${agora.toISO()} | 24h: ${ag24h.length} | 3h: ${ag3h.length}`
+    // );
   } catch (error) {
     console.error("[LEMBRETES] erro:", error);
   } finally {

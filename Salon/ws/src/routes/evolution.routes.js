@@ -134,10 +134,10 @@ async function saveInstanceEvo({ email, userId, instanceName }) {
       return null;
     }
 
-    console.log("[WA] instanceEvo salvo com sucesso:", {
-      colaboradorId: updated._id?.toString(),
-      instanceEvo: updated.instanceEvo,
-    });
+    // console.log("[WA] instanceEvo salvo com sucesso:", {
+    //   colaboradorId: updated._id?.toString(),
+    //   instanceEvo: updated.instanceEvo,
+    // });
 
     return updated;
   } catch (e) {
@@ -184,7 +184,7 @@ router.post("/whatsapp/connect", async (req, res) => {
         qrCodeText = qr.qrCodeText;
 
         if (qrImage || qrCodeText) {
-          console.log(`[WA] QR obtido na tentativa ${i}/${MAX_TRIES}`);
+          //console.log(`[WA] QR obtido na tentativa ${i}/${MAX_TRIES}`);
           break;
         }
       } catch (e) {

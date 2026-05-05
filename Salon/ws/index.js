@@ -23,7 +23,7 @@ const allowedOrigins = (process.env.FRONTEND_URLS || "")
   .map((o) => o.trim().replace(/\/$/, "")) // remove barra final
   .filter(Boolean);
 
-console.log("CORS allowedOrigins:", allowedOrigins);
+//console.log("CORS allowedOrigins:", allowedOrigins);
 
 const corsOptions = {
   origin: (origin, callback) => {

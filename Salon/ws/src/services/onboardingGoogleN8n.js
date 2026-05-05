@@ -56,16 +56,16 @@ async function createCredentialWithFallback({ type, name, tokens }) {
   for (let i = 0; i < variants.length; i++) {
     try {
       const payload = { name, type, data: variants[i] };
-      console.log(`[N8N] Tentando credencial ${type} variante ${i + 1}...`);
+      //console.log(`[N8N] Tentando credencial ${type} variante ${i + 1}...`);
       const { data } = await n8n.post("/credentials", payload);
-      console.log(`[N8N] Credencial criada (${type}) variante ${i + 1}:`, data?.id);
+      //console.log(`[N8N] Credencial criada (${type}) variante ${i + 1}:`, data?.id);
       return data;
     } catch (err) {
       lastErr = err;
-      console.log(
-        `[N8N] Falha variante ${i + 1} (${type}):`,
-        err?.response?.data?.message || err.message
-      );
+      // console.log(
+      //   `[N8N] Falha variante ${i + 1} (${type}):`,
+      //   err?.response?.data?.message || err.message
+      // );
     }
   }
 
