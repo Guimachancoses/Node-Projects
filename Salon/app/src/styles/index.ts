@@ -263,18 +263,30 @@ export const Button = styled(ButtonPaper)
   width: "100%"
 `;
 
-export const TextInput = styled(TextInputPaper).attrs({
-  mode: "outlined",
-  theme: {
-    colors: {
-      placeholder: util.toAlpha(theme.colors.muted, 30),
+interface CustomTextInputProps {
+  isDark?: boolean;
+}
+
+export const TextInput = styled(TextInputPaper).attrs<CustomTextInputProps>(
+  (props) => ({
+    mode: "outlined",
+    textColor: props.isDark ? "#E8ECF3" : "#1F2937",
+    theme: {
+      colors: {
+        placeholder: props.isDark
+          ? "rgba(255,255,255,0.65)" // placeholder claro/agradável no dark
+          : util.toAlpha(theme.colors.muted, 45),
+        background: props.isDark ? "#1B1F27" : theme.colors.light,
+        outline: props.isDark ? "#3A4252" : "#C9D1E1",
+        primary: props.isDark ? "#7DA2FF" : theme.colors.primary,
+      },
     },
-  },
-})`
+  })
+)<CustomTextInputProps>`
   height: 45px;
   width: 100%;
   font-size: 15px;
-  background: ${theme.colors.light};
+  background: ${(props) => (props.isDark ? "#1B1F27" : theme.colors.light)};
 `;
 
 interface SpacerProps {

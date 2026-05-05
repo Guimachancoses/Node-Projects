@@ -152,8 +152,7 @@ export default function AgendamentoBottomS() {
     (state: any) => state.salao
   );
 
-  console.log("agenda", agenda)
-
+  //console.log("agenda", agenda)
   const [headerHeight, setHeaderHeight] = React.useState(78);
   const HANDLE_HEIGHT = 88;
 
@@ -168,7 +167,9 @@ export default function AgendamentoBottomS() {
   const { cliente } = useSelector((state: any) => state.cliente);
 
   const preferenciaPagamento = cliente?.prefPagamento;
-  const { colors } = useTheme();
+  const { colors, dark } = useTheme();
+  const isDarkMode = dark;
+  const dynamicTextColor = isDarkMode ? "light" : "dark";
   const dataSelecionada = moment(agendamento?.data).format("YYYY-MM-DD");
   const horaSelecionada = moment(agendamento?.data).format("HH:mm");
   const { horariosDisponiveis, colaboradoresDia } = util.selectAgendamento(
@@ -278,8 +279,8 @@ export default function AgendamentoBottomS() {
                 align="center"
               >
                 <ActivityIndicator size="large" color={theme.colors.primary} />
-                <Title align="center">Só um instante...</Title>
-                <Text small align="center">
+                <Title align="center" color={dynamicTextColor}>Só um instante...</Title>
+                <Text small align="center" color={dynamicTextColor}>
                   Estamos buscando o melhor horário para você...
                 </Text>
               </Box>

@@ -12,6 +12,7 @@ import Layout from "./components/HeaderSide";
 import FaleConosco from "./pages/FaleConosco";
 import TermosDeServico from "./pages/TermosDeServico";
 import PoliticaDePrivacidade from "./pages/PoliticaDePrivacidade";
+import ForgotPassword from "./pages/ForgotPassword";
 import "./styles.css";
 
 // Guard de rota privada
@@ -49,6 +50,7 @@ const Main = ({ toggleTheme, colorMode }) => {
       <Route path="/fale-conosco" element={<FaleConosco />} />
       <Route path="/termos-de-servico" element={<TermosDeServico />} />
       <Route path="/politica-de-privacidade" element={<PoliticaDePrivacidade />} />
+      <Route path="/forgot-password" element={<ForgotPassword />} />
 
       {/* Privadas */}
       <Route element={<PrivateRoute toggleTheme={toggleTheme} colorMode={colorMode} />}>

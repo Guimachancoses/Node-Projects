@@ -97,7 +97,7 @@ const Login = () => {
       });
 
       if (result.status === "complete") {
-        await setActive({  session: result.createdSessionId });
+        await setActive({ session: result.createdSessionId });
         navigate("/agendamentos", { replace: true }); // <- importante
         return;
       }
@@ -255,7 +255,17 @@ const Login = () => {
                 onChange={(e) => setPassword(e.target.value)}
               />
 
-              <Link href="#" variant="body2" sx={{ display: "block", mt: 1, mb: 2 }}>
+              <Link
+                component="button"
+                type="button"
+                variant="body2"
+                sx={{ display: "block", mt: 1, mb: 2 }}
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  navigate("/forgot-password");
+                }}
+              >
                 Esqueceu sua senha?
               </Link>
 

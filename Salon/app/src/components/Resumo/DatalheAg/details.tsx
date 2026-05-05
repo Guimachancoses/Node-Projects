@@ -200,13 +200,13 @@ export default function Details() {
             }
             spacing="5px 0 0"
           >
-            {agendamento?.status === "A"
+            {agendamento?.statusPagamento === "S"
               ? "Confirmado"
-              : agendamento?.status === "C"
+              : agendamento?.statusPagamento === "C"
               ? "Cancelado"
-              : agendamento?.status === "P"
+              : agendamento?.statusPagamento === "P"
               ? "Pendente"
-              : "Finalizado"}
+              : "Erro"}
           </Text>
         </Surface>
       </Box>

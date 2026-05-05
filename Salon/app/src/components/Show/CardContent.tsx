@@ -9,14 +9,14 @@ interface CardContentProps {
 }
 
 const CardContent = ({ servico }: CardContentProps) => {
-  const [expanded, setExpanded] = useState(false);
+  //const [expanded, setExpanded] = useState(false);
   const [modalVisible, setModalVisible] = useState(false);
   const { salao } = useSelector((state: any) => state.salao);
-  const { colors } = useTheme();
+  //const { colors } = useTheme();
 
-  const handleExpandClick = () => {
-    setExpanded(!expanded);
-  };
+  // const handleExpandClick = () => {
+  //   setExpanded(!expanded);
+  // };
 
   return (
     <>
@@ -43,14 +43,14 @@ const CardContent = ({ servico }: CardContentProps) => {
           </Paragraph>
         </Card.Content>
 
-        <Card.Actions>
+        {/* <Card.Actions>
           <IconButton icon="heart" onPress={() => {}} />
           <IconButton icon="share" onPress={() => {}} />
-          {/* <IconButton
+          <IconButton
             icon={expanded ? 'chevron-up' : 'chevron-down'}
             onPress={handleExpandClick}
             style={styles.expandButton}
-          /> */}
+          />
         </Card.Actions>
 
         {expanded && (
@@ -60,7 +60,7 @@ const CardContent = ({ servico }: CardContentProps) => {
               Heat 1/2 cup of the broth in a pot until simmering...
             </Paragraph>
           </Card.Content>
-        )}
+        )} */}
       </Card>
     </>
   );

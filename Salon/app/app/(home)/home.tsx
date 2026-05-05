@@ -2,16 +2,16 @@ import React, { useRef, useState, useEffect } from "react";
 import {
   Animated,
   View,
-  FlatList,
   TouchableWithoutFeedback,
   PanResponder,
   Easing,
   RefreshControl,
   Modal,
   ActivityIndicator,
+  StyleSheet
 } from "react-native";
 import { useDispatch, useSelector } from "react-redux";
-import { Portal } from "react-native-paper";
+import { Portal, useTheme } from "react-native-paper";
 import { useClerk } from "@clerk/clerk-expo";
 import { router } from "expo-router";
 
@@ -46,6 +46,7 @@ const MENU_WIDTH = 250;
 
 export default function Home() {
   const dispatch = useDispatch();
+  const { dark } = useTheme();
   const { form, salao, tipoServicos, agendamento, servicos } = useSelector(
     (state: any) => state.salao
   );
@@ -61,6 +62,19 @@ export default function Home() {
   const [loadingInitial, setLoadingInitial] = useState(true);
   const clienteId = cliente?.clienteId ?? cliente?._id;
   const clerkEmail = user?.primaryEmailAddress?.emailAddress;
+  const scrollY = useRef(new Animated.Value(0)).current;
+
+  const imageOpacity = scrollY.interpolate({
+    inputRange: [0, 220],
+    outputRange: [1, 0.82], // leve transparência só
+    extrapolate: "clamp",
+  });
+
+  const darkOverlayOpacity = scrollY.interpolate({
+    inputRange: [0, 220],
+    outputRange: [0.15, 0.45], // escurece gradualmente ao subir
+    extrapolate: "clamp",
+  });
 
   useEffect(() => {
     // se já tem clienteId, não precisa filtrar de novo
@@ -168,11 +182,22 @@ export default function Home() {
 
   if (loadingInitial) {
     return (
-      <View style={{ flex: 1, justifyContent: "center", alignItems: "center"}}>
+      <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
         <ActivityIndicator size="large" color={theme.colors.primary} />
       </View>
     );
   }
+
+  const closeMenu = () => {
+    Animated.timing(slideAnim, {
+      toValue: -MENU_WIDTH,
+      duration: 220,
+      easing: Easing.in(Easing.cubic),
+      useNativeDriver: false,
+    }).start(() => {
+      setMenuVisible(false);
+    });
+  };
 
   return (
     <>
@@ -196,7 +221,7 @@ export default function Home() {
                 transform: [{ translateX: slideAnim }],
               }}
             >
-              <MenuComponent />
+              <MenuComponent onClose={closeMenu} />
             </Animated.View>
 
             <TouchableWithoutFeedback onPress={() => setMenuVisible(false)}>
@@ -220,8 +245,13 @@ export default function Home() {
         />
       )}
 
-      <FlatList
-        style={{ backgroundColor: util.toAlpha(theme.colors.muted, 3) , marginBottom: 60 }}
+      <Animated.FlatList
+        onScroll={Animated.event(
+          [{ nativeEvent: { contentOffset: { y: scrollY } } }],
+          { useNativeDriver: true }
+        )}
+        scrollEventThrottle={16}
+        style={{ backgroundColor: util.toAlpha(theme.colors.muted, 3), marginBottom: 60 }}
         ListHeaderComponent={
           <>
             <Box position="absolute" top="60px" left="20px" zIndex={1} width="auto">
@@ -257,24 +287,38 @@ export default function Home() {
                 shadowOpacity: 0.3,
                 shadowRadius: 5,
                 elevation: 6,
+                backgroundColor: "#000",
+                height: 300, // fixa altura para não “encolher”
               }}
             >
-              <Cover
-                image={require("@/src/assets/images/capa.jpg")}
-                customWidth="100%"
-                customHeight="300px"
-                resizeMode="cover"
-              >
-                <Gradient>
-                  <Badge color={salao.isOpened ? "success" : "danger"}>
-                    {salao.isOpened ? "ABERTO" : "FECHADO"}
-                  </Badge>
-                  <Title color="light">{salao?.nome}</Title>
-                  <Text color="light">
-                    {salao?.endereco?.cidade} • {salao?.distance?.toFixed(2)}kms
-                  </Text>
-                </Gradient>
-              </Cover>
+              <Animated.View style={{ opacity: imageOpacity }}>
+                <Cover
+                  image={require("@/src/assets/images/capa.jpg")}
+                  customWidth="100%"
+                  customHeight="300px"
+                  resizeMode="cover"
+                >
+                  <Gradient>
+                    <Badge color={salao.isOpened ? "success" : "danger"}>
+                      {salao.isOpened ? "ABERTO" : "FECHADO"}
+                    </Badge>
+                    <Title color="light">{salao?.nome}</Title>
+                    <Text color="light">
+                      {salao?.endereco?.cidade} • {salao?.distance?.toFixed(2)}kms
+                    </Text>
+                  </Gradient>
+                </Cover>
+              </Animated.View>
+
+              {/* Camada escura animada para "esmaecer" sem branquear */}
+              <Animated.View
+                pointerEvents="none"
+                style={{
+                  ...StyleSheet.absoluteFillObject,
+                  backgroundColor: dark ? "#222" : "#fff",
+                  opacity: darkOverlayOpacity,
+                }}
+              />
             </View>
 
             <Header />

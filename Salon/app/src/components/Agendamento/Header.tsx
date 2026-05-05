@@ -22,7 +22,7 @@ export default function Header() {
   const dispatch = useDispatch();
   const { salao, servicos } = useSelector((state: any) => state.salao);
   const [selectedTypeService, setSelectedTypeService] = useState("Barbearia");
-  const { colors } = useTheme(); // ← aqui pegamos o tema atual
+  const { colors, dark } = useTheme(); // ← aqui pegamos o tema atual
 
   const iconColor = colors.onSurface;
   const textColor = colors.onSurface;
@@ -182,6 +182,7 @@ export default function Header() {
         </Title>
         <Spacer size="5px" />
         <TextInput
+          isDark={dark}
           placeholder="Digite o nome do serviço..."
           onChangeText={(value) => dispatch(updateForm({ inputFiltro: value }))}
           onFocus={() => dispatch(updateForm({ inputFiltroFoco: true }))}

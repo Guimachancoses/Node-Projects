@@ -142,10 +142,10 @@ export default function HitoricoAg({ agendamento, value }: ServicoProps) {
                 width="55%"
                 align="center"
               >
-                <Title small color={dynamicTextColor}>
+                <Text bold color={dynamicTextColor}>
                   {servico?.titulo}
-                </Title>
-                <Text small color={dynamicTextColor}>
+                </Text>
+                <Text small spacing="5px 0 0 0" color={dynamicTextColor}>
                   Dia {moment(agendamento?.data).format("DD/MM/YYYY")} às{" "}
                   {moment(agendamento?.data).format("HH:mm")}
                 </Text>
@@ -155,11 +155,11 @@ export default function HitoricoAg({ agendamento, value }: ServicoProps) {
                   style={{
                     ...styles.surface,
                     backgroundColor:
-                      agendamento?.statusPagamento === "S"
+                      agendamento?.status === "C"
                         ? "#e5ffe5"
-                        : "#ffe5e5",
+                        : "#ebebeb",
                     borderColor:
-                      agendamento?.statusPagamento === "S" ? "green" : "red",
+                      agendamento?.status === "F" ? "grey" : "green",
                   }}
                   elevation={4}
                 >
@@ -167,11 +167,11 @@ export default function HitoricoAg({ agendamento, value }: ServicoProps) {
                     style={{
                       ...styles.pago,
                       color:
-                        agendamento?.statusPagamento === "S" ? "green" : "red",
+                        agendamento?.status === "F" ? "grey" : "green",
                     }}
                     small
                   >
-                    {agendamento?.statusPagamento === "S" ? "Pago" : "Pendente"}
+                    {agendamento?.status === "F" ? "Finalizado" : "Agendado"}
                   </Text>
                 </Surface>
               </Box>

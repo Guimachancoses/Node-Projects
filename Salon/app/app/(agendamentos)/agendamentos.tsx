@@ -12,7 +12,7 @@ import { router, useFocusEffect } from "expo-router";
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import MenuComponent from "@/src/components/Menu/MenuComponet";
 import { Appbar, Portal, SegmentedButtons, useTheme } from "react-native-paper";
-import { Box} from "@/src/styles";
+import { Box } from "@/src/styles";
 import theme from "@/src/styles/theme.json";
 import HitoricoAg from "@/src/components/Resumo/HitoricoAg";
 import BtSheetResume from "@/src/components/Resumo/BtSheetResume";
@@ -75,6 +75,17 @@ export default function Agendamentos() {
     })
   ).current;
 
+  const closeMenu = () => {
+    Animated.timing(slideAnim, {
+      toValue: -MENU_WIDTH,
+      duration: 220,
+      easing: Easing.in(Easing.cubic),
+      useNativeDriver: false,
+    }).start(() => {
+      setMenuVisible(false);
+    });
+  };
+
   return (
     <>
       <ImageBackground
@@ -103,7 +114,7 @@ export default function Agendamentos() {
                   transform: [{ translateX: slideAnim }],
                 }}
               >
-                <MenuComponent />
+                <MenuComponent onClose={closeMenu} />
               </Animated.View>
 
               <TouchableWithoutFeedback onPress={() => setMenuVisible(false)}>

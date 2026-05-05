@@ -21,7 +21,7 @@ export default function CardComp({ onPress, preferenciaPagamento }: CardProps) {
   return (
     <View style={{ backgroundColor: colors.background }}>
       <Text bold hasPadding color={dynamicTextColor}>
-        Como você gostaria de pagar?
+        O pagamento será:
       </Text>
       <View
         style={{
@@ -42,7 +42,7 @@ export default function CardComp({ onPress, preferenciaPagamento }: CardProps) {
           align="center"
           justify="space-between"
           spacing="0 0 10px"
-          onPress={onPress}
+          // onPress={onPress}
         >
           <Box
             justify="space-between"

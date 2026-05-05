@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useRef, useState, useMemo } from "react";
 import {
   View,
   StyleSheet,
@@ -9,8 +9,10 @@ import {
   Animated,
   TouchableWithoutFeedback,
   PanResponder,
+  Easing
 } from "react-native";
-import { Text, Avatar, Button, TextInput } from "react-native-paper";
+import { Text, Avatar, Button, Portal, IconButton } from "react-native-paper";
+import { TextInput } from "@/src/styles";
 import * as ImagePicker from "expo-image-picker";
 import { useUser } from "@clerk/clerk-expo";
 import { Box } from "@/src/styles";
@@ -24,10 +26,10 @@ import {
   updateCliente,
 } from "@/src/store/modules/cliente/action";
 import { useDispatch, useSelector } from "react-redux";
-import { Portal } from "react-native-paper";
 import MenuComponent from "@/src/components/Menu/MenuComponet";
+import { useTheme } from "react-native-paper";
 
-const MENU_WIDTH = 250;
+const MENU_WIDTH = 280;
 
 export default function ConpletRg() {
   const dispatch = useDispatch();
@@ -41,6 +43,17 @@ export default function ConpletRg() {
   const [foneError, setFoneError] = useState<string | null>(null);
   const [menuVisible, setMenuVisible] = useState(false);
   const slideAnim = useRef(new Animated.Value(-MENU_WIDTH)).current;
+
+  useEffect(() => {
+    Animated.timing(slideAnim, {
+      toValue: menuVisible ? 0 : -MENU_WIDTH,
+      duration: 300,
+      easing: Easing.out(Easing.cubic),
+      useNativeDriver: false,
+    }).start();
+  }, [menuVisible, slideAnim]);
+
+  const { dark } = useTheme();
 
   const { user } = useUser();
 
@@ -107,6 +120,20 @@ export default function ConpletRg() {
       })
     );
   };
+
+  const podeAbrirMenuPorBotao =
+    forms.behavior === "update" &&
+    !!form?.nome?.trim() &&
+    !!form?.sobrenome?.trim() &&
+    !!form?.telefone?.replace(/\D/g, "") &&
+    !!form?.cpf?.replace(/\D/g, "") &&
+    !!form?.dataNascimento?.trim() &&
+    !!form?.cep?.replace(/\D/g, "") &&
+    !!String(form?.numero || "").trim() &&
+    !!form?.street?.trim() &&
+    !!form?.city?.trim() &&
+    !!form?.neighborhood?.trim() &&
+    !!selectedGender;
 
   const handleChange = (key: string, value: string) => {
     setForm((prev) => ({ ...prev, [key]: value }));
@@ -237,6 +264,116 @@ export default function ConpletRg() {
     })
   ).current;
 
+  const originalSnapshotRef = useRef<string>("");
+
+  const onlyDigits = (v: string) => (v || "").replace(/\D/g, "");
+
+  const normalizeForCompare = () => ({
+    nome: (form?.nome || "").trim(),
+    sobrenome: (form?.sobrenome || "").trim(),
+    telefone: onlyDigits(form?.telefone || ""),
+    cpf: onlyDigits(form?.cpf || ""),
+    dataNascimento: (form?.dataNascimento || "").trim(), // DD/MM/AAAA no form
+    sexo: selectedGender || "", // male/female/other
+    cep: onlyDigits(form?.cep || ""),
+    numero: String(form?.numero || "").trim(),
+    street: (form?.street || "").trim(),
+    city: (form?.city || "").trim(),
+    neighborhood: (form?.neighborhood || "").trim(),
+    avatar: avatar || "",
+  });
+
+  const currentSnapshot = useMemo(
+    () => JSON.stringify(normalizeForCompare()),
+    [
+      form?.nome,
+      form?.sobrenome,
+      form?.telefone,
+      form?.cpf,
+      form?.dataNascimento,
+      selectedGender,
+      form?.cep,
+      form?.numero,
+      form?.street,
+      form?.city,
+      form?.neighborhood,
+      avatar,
+    ]
+  );
+
+  // obrigatórios
+  const requiredFilled = useMemo(() => {
+    const telefoneOk = onlyDigits(form?.telefone).length >= 10;
+    const cpfOk = onlyDigits(form?.cpf).length === 11 && isValidCPF(form?.cpf || "");
+    const cepOk = onlyDigits(form?.cep).length === 8;
+    const dataOk = isValidBirthDate(form?.dataNascimento || "");
+    const sexoOk = !!selectedGender;
+
+    return (
+      (form?.nome || "").trim().length > 0 &&
+      (form?.sobrenome || "").trim().length > 0 &&
+      telefoneOk &&
+      cpfOk &&
+      dataOk &&
+      cepOk &&
+      (form?.numero || "").toString().trim().length > 0 &&
+      (form?.street || "").trim().length > 0 &&
+      (form?.city || "").trim().length > 0 &&
+      (form?.neighborhood || "").trim().length > 0 &&
+      sexoOk
+    );
+  }, [
+    form?.nome,
+    form?.sobrenome,
+    form?.telefone,
+    form?.cpf,
+    form?.dataNascimento,
+    form?.cep,
+    form?.numero,
+    form?.street,
+    form?.city,
+    form?.neighborhood,
+    selectedGender,
+  ]);
+
+  const hasErrors = !!cpfError || !!cepError || !!foneError || !!birthDateError;
+
+  const hasChanges =
+    forms.behavior === "create"
+      ? true
+      : originalSnapshotRef.current !== "" &&
+      currentSnapshot !== originalSnapshotRef.current;
+
+  // baseline para UPDATE
+  useEffect(() => {
+    if (forms.behavior === "create") {
+      originalSnapshotRef.current = "";
+      return;
+    }
+
+    // captura snapshot inicial apenas uma vez, quando formulário já está preenchido
+    if (forms.behavior === "update" && !originalSnapshotRef.current && requiredFilled) {
+      originalSnapshotRef.current = currentSnapshot;
+    }
+  }, [forms.behavior, requiredFilled, currentSnapshot]);
+
+  const isSaveDisabled =
+    forms?.saving ||
+    hasErrors ||
+    !requiredFilled ||
+    (forms.behavior === "update" && !hasChanges);
+
+  const closeMenu = () => {
+    Animated.timing(slideAnim, {
+      toValue: -MENU_WIDTH,
+      duration: 220,
+      easing: Easing.in(Easing.cubic),
+      useNativeDriver: false,
+    }).start(() => {
+      setMenuVisible(false);
+    });
+  };
+
   return (
     <ImageBackground
       source={require("@/src/assets/images/background_parrudus.jpg")} // substitua por sua imagem
@@ -244,6 +381,21 @@ export default function ConpletRg() {
       resizeMode="cover"
     >
       <View style={styles.gradientOverlay} />
+      {podeAbrirMenuPorBotao && (
+        <IconButton
+          icon="menu"
+          size={28}
+          iconColor={themeX.colors.light}
+          containerColor="rgba(0,0,0,0.35)"
+          style={{
+            position: "absolute",
+            top: Platform.OS === "android" ? 40 : 60,
+            right: 12,
+            zIndex: 10000,
+          }}
+          onPress={() => setMenuVisible(true)}
+        />
+      )}
       <ScrollView contentContainerStyle={styles.container}>
         {/* Menu lateral com fundo opaco */}
         {menuVisible && forms.behavior === "update" && (
@@ -266,7 +418,7 @@ export default function ConpletRg() {
                   transform: [{ translateX: slideAnim }],
                 }}
               >
-                <MenuComponent />
+                <MenuComponent onClose={closeMenu} />
               </Animated.View>
 
               <TouchableWithoutFeedback onPress={() => setMenuVisible(false)}>
@@ -292,7 +444,7 @@ export default function ConpletRg() {
         <TouchableOpacity onPress={pickImage} style={styles.avatarContainer}>
           {avatar ? (
             <Avatar.Image
-              size={80}
+              size={70}
               source={{ uri: avatar }}
               style={{
                 borderColor: "1px solid #fff",
@@ -321,35 +473,36 @@ export default function ConpletRg() {
           </Text>
         ) : (
           <Text style={{ ...styles.welcomeText, fontSize: 16 }}>
-            Vereifique seus dados antes de alterá-los:
+            Verifique seus dados antes de alterá-los:
           </Text>
         )}
         <View style={styles.form}>
           {!user?.firstName && (
             <TextInput
+              isDark={dark}
               label="Nome"
               value={form?.nome}
               onChangeText={(text) => {
                 setCliente("nome", text);
                 handleChange("nome", text);
               }}
-              style={styles.input}
             />
           )}
           {!user?.lastName && (
             <TextInput
+              isDark={dark}
               label="Sobrenome"
               value={form?.sobrenome}
               onChangeText={(text) => {
                 setCliente("sobrenome", text), handleChange("sobrenome", text);
               }}
-              style={styles.input}
+
             />
           )}
           <TextInput
+            isDark={dark}
             label="Telefone"
             value={form.telefone}
-            style={styles.input}
             keyboardType="phone-pad"
             placeholder="(19) 98195-5602"
             onChangeText={(text) => {
@@ -388,9 +541,9 @@ export default function ConpletRg() {
             </Text>
           )}
           <TextInput
+            isDark={dark}
             label="CPF"
             value={form.cpf}
-            style={styles.input}
             keyboardType="numeric"
             placeholder="000.000.000-00"
             disabled={forms?.behavior === "update"}
@@ -425,6 +578,7 @@ export default function ConpletRg() {
             </Text>
           )}
           <TextInput
+            isDark={dark}
             label="Data de nascimento"
             value={form?.dataNascimento}
             onChangeText={(text) => {
@@ -443,7 +597,6 @@ export default function ConpletRg() {
               }
             }}
             placeholder="DD/MM/AAAA"
-            style={styles.input}
             keyboardType="numeric"
             error={!!birthDateError}
           />
@@ -459,10 +612,10 @@ export default function ConpletRg() {
             </Text>
           )}
           <TextInput
+            isDark={dark}
             label="CEP"
             value={form.cep}
             placeholder="13484-299"
-            style={styles.input}
             keyboardType="numeric"
             onChangeText={(text) => {
               const digits = text.replace(/\D/g, "").slice(0, 8);
@@ -521,6 +674,7 @@ export default function ConpletRg() {
             </Text>
           )}
           <TextInput
+            isDark={dark}
             label="Número"
             value={form.numero}
             placeholder="139"
@@ -532,9 +686,9 @@ export default function ConpletRg() {
               });
               handleChange("numero", text);
             }}
-            style={styles.input}
           />
           <TextInput
+            isDark={dark}
             label="Logradouro"
             placeholder="Rua Armindo Tank"
             value={form.street}
@@ -545,10 +699,10 @@ export default function ConpletRg() {
               });
               handleChange("street", text);
             }}
-            style={styles.input}
             disabled={enderecoPreenchido}
           />
           <TextInput
+            isDark={dark}
             label="Cidade"
             placeholder="Limeira"
             value={form.city}
@@ -562,10 +716,10 @@ export default function ConpletRg() {
               });
               handleChange("city", text);
             }}
-            style={styles.input}
             disabled={enderecoPreenchido}
           />
           <TextInput
+            isDark={dark}
             label="Bairro"
             placeholder="Vila Anita"
             value={form.neighborhood}
@@ -576,7 +730,6 @@ export default function ConpletRg() {
               });
               handleChange("neighborhood", text);
             }}
-            style={styles.input}
             disabled={enderecoPreenchido}
           />
           <Box
@@ -618,10 +771,9 @@ export default function ConpletRg() {
 
         <Button
           mode="contained"
+          disabled={isSaveDisabled}
           onPress={() => {
-            forms.behavior === "create"
-              ? dispatch(addCliente())
-              : dispatch(updateCadastro());
+            forms.behavior === "create" ? dispatch(addCliente()) : dispatch(updateCadastro());
           }}
           style={styles.button}
         >
@@ -646,6 +798,7 @@ const styles = StyleSheet.create({
   },
   avatarContainer: {
     flex: 1,
+    marginTop: 25
   },
   welcomeText: {
     fontSize: 22,
