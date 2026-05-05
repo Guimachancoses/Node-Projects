@@ -98,7 +98,10 @@ export function* filterAgenda({ payload }: any) {
       }
     );
 
-    //console.log(res.agenda)
+    console.log(
+      "dias-disponiveis",
+      JSON.stringify(res.agenda, null, 2)
+    );
 
     if (res.error) {
       Toast.show({

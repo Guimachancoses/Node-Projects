@@ -152,6 +152,8 @@ export default function AgendamentoBottomS() {
     (state: any) => state.salao
   );
 
+  console.log("agenda", agenda)
+
   const [headerHeight, setHeaderHeight] = React.useState(78);
   const HANDLE_HEIGHT = 88;
 

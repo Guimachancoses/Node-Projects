@@ -52,7 +52,6 @@ export default function ModalEspci({
     if (!foto) return Logo;
 
     const value = String(foto).trim().toLowerCase();
-    console.log("value", value)
     if (
       value === "" ||
       value === "null" ||

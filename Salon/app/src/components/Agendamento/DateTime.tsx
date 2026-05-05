@@ -72,7 +72,7 @@ export default function DateTime({
 
   // console.log("dataSelecionada: ", dataSelecionada);
   // console.log("horaSelecionada: ", horaSelecionada);
-  // console.log("Horarios disponiveis em DAtetime: ", horarioDisponiveis);
+  //console.log("Horarios disponiveis em DAtetime: ", horarioDisponiveis);
 
   return (
     <View style={{ backgroundColor: colors.background }}>
