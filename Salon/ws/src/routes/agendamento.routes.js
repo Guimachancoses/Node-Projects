@@ -206,6 +206,7 @@ router.post("/dias-disponiveis", async (req, res) => {
     console.log("🕒 HOJE:", hojeSP, "| AGORA:", agoraSP.format("HH:mm"), "| TZ:", TZ);
 
     // duração serviço (usar UTC para não deslocar duração por timezone)
+    const servicoDuracaoHHmm = moment.utc(servico.duracao).format("HH:mm");
     const getDuracaoMinutos = (duracaoDate) => {
       const m = moment(duracaoDate).tz(TZ);
       return m.hours() * 60 + m.minutes();
