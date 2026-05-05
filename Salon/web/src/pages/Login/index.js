@@ -263,6 +263,7 @@ const Login = () => {
                 onClick={(e) => {
                   e.preventDefault();
                   e.stopPropagation();
+
                   navigate("/forgot-password");
                 }}
               >
