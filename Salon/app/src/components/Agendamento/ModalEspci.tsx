@@ -5,6 +5,7 @@ import theme from "@/src/styles/theme.json";
 import { ScrollView } from "react-native-gesture-handler";
 import { Dimensions } from "react-native";
 import { useDispatch } from "react-redux";
+import Logo from "@/src/assets/images/Logo.png";
 
 import { Text, Box, Touchable, Cover } from "../../styles";
 import {
@@ -47,6 +48,22 @@ export default function ModalEspci({
 
   const containerStyle = { backgroundColor: "white", padding: 20, margin: 20 };
 
+  const getImage = (foto: any) => {
+    if (!foto) return Logo;
+
+    const value = String(foto).trim().toLowerCase();
+    console.log("value", value)
+    if (
+      value === "" ||
+      value === "null" ||
+      value === "undefined"
+    ) {
+      return Logo;
+    }
+
+    return foto;
+  };
+
   return (
     <>
       <Portal>
@@ -66,6 +83,7 @@ export default function ModalEspci({
               </Text>
               <Box wrap="wrap" spacing="10px 0 0">
                 {colaboradoresDisponiveis?.map((colaborador: any) => (
+
                   <Touchable
                     key={colaborador._id}
                     width={`${(Dimensions.get("screen").width - 120) / 4}px`}
@@ -81,9 +99,10 @@ export default function ModalEspci({
                     }}
                   >
                     <Cover
-                      image={colaborador?.foto}
-                      height={45}
-                      width={45}
+                      image={getImage(colaborador?.foto)}
+                      customWidth={45}
+                      customHeight={45}
+                      resizeMode="cover"
                       circle
                       border={
                         colaborador._id === agendamento.colaboradorId

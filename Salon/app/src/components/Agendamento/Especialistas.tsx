@@ -7,6 +7,7 @@ import theme from "@/src/styles/theme.json";
 import util from "@/src/constants/util";
 import { updateForm } from "@/src/store/modules/salao/actions";
 import { View } from "react-native";
+import Logo from "@/src/assets/images/Logo.png";
 
 interface EspecialistaProps {
   colaboradores: any;
@@ -25,6 +26,10 @@ export default function Especialistas({ colaboradores, agendamento }: Especialis
     (c: any) => c._id === agendamento?.colaboradorId
   );
 
+  const imageSource = colaborador?.foto
+  ? { uri: colaborador.foto }
+  : Logo;
+
   return (
     <View style={{ backgroundColor: colors.background }}>
       <Text hasPadding bold color={dynamicTextColor} removePaddingBottom>
@@ -37,8 +42,7 @@ export default function Especialistas({ colaboradores, agendamento }: Especialis
             customHeight={60}
             resizeMode="cover"
             circle
-            //image={colaborador?.foto}
-            image={{uri: "https://img.nsctotal.com.br/wp-content/uploads/2023/09/mulher-cabelo.jpg"}}
+            image={imageSource}
           />
           <Text small color={dynamicTextColor} spacing="0 10px 0">
             {`${colaborador?.nome} ${colaborador?.sobrenome}`}

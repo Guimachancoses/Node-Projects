@@ -23,7 +23,7 @@ interface CoverProps extends RNImageProps {
   spacing?: string;
   border?: string;
   circle?: boolean;
-  image?: ImageSourcePropType; // <-- Corrigido aqui
+  image?: ImageSourcePropType;
   backgroundColor?: string;
   resizeMode?: ImageResizeMode;
 }
@@ -33,7 +33,7 @@ export const Cover = styled(ImageBackground).attrs<CoverProps>((props) => ({
     typeof props.image === "string"
       ? { uri: props.image }
       : props.image || undefined,
-  resizeMode: props.resizeMode || "contain", // <-- AQUI
+  resizeMode: props.resizeMode || "contain",
 }))<CoverProps>`
   width: ${(props) =>
     typeof props.customWidth === "number"

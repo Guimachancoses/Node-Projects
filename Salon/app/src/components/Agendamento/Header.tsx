@@ -4,7 +4,6 @@ import {
   Box,
   Text,
   Touchable,
-  Button,
   TextInput,
   Spacer,
 } from "@/src/styles";

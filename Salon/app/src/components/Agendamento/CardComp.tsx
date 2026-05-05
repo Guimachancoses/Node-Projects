@@ -4,7 +4,7 @@ import MaterialCommunityIcons from "@/src/components/Agendamento/MCIcon";
 
 import util from "@/src/constants/util";
 import theme from "@/src/styles/theme.json";
-import { Box, Spacer, Text, Touchable } from "@/src/styles";
+import { Box, Text, Touchable } from "@/src/styles";
 import { useTheme } from "react-native-paper";
 
 interface CardProps {
