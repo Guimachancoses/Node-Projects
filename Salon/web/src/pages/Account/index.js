@@ -496,10 +496,6 @@ export default function Account() {
     const fileToSend = fotoFile || fotoExibicao;
 
     dispatch(updateMyAccountRequest(accountForm, fileToSend));
-
-    console.log("accountForm", accountForm);
-    console.log("fotoFile", fotoFile);
-    console.log("fotoExibicao", fotoExibicao);
   };
 
   useEffect(() => {

@@ -421,6 +421,8 @@ export function* checkUser() {
 export function* updateMyAccount({ payload, fotoFile }) {
   const { form, user } = yield select((state) => state.colaborador);
 
+  console.log("fotoFile", fotoFile)
+
   try {
     yield put(updateColaborador({ form: { ...form, saving: true } }));
 
@@ -444,6 +446,7 @@ export function* updateMyAccount({ payload, fotoFile }) {
       nome: payload?.nome || "",
       sobrenome: payload?.sobrenome || "",
       sexo: payload?.sexo || "",
+      foto: fotoFile || "",
       telefone: {
         area: payload?.telefone?.area || "",
         numero: payload?.telefone?.numero || "",
@@ -466,9 +469,10 @@ export function* updateMyAccount({ payload, fotoFile }) {
       const formData = new FormData();
       formData.append("salaoId", SALAOID);
       formData.append("colaborador", JSON.stringify({ ...baseUpdate, ...perfil }));
-      formData.append("arquivo_0", fotoFile);
 
-      console.log("formData", formData)
+      for (let [key, value] of formData.entries()) {
+        console.log(key, value);
+      }
 
       const response = yield call(api.put, `/colaborador/${user._id}`, formData);
       res = response.data;
