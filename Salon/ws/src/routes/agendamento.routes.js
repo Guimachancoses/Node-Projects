@@ -1,7 +1,8 @@
 const express = require("express");
 const router = express.Router();
 const mongoose = require("mongoose");
-const moment = require("moment");
+const moment = require("moment-timezone");
+const TZ = "America/Sao_Paulo";
 const util = require("../util");
 const _ = require("lodash");
 const { DateTime } = require("luxon");
@@ -190,92 +191,75 @@ router.post("/dias-disponiveis", async (req, res) => {
   try {
     const { data, salaoId, servicoId } = req.body;
 
-    console.log("📥 REQUEST:", { data, salaoId, servicoId });
-
     const horarios = await Horario.find({ salaoId });
     const servico = await Servico.findById(servicoId).select("duracao");
 
     let agenda = [];
     let colaboradores = [];
-    let lastDay = moment(data);
 
-    const hoje = moment().format("YYYY-MM-DD");
-    const agora = moment();
+    // dia base em SP
+    let lastDay = moment.tz(data, "YYYY-MM-DD", TZ).startOf("day");
+    const agoraSP = moment.tz(TZ);
+    const hojeSP = agoraSP.format("YYYY-MM-DD");
 
-    console.log("🕒 HOJE:", hoje, "| AGORA:", agora.format("HH:mm"));
-
-    // duração serviço
     const servicoMinutos = util.hourToMinutes(
       moment(servico.duracao).format("HH:mm")
     );
-
     const servicoSlots = util.sliceMinutes(
       servico.duracao,
       moment(servico.duracao).add(servicoMinutos, "minutes"),
       util.SLOT_DURATION
     ).length;
 
-    console.log("⏱️ SERVIÇO:", {
-      duracao: servico.duracao,
-      minutos: servicoMinutos,
-      slots: servicoSlots,
-    });
-
     for (let i = 0; i <= 365 && agenda.length <= 7; i++) {
       const dataFormatada = lastDay.format("YYYY-MM-DD");
-
-      console.log("\n📅 DIA:", dataFormatada);
 
       const espacosValidos = horarios.filter((horario) => {
         const diaSemanaDisponivel = horario.dias.includes(lastDay.day());
         const servicoDisponivel = horario.especialidades.includes(servicoId);
-
         return diaSemanaDisponivel && servicoDisponivel;
       });
-
-      console.log("🧩 ESPAÇOS VÁLIDOS:", espacosValidos.length);
 
       if (espacosValidos.length > 0) {
         let todosHorariosDia = {};
 
         for (let espaco of espacosValidos) {
-          console.log("⏰ ESPAÇO:", {
-            inicio: espaco.inicio,
-            fim: espaco.fim,
-          });
-
           for (let colaboradorId of espaco.colaboradores) {
             if (!todosHorariosDia[colaboradorId]) {
               todosHorariosDia[colaboradorId] = [];
             }
 
-            const inicio = moment(lastDay)
-              .hour(moment(espaco.inicio).hour())
-              .minute(moment(espaco.inicio).minute())
-              .second(0);
+            // horário template salvo como Date -> extrai hora/minuto em UTC
+            // (mantém a "hora de relógio" que você cadastrou)
+            const inicioTpl = moment.utc(espaco.inicio);
+            const fimTpl = moment.utc(espaco.fim);
 
-            const fim = moment(lastDay)
-              .hour(moment(espaco.fim).hour())
-              .minute(moment(espaco.fim).minute())
-              .second(0);
+            const inicio = lastDay
+              .clone()
+              .hour(inicioTpl.hour())
+              .minute(inicioTpl.minute())
+              .second(0)
+              .millisecond(0);
 
-            let slots = util.sliceMinutes(
-              inicio,
-              fim,
-              util.SLOT_DURATION
-            );
+            const fim = lastDay
+              .clone()
+              .hour(fimTpl.hour())
+              .minute(fimTpl.minute())
+              .second(0)
+              .millisecond(0);
 
-            // 🔥 FILTRO DE HORA ATUAL (APENAS HOJE)
-            if (dataFormatada === hoje) {
+            let slots = util.sliceMinutes(inicio, fim, util.SLOT_DURATION);
+
+            // filtro de "não mostrar passado" APENAS para hoje em SP
+            if (dataFormatada === hojeSP) {
               slots = slots.filter((hora) => {
-                const horarioMoment = moment(
-                  `${dataFormatada}T${hora}`,
-                  "YYYY-MM-DDTHH:mm"
+                const slotSP = moment.tz(
+                  `${dataFormatada} ${hora}`,
+                  "YYYY-MM-DD HH:mm",
+                  TZ
                 );
-                return horarioMoment.isAfter(agora);
+                return slotSP.isAfter(agoraSP); // estritamente maior que agora
               });
-
-              console.log("🧹 FILTRADO (HOJE):", slots);
             }
 
             todosHorariosDia[colaboradorId] = [
@@ -285,39 +269,35 @@ router.post("/dias-disponiveis", async (req, res) => {
           }
         }
 
-        // 🔥 VERIFICAR CONFLITOS COM AGENDAMENTOS
-        for (let colaboradorId of Object.keys(todosHorariosDia)) {
-          console.log("\n👤 COLAB:", colaboradorId);
+        // limites do dia em SP convertidos para UTC p/ query Mongo
+        const inicioDiaUTC = lastDay.clone().startOf("day").utc().toDate();
+        const fimDiaUTC = lastDay.clone().endOf("day").utc().toDate();
 
+        for (let colaboradorId of Object.keys(todosHorariosDia)) {
           const agendamentos = await Agendamento.find({
             colaboradorId,
-            data: {
-              $gte: moment(lastDay).startOf("day"),
-              $lte: moment(lastDay).endOf("day"),
-            },
+            data: { $gte: inicioDiaUTC, $lte: fimDiaUTC },
             status: { $ne: "C" },
           })
             .select("data servicoId -_id")
             .populate("servicoId", "duracao");
 
-          console.log("📌 AGENDAMENTOS:", agendamentos.length);
-
           let horariosOcupados = agendamentos
             .map((agendamento) =>
               util.sliceMinutes(
-                moment(agendamento.data),
-                moment(agendamento.data).add(
-                  util.hourToMinutes(
-                    moment(agendamento.servicoId.duracao).format("HH:mm")
+                moment(agendamento.data).tz(TZ), // converte agendamento para SP
+                moment(agendamento.data)
+                  .tz(TZ)
+                  .add(
+                    util.hourToMinutes(
+                      moment(agendamento.servicoId.duracao).format("HH:mm")
+                    ),
+                    "minutes"
                   ),
-                  "minutes"
-                ),
                 util.SLOT_DURATION
               )
             )
             .flat();
-
-          console.log("⛔ OCUPADOS:", horariosOcupados);
 
           let horariosLivres = util
             .sliptByValue(
@@ -328,33 +308,34 @@ router.post("/dias-disponiveis", async (req, res) => {
             )
             .filter((space) => space.length > 0);
 
-          console.log("🟢 LIVRES INICIAL:", horariosLivres);
+          horariosLivres = horariosLivres.filter((h) => h.length >= servicoSlots);
 
-          // precisa caber o serviço
-          horariosLivres = horariosLivres.filter(
-            (h) => h.length >= servicoSlots
-          );
-
-          // garantir sequência válida
           horariosLivres = horariosLivres
             .map((slot) =>
-              slot.filter(
-                (_, index) => slot.length - index >= servicoSlots
-              )
+              slot.filter((_, index) => slot.length - index >= servicoSlots)
             )
             .flat();
 
-          // ordenar
           horariosLivres = horariosLivres.sort((a, b) =>
             moment(a, "HH:mm").isBefore(moment(b, "HH:mm")) ? -1 : 1
           );
 
-          // 🔥 remover horários quebrados
           horariosLivres = _.chunk(horariosLivres, 2).filter(
             (slot) => slot.length === 2
           );
 
-          console.log("✅ FINAL:", horariosLivres);
+          // segurança extra: se for hoje, remove novamente qualquer horário passado
+          if (dataFormatada === hojeSP) {
+            horariosLivres = horariosLivres.filter((slot) => {
+              const horaInicio = Array.isArray(slot) ? slot[0] : slot;
+              const slotSP = moment.tz(
+                `${dataFormatada} ${horaInicio}`,
+                "YYYY-MM-DD HH:mm",
+                TZ
+              );
+              return slotSP.isAfter(agoraSP);
+            });
+          }
 
           if (horariosLivres.length === 0) {
             delete todosHorariosDia[colaboradorId];
@@ -364,15 +345,9 @@ router.post("/dias-disponiveis", async (req, res) => {
         }
 
         const total = Object.keys(todosHorariosDia).length;
-
-        console.log("👥 DISPONÍVEIS NO DIA:", total);
-
         if (total > 0) {
           colaboradores.push(Object.keys(todosHorariosDia));
-
-          agenda.push({
-            [dataFormatada]: todosHorariosDia,
-          });
+          agenda.push({ [dataFormatada]: todosHorariosDia });
         }
       }
 
@@ -380,18 +355,12 @@ router.post("/dias-disponiveis", async (req, res) => {
     }
 
     colaboradores = _.uniq(colaboradores.flat());
-
-    colaboradores = await Colaborador.find({
-      _id: { $in: colaboradores },
-    }).select("nome sobrenome foto");
-
-    console.log("\n🎯 RESULTADO FINAL:");
-    console.log("📅 Agenda:", agenda.length);
-    console.log("👥 Colaboradores:", colaboradores.length);
+    colaboradores = await Colaborador.find({ _id: { $in: colaboradores } }).select(
+      "nome sobrenome foto"
+    );
 
     res.json({ error: false, colaboradores, agenda });
   } catch (err) {
-    console.log("❌ ERRO:", err);
     res.json({ error: true, message: err.message });
   }
 });
