@@ -313,16 +313,16 @@ router.post("/dias-disponiveis", async (req, res) => {
           console.log("📌 AGENDAMENTOS:", agendamentos.length);
 
           let horariosOcupados = agendamentos
-            .map((agendamento) =>
-              util.sliceMinutes(
-                moment(agendamento.data).tz(TZ),
-                moment(agendamento.data)
-                  .tz(TZ)
-                  .add(getDuracaoMinutos(agendamento.servicoId.duracao), "minutes"),
-                util.SLOT_DURATION
-              )
+          .map((agendamento) =>
+            util.sliceMinutes(
+              moment(agendamento.data).tz(TZ),
+              moment(agendamento.data)
+                .tz(TZ)
+                .add(getDuracaoMinutos(agendamento.servicoId.duracao), "minutes"),
+              util.SLOT_DURATION
             )
-            .flat();
+          )
+          .flat();
 
           console.log("⛔ OCUPADOS:", horariosOcupados);
 
