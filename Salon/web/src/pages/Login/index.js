@@ -255,7 +255,7 @@ const Login = () => {
                 onChange={(e) => setPassword(e.target.value)}
               />
 
-              <Link
+              {/* <Link
                 component="button"
                 type="button"
                 variant="body2"
@@ -267,7 +267,7 @@ const Login = () => {
                 }}
               >
                 Esqueceu sua senha?
-              </Link>
+              </Link> */}
 
               <Button
                 type="submit"
