@@ -12,6 +12,7 @@
   "dependencies": {
     "@mercadopago/sdk-js": "^0.0.3",
     "@mercadopago/sdk-react": "^1.0.2",
+    "@turf/turf": "^7.3.5",
     "aws": "^0.0.3-2",
     "aws-sdk": "^2.1692.0",
     "axios": "^1.8.4",
@@ -22,6 +23,7 @@
     "dotenv": "^17.4.2",
     "expo-server-sdk": "^6.1.0",
     "express": "^5.2.1",
+    "express-fileupload": "^1.5.2",
     "googleapis": "^171.4.0",
     "lodash": "^4.17.21",
     "luxon": "^3.6.1",

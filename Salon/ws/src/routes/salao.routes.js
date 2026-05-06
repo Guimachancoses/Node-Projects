@@ -11,7 +11,7 @@ const Arquivo = require("../models/arquivo");
 const util = require("../util");
 
 // ajuste o caminho conforme seu projeto
-const { uploadToS3, deleteFileS3 } = require("../services/amazon");
+const { uploadToS3, deleteFileS3 } = require("../services/aws");
 
 // ------------------------
 // helpers
