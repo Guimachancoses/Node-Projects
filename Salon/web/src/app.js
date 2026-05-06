@@ -1,11 +1,15 @@
 // App.js
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { ThemeProvider, createTheme } from "@mui/material/styles";
 import { CssBaseline } from "@mui/material";
 import Main from "./routes";
 
 export default function App() {
-  const [mode, setMode] = React.useState("light");
+  // 1) estado inicial lendo do localStorage
+  const [mode, setMode] = useState(() => {
+    const saved = localStorage.getItem("themeMode");
+    return saved === "dark" || saved === "light" ? saved : "light";
+  });
 
   const theme = React.useMemo(
     () =>
@@ -46,9 +50,15 @@ export default function App() {
     [mode]
   );
 
+  // 2) função que alterna tema
   const toggleTheme = () => {
     setMode((prev) => (prev === "light" ? "dark" : "light"));
   };
+
+  // 3) persiste sempre que mode mudar
+  useEffect(() => {
+    localStorage.setItem("themeMode", mode);
+  }, [mode]);
 
   return (
     <ThemeProvider theme={theme}>

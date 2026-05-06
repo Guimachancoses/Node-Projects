@@ -250,15 +250,20 @@ const Agendamentos = () => {
     cursor: "pointer",
     backgroundColor:
       theme.palette.mode === "dark"
-        ? "rgba(47, 50, 67, 0.5)"
-        : "rgba(255, 255, 255, 0.85)",
-    backdropFilter: "blur(4px)",
-    color: theme.palette.mode === "dark" ? "#fff" : "#000",
+        ? "rgba(11, 16, 25, 0.78)"
+        : "rgba(255, 255, 255, 0.90)",
+    backdropFilter: "blur(6px)",
+    color: theme.palette.mode === "dark" ? "#f3f6fb" : "#0f172a",
     height: isMobile ? "calc(100dvh - 230px)" : "calc(100dvh - 220px)",
     minHeight: 420,
     borderRadius: 12,
     boxShadow: theme.shadows[3],
     padding: isMobile ? 4 : 8,
+    border: `1px solid ${
+      theme.palette.mode === "dark"
+        ? "rgba(255,255,255,0.14)"
+        : "rgba(0,0,0,0.08)"
+    }`,
   };
 
   const servicosOptions = (servicos || []).map((s) => ({

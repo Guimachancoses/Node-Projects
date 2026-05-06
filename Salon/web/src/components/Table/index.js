@@ -121,16 +121,11 @@ const TableComponent = ({
         )}
       </Stack>
 
-      {toolbarComponent && (
-        <Toolbar sx={{ justifyContent: "space-between", px: 0, mb: 1 }}>
-          {selectedIds.length > 0 ? (
-            <Typography sx={{ color: "white" }}>{selectedIds.length} selecionado(s)</Typography>
-          ) : (
-            <Box />
-          )}
-          {toolbarComponent(selectedIds)}
-        </Toolbar>
-      )}
+      <Toolbar sx={{ justifyContent: "space-between", px: 0, mb: 1 }}>
+        <Box />
+        {toolbarComponent(selectedIds)}
+      </Toolbar>
+
 
       {loading ? (
         <Paper sx={{ p: 4, textAlign: "center" }}>
@@ -153,7 +148,7 @@ const TableComponent = ({
               <CardContent sx={{ pb: "12px !important" }}>
                 <Stack direction="row" justifyContent="space-between" alignItems="center">
                   <Typography variant="subtitle2" fontWeight={700}>
-                    {[row.nome, row.sobrenome].filter(Boolean).join(" ") || `${row.titulo}` ||  `#${row.id}`}
+                    {[row.nome, row.sobrenome].filter(Boolean).join(" ") || `${row.titulo}` || `#${row.id}`}
                   </Typography>
 
                   <Stack direction="row" alignItems="center" spacing={0.5}>
@@ -300,6 +295,15 @@ const TableComponent = ({
             </TableBody>
           </Table>
         </TableContainer>
+      )}
+      {toolbarComponent && (
+        <Toolbar sx={{ justifyContent: "space-between", px: 0, mb: 1 }}>
+          {selectedIds.length > 0 ? (
+            <Typography sx={{ color: "white" }}>{selectedIds.length} selecionado(s)</Typography>
+          ) : (
+            <Box />
+          )}
+        </Toolbar>
       )}
     </Container>
   );

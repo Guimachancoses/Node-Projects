@@ -7,6 +7,7 @@ import store from './store';
 import App from './app';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import history from './history';
+
 // Pega a chave do Clerk do .env
 const PUBLISHABLE_KEY = process.env.REACT_APP_CLERK_PUBLISHABLE_KEY;
 

@@ -42,6 +42,8 @@ const corsOptions = {
   allowedHeaders: ["Content-Type", "Authorization"],
 };
 
+const fileUpload = require("express-fileupload");
+
 app.use(cors(corsOptions));
 app.options(/.*/, cors(corsOptions));
 
@@ -70,6 +72,12 @@ app.use(
 );
 app.use("/evolution", require("./src/routes/evolution.routes"));
 
+app.use(
+  fileUpload({
+    createParentPath: true,
+    limits: { fileSize: 8 * 1024 * 1024 },
+  })
+);
 // Rotas Google/OAuth (separadas)
 app.use("/", require("./src/routes/google.routes"));
 

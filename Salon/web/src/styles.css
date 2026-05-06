@@ -357,3 +357,104 @@ body {
     padding: 6px 4px;
   }
 }
+/* ===== RBC base ===== */
+.rbc-toolbar {
+  border-radius: 10px;
+  padding: 8px;
+}
+
+.rbc-toolbar .rbc-toolbar-label {
+  font-weight: 700;
+}
+
+.rbc-toolbar .rbc-btn-group button {
+  border-radius: 8px;
+}
+
+.rbc-toolbar .rbc-btn-group button.rbc-active {
+  font-weight: 700;
+}
+
+/* ===== DARK ===== */
+body.dark .rbc-toolbar {
+  background: rgba(9, 14, 22, 0.78) !important;
+  border: 1px solid rgba(255, 255, 255, 0.16) !important;
+}
+
+body.dark .rbc-toolbar .rbc-toolbar-label {
+  color: #f5f7fb !important;
+}
+
+body.dark .rbc-toolbar .rbc-btn-group button {
+  background: rgba(255, 255, 255, 0.06) !important;
+  color: #f5f7fb !important;
+  border: 1px solid rgba(255, 255, 255, 0.2) !important;
+}
+
+body.dark .rbc-toolbar .rbc-btn-group button:hover {
+  background: rgba(255, 255, 255, 0.12) !important;
+}
+
+body.dark .rbc-toolbar .rbc-btn-group button.rbc-active {
+  background: rgba(255, 255, 255, 0.22) !important;
+  color: #fff !important;
+  border-color: rgba(255, 255, 255, 0.32) !important;
+}
+
+body.dark .rbc-time-header,
+body.dark .rbc-header {
+  background: rgba(9, 14, 22, 0.72) !important;
+  color: #ecf2ff !important;
+}
+
+body.dark .rbc-time-content,
+body.dark .rbc-time-view,
+body.dark .rbc-day-slot .rbc-time-slot {
+  border-color: rgba(255, 255, 255, 0.2) !important;
+}
+
+body.dark .rbc-time-gutter .rbc-label {
+  color: #e8edf7 !important;
+}
+
+/* ===== LIGHT ===== */
+body.light .rbc-toolbar {
+  background: rgba(255, 255, 255, 0.92) !important;
+  border: 1px solid rgba(15, 23, 42, 0.12) !important;
+}
+
+body.light .rbc-toolbar .rbc-toolbar-label {
+  color: #0f172a !important;
+}
+
+body.light .rbc-toolbar .rbc-btn-group button {
+  background: #ffffff !important;
+  color: #0f172a !important;
+  border: 1px solid rgba(15, 23, 42, 0.18) !important;
+}
+
+body.light .rbc-toolbar .rbc-btn-group button:hover {
+  background: #f8fafc !important;
+}
+
+body.light .rbc-toolbar .rbc-btn-group button.rbc-active {
+  background: #e2e8f0 !important;
+  color: #0f172a !important;
+  border-color: rgba(15, 23, 42, 0.3) !important;
+}
+
+body.light .rbc-time-header,
+body.light .rbc-header {
+  background: rgba(248, 250, 252, 0.95) !important;
+  color: #1e293b !important;
+}
+
+body.light .rbc-time-content,
+body.light .rbc-time-view,
+body.light .rbc-day-slot .rbc-time-slot {
+  border-color: rgba(15, 23, 42, 0.12) !important;
+}
+
+body.light .rbc-time-gutter .rbc-label {
+  color: #334155 !important;
+}

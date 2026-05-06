@@ -470,9 +470,9 @@ export function* updateMyAccount({ payload, fotoFile }) {
       formData.append("salaoId", SALAOID);
       formData.append("colaborador", JSON.stringify({ ...baseUpdate, ...perfil }));
 
-      for (let [key, value] of formData.entries()) {
-        //console.log(key, value);
-      }
+      // for (let [key, value] of formData.entries()) {
+      //   console.log(key, value);
+      // }
 
       const response = yield call(api.put, `/colaborador/${user._id}`, formData);
       res = response.data;

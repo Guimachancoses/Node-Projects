@@ -56,10 +56,10 @@ export default function Home() {
   const slideAnim = useRef(new Animated.Value(-MENU_WIDTH)).current;
   const { user } = useClerk();
   const [refreshing, setRefreshing] = useState(false);
-  const [loading] = useState(false);
-  const listaBase = tipoServicos.length > 0 ? tipoServicos : [];
+  const listaBase = tipoServicos.length > 0 ? tipoServicos : (servicos || []);
   const { notification, error, clearNotification } = useNotification();
   const [loadingInitial, setLoadingInitial] = useState(true);
+  const loading = loadingInitial || (!servicos || servicos.length === 0);
   const clienteId = cliente?.clienteId ?? cliente?._id;
   const clerkEmail = user?.primaryEmailAddress?.emailAddress;
   const scrollY = useRef(new Animated.Value(0)).current;
@@ -99,9 +99,14 @@ export default function Home() {
 
   useEffect(() => {
     carregarDados();
-    const t = setTimeout(() => setLoadingInitial(false), 1200); // ajuste fino
-    return () => clearTimeout(t);
   }, [carregarDados]);
+
+  useEffect(() => {
+    // encerra loading quando os dados mínimos chegaram
+    if (salao && servicos) {
+      setLoadingInitial(false);
+    }
+  }, [salao, servicos]);
 
   const onRefresh = async () => {
     setRefreshing(true);
@@ -333,7 +338,7 @@ export default function Home() {
             {loading ? (
               <>
                 <ActivityIndicator size="large" color={theme.colors.primary} />
-                <Text spacing="10px 0 0" align="center" color={theme.colors.primary}>
+                <Text spacing="10px 0 0" align="center" color={dark ? theme.colors.light : theme.colors.primary}>
                   Buscando serviços...
                 </Text>
               </>
@@ -342,9 +347,9 @@ export default function Home() {
                 <MaterialCommunityIcons
                   name="alert-circle-outline"
                   size={48}
-                  color={theme.colors.primary}
+                  color={dark ? theme.colors.light : theme.colors.primary}
                 />
-                <Text spacing="10px 0 0" align="center" color={theme.colors.primary}>
+                <Text spacing="10px 0 0" align="center" color={dark ? theme.colors.light : theme.colors.primary}>
                   Nenhum serviço encontrado
                 </Text>
               </>
