@@ -15,6 +15,10 @@ import {
   ListItemText,
   useTheme,
   useMediaQuery,
+  Box,
+  Chip,
+  Stack,
+  Drawer,
 } from "@mui/material";
 import MuiAlert from "@mui/material/Alert";
 import Snackbar from "@mui/material/Snackbar";
@@ -48,6 +52,8 @@ import SaveIcon from "@mui/icons-material/Save";
 import SignpostIcon from "@mui/icons-material/Signpost";
 import AutorenewIcon from "@mui/icons-material/Autorenew";
 import ContentCutIcon from '@mui/icons-material/ContentCut';
+import SearchIcon from "@mui/icons-material/Search";
+import ClearIcon from "@mui/icons-material/Clear";
 
 import { buscarEndereco } from "../../services/apiCep";
 
@@ -91,6 +97,14 @@ const Colaboradores = () => {
   const [cepLoading, setCepLoading] = useState(false);
   const ultimoCepBuscadoRef = useRef("");
   const cepRequestIdRef = useRef(0);
+  const [filterOpen, setFilterOpen] = useState(false);
+
+  const [quickSearch, setQuickSearch] = useState("");
+  const [filtros, setFiltros] = useState({
+    nome: "",
+    email: "",
+    telefone: "",
+  });
 
   const setTelefoneField = (key, value) => {
     setColaborador("telefone", {
@@ -378,6 +392,36 @@ const Colaboradores = () => {
     };
   });
 
+  const rowsFiltradas = useMemo(() => {
+    const q = quickSearch.trim().toLowerCase();
+
+    return (colaboradoresProcessados || []).filter((c) => {
+      // busca rápida
+      const matchQuick =
+        !q ||
+        `${c.nome || ""} ${c.sobrenome || ""}`.toLowerCase().includes(q) ||
+        (c.email || "").toLowerCase().includes(q) ||
+        (c.telefoneFormatado || "").toLowerCase().includes(q);
+
+      // filtros avançados
+      const matchNome =
+        !filtros.nome ||
+        `${c.nome || ""} ${c.sobrenome || ""}`
+          .toLowerCase()
+          .includes(filtros.nome.toLowerCase());
+
+      const matchEmail =
+        !filtros.email || (c.email || "").toLowerCase().includes(filtros.email.toLowerCase());
+
+      const matchTelefone =
+        !filtros.telefone ||
+        (c.telefoneFormatado || "").replace(/\D/g, "").includes(filtros.telefone.replace(/\D/g, ""));
+
+
+      return matchQuick && matchNome && matchEmail && matchTelefone;
+    });
+  }, [colaboradoresProcessados, quickSearch, filtros]);
+
   const columns = [
     { field: "id", headerName: "ID", width: 10, fixed: true },
     { field: "nome", headerName: "Nome", width: 100 },
@@ -386,14 +430,6 @@ const Colaboradores = () => {
     { field: "telefoneFormatado", headerName: "Telefone", width: 150 },
     { field: "statusFormat", headerName: "Status", width: 120 },
   ];
-
-  const filtro = (
-    <Tooltip title="Filtrar" sx={{ color: "white" }}>
-      <IconButton onClick={() => console.log("Abrir filtros")}>
-        <FilterListIcon />
-      </IconButton>
-    </Tooltip>
-  );
 
   const renderDetalhesColaborador = (row) => (
     <>
@@ -551,31 +587,107 @@ const Colaboradores = () => {
 
   const isReativar = behavior !== "create" && colaborador?.vinculo === "E";
 
+  const chipSx = {
+    bgcolor: "rgba(2,85,93,0.25)",
+    color: "#d9f7ff",
+    border: "1px solid rgba(2,85,93,0.85)",
+    "& .MuiChip-deleteIcon": { color: "#9fe8ff" },
+    "& .MuiChip-deleteIcon:hover": { color: "#fff" },
+  };
+
   return (
     <div className="col">
+      <Stack direction="row" spacing={1} useFlexGap flexWrap="wrap" sx={{ mb: 1 }}>
+        {quickSearch && (
+          <Chip label={`Busca: ${quickSearch}`} onDelete={() => setQuickSearch("")} sx={chipSx} />
+        )}
+        {filtros.nome && (
+          <Chip label={`Nome: ${filtros.nome}`} onDelete={() => setFiltros((p) => ({ ...p, nome: "" }))} sx={chipSx} />
+        )}
+        {filtros.email && (
+          <Chip label={`E-mail: ${filtros.email}`} onDelete={() => setFiltros((p) => ({ ...p, email: "" }))} sx={chipSx} />
+        )}
+        {filtros.telefone && (
+          <Chip label={`Telefone: ${filtros.telefone}`} onDelete={() => setFiltros((p) => ({ ...p, telefone: "" }))} sx={chipSx} />
+        )}
+      </Stack>
       <TableComponent
         loading={form.filtering}
         title="Colaboradores"
-        rows={colaboradoresProcessados}
+        rows={rowsFiltradas}
         columns={columns}
         buttonLabel="Novo Colaborador"
         iconClass="mdi mdi-plus"
         onButtonClick={handleNovoColaborador}
         toolbarComponent={(selectedIds) => (
-          <>
-            {filtro}
+          <Stack
+            direction={{ xs: "column", sm: "row" }}
+            spacing={1}
+            alignItems={{ xs: "stretch", sm: "center" }}
+            sx={{ width: "100%" }}
+          >
+            <Tooltip title="Filtros avançados">
+              <IconButton onClick={() => setFilterOpen(true)}>
+                <FilterListIcon sx={{ color: "#fff" }}/>
+              </IconButton>
+            </Tooltip>
+
+            <TextField
+              size="small"
+              placeholder="Pesquisar ..."
+              value={quickSearch}
+              onChange={(e) => setQuickSearch(e.target.value)}
+              InputProps={{
+                startAdornment: (
+                  <SearchIcon
+                    fontSize="small"
+                    style={{ marginRight: 8, opacity: 0.85, color: "#fff" }}
+                  />
+                ),
+              }}
+              sx={{
+                minWidth: { xs: "100%", sm: 320 },
+                "& .MuiOutlinedInput-root": {
+                  color: "#fff",
+                  "& fieldset": {
+                    borderColor: "rgba(255, 255, 255, 0.1)", // borda padrão
+                  },
+                  "&:hover fieldset": {
+                    borderColor: "primary.main", // hover
+                  },
+                  "&.Mui-focused fieldset": {
+                    borderColor: "primary.main", // foco
+                  },
+                },
+                "& .MuiInputBase-input::placeholder": {
+                  color: "rgba(255,255,255,0.9)",
+                  opacity: 1,
+                },
+              }}
+            />
+
+            <Button
+              variant="outlined"
+              startIcon={<ClearIcon sx={{ color: "#fff" }} />}
+              onClick={() => {
+                setQuickSearch("");
+                setFiltros({ nome: "", email: "", telefone: "" });
+              }}
+              sx={{ color: "#fff" }}
+            >
+              Limpar filtros
+            </Button>
+
             <Button
               variant="outlined"
               color="error"
               disabled={selectedIds.length === 0}
-              onClick={() => {
-                handleOpenDialog(selectedIds);
-                //console.log(selectedIds);
-              }}
+              onClick={() => handleOpenDialog(selectedIds)}
+              sx={{ ml: { sm: "auto" } }}
             >
-              Excluir
+              Excluir {selectedIds.length > 0 ? `(${selectedIds.length})` : ""}
             </Button>
-          </>
+          </Stack>
         )}
         onRowClick={(colaborador) => {
           dispatch(
@@ -593,6 +705,46 @@ const Colaboradores = () => {
         checkboxSelection={true}
         renderExpandedRow={renderDetalhesColaborador}
       />
+      <Drawer anchor="right" open={filterOpen} onClose={() => setFilterOpen(false)}>
+        <Box sx={{ width: 320, p: 2 }}>
+          <Typography variant="h6" sx={{ mb: 2 }}>Filtros avançados</Typography>
+
+          <TextField
+            fullWidth
+            label="Nome"
+            margin="normal"
+            value={filtros.nome}
+            onChange={(e) => setFiltros((p) => ({ ...p, nome: e.target.value }))}
+          />
+          <TextField
+            fullWidth
+            label="E-mail"
+            margin="normal"
+            value={filtros.email}
+            onChange={(e) => setFiltros((p) => ({ ...p, email: e.target.value }))}
+          />
+          <TextField
+            fullWidth
+            label="Telefone"
+            margin="normal"
+            value={filtros.telefone}
+            onChange={(e) => setFiltros((p) => ({ ...p, telefone: e.target.value }))}
+          />
+
+          <Stack direction="row" spacing={1} sx={{ mt: 2 }}>
+            <Button
+              fullWidth
+              variant="outlined"
+              onClick={() => setFiltros({ nome: "", email: "", telefone: "", chatbotStatus: "" })}
+            >
+              Limpar
+            </Button>
+            <Button fullWidth variant="contained" onClick={() => setFilterOpen(false)}>
+              Aplicar
+            </Button>
+          </Stack>
+        </Box>
+      </Drawer>
       {/* Drawer Component Controlado diretamente pelo estado do Redux */}
       <div
         style={{ display: "flex", flexDirection: "column", marginLeft: "16px" }}

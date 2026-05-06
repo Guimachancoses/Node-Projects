@@ -28,14 +28,16 @@ export default function Header() {
   const textColor = colors.onSurface;
 
   const handleTipoSelect = (tipo: string) => {
-    dispatch(updateTypeChoice(tipo)); // atualiza a escolha
-    const filtrados = servicos.filter((s: any) => s.tipoServico === tipo);
+    dispatch(updateTypeChoice(tipo));
+    const base = Array.isArray(servicos) ? servicos : [];
+    const filtrados = base.filter((s: any) => s.tipoServico === tipo);
     dispatch(updateTipoServicos(filtrados));
   };
 
   useEffect(() => {
-    handleTipoSelect("Barbearia");
-  }, []);
+    if (!servicos || servicos.length === 0) return;
+    handleTipoSelect(selectedTypeService); // reaplica filtro quando servicos chegar
+  }, [servicos, selectedTypeService]);
 
   const countServicosPorTipo = (tipo: string) => {
     return servicos?.filter((s: any) => s.tipoServico === tipo)?.length || 0;
