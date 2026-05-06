@@ -222,6 +222,10 @@ export default function Layout({ toggleTheme }) {
                 <Typography>Minha Conta</Typography>
               </MenuItem>
 
+              <MenuItem onClick={handleCloseUserMenu} component={Link} to="/empresa">
+                <Typography>Minha Empresa</Typography>
+              </MenuItem>
+
               <MenuItem
                 onClick={() => {
                   handleCloseUserMenu();

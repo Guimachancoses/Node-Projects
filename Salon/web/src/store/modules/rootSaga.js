@@ -5,7 +5,8 @@ import cliente from "./cliente/sagas";
 import colaborador from "./colaborador/sagas";
 import servico from "./servico/sagas";
 import horario from "./horario/sagas";
+import salao from "./salao/sagas";
 
 export default function* rootSaga() {
-  return yield all([agendamento, cliente, colaborador, servico, horario]);
+  return yield all([agendamento, cliente, colaborador, servico, horario, salao]);
 }
