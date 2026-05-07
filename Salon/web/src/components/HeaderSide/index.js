@@ -1,4 +1,7 @@
-import React, { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { useDispatch, useSelector } from "react-redux";
+import { loadMyCompanyRequest } from "../../store/modules/salao/actions";
+import consts from "../../consts";
 import { Outlet, Link, useLocation } from "react-router-dom";
 import {
   AppBar,
@@ -31,7 +34,6 @@ import AutoFixHighIcon from "@mui/icons-material/AutoFixHigh";
 import MoreTimeIcon from "@mui/icons-material/MoreTime";
 
 import { useClerk } from "@clerk/clerk-react";
-import logo from "../../assets/logo_parrudus.png";
 import miniLogo from "../../assets/mini_logo.jpg";
 
 const DRAWER_EXPANDED = 240;
@@ -46,6 +48,14 @@ const navItems = [
 ];
 
 export default function Layout({ toggleTheme }) {
+  const dispatch = useDispatch();
+  const { empresa } = useSelector((state) => state.salao || {});
+
+  useEffect(() => {
+    // evita chamar toda hora
+    if (!empresa?._id) dispatch(loadMyCompanyRequest());
+  }, [dispatch, empresa?._id]);
+
   const theme = useTheme();
   const location = useLocation();
   const { signOut, user } = useClerk();
@@ -74,6 +84,24 @@ export default function Layout({ toggleTheme }) {
   const showTextInDesktop = isDesktop && !collapsed;
   const showTextInTemporary = !isDesktop; // em mobile/tablet sempre mostra texto
 
+  const logoUrl = useMemo(() => {
+    const build = (value = "") => {
+      if (!value) return "";
+      if (value.startsWith("http")) return value;
+      return `${consts.bucketUrl.replace(/\/$/, "")}/${value.replace(/^\//, "")}`;
+    };
+
+    // prioridade: campo direto
+    if (empresa?.logo) return build(empresa.logo);
+
+    // fallback: buscar em arquivos
+    const arqLogo = (empresa?.arquivos || [])
+      .filter((a) => (a?.caminho || "").includes("logo-"))
+      .sort((a, b) => new Date(b.dataCadastro) - new Date(a.dataCadastro))[0];
+
+    return build(arqLogo?.caminho || "");
+  }, [empresa]);
+
   const drawerContent = (
     <Box sx={{ height: "100%", backgroundColor: "var(--dark)", color: "white" }}>
       <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", px: 1, py: 1 }}>
@@ -90,7 +118,7 @@ export default function Layout({ toggleTheme }) {
 
       <Box
         component="img"
-        src={logo}
+        src={logoUrl} // fallback para logo local
         alt="Logo"
         sx={{
           display: showTextInDesktop || showTextInTemporary ? "block" : "none",
@@ -186,8 +214,12 @@ export default function Layout({ toggleTheme }) {
           )}
 
           <Box sx={{ display: "flex", flexDirection: "column", alignItems: "flex-end", flexGrow: 1 }}>
-            <Typography variant="h6" noWrap sx={{ color: "var(--white)", fontSize: { xs: "1rem", sm: "1.15rem" } }}>
-              Parrudus Barbearia
+            <Typography
+              variant="h6"
+              noWrap
+              sx={{ color: "var(--white)", fontSize: { xs: "1rem", sm: "1.15rem" } }}
+            >
+              {empresa?.nome || "Carregando..."}
             </Typography>
             <Typography variant="caption" sx={{ color: "var(--Gold)" }}>
               Plano Gold

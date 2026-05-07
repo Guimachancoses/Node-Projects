@@ -100,6 +100,7 @@ export default function Empresa() {
   const [apresentacaoFile, setApresentacaoFile] = useState(null);
   const [apresentacaoPreview, setApresentacaoPreview] = useState("");
   const apresentacaoInputRef = useRef(null);
+  const [submitLocked, setSubmitLocked] = useState(false);
 
   const logoInputRef = useRef(null);
   const capaInputRef = useRef(null);
@@ -324,7 +325,10 @@ export default function Empresa() {
   const disableSave = form?.saving || !requiredFilled || !hasChanges;
 
   const handleSave = () => {
+    if (submitLocked) return; // evita clique duplo
     if (!validateForm()) return;
+
+    setSubmitLocked(true);
 
     dispatch(
       updateMyCompanyRequest({
@@ -343,6 +347,12 @@ export default function Empresa() {
       })
     );
   };
+
+  useEffect(() => {
+    if (!form?.saving) {
+      setSubmitLocked(false);
+    }
+  }, [form?.saving]);
 
   return (
     <Container maxWidth="lg" sx={{ py: 3 }}>
@@ -379,6 +389,11 @@ export default function Empresa() {
                   </InputAdornment>
                 ),
               }}
+              inputProps={{
+                style: {
+                  fontSize: "0.8rem", // Altere esse valor conforme quiser
+                },
+              }}
             />
           </Grid>
 
@@ -397,6 +412,11 @@ export default function Empresa() {
                     <EmailIcon />
                   </InputAdornment>
                 ),
+              }}
+              inputProps={{
+                style: {
+                  fontSize: "0.8rem", // Altere esse valor conforme quiser
+                },
               }}
             />
           </Grid>
@@ -417,6 +437,11 @@ export default function Empresa() {
                   </InputAdornment>
                 ),
               }}
+              inputProps={{
+                style: {
+                  fontSize: "0.8rem", // Altere esse valor conforme quiser
+                },
+              }}
             />
           </Grid>
 
@@ -429,6 +454,11 @@ export default function Empresa() {
               onBlur={() => validateField("telefone")}
               error={!!errors.telefone}
               helperText={errors.telefone}
+              inputProps={{
+                style: {
+                  fontSize: "0.8rem", // Altere esse valor conforme quiser
+                },
+              }}
             />
           </Grid>
 
@@ -448,6 +478,11 @@ export default function Empresa() {
                   </InputAdornment>
                 ) : null,
               }}
+              inputProps={{
+                style: {
+                  fontSize: "0.8rem", // Altere esse valor conforme quiser
+                },
+              }}
             />
           </Grid>
 
@@ -460,6 +495,11 @@ export default function Empresa() {
               onBlur={() => validateField("uf")}
               error={!!errors.uf}
               helperText={errors.uf}
+              inputProps={{
+                style: {
+                  fontSize: "0.8rem", // Altere esse valor conforme quiser
+                },
+              }}
             />
           </Grid>
 
@@ -476,6 +516,11 @@ export default function Empresa() {
                   </InputAdornment>
                 ),
               }}
+              inputProps={{
+                style: {
+                  fontSize: "0.8rem", // Altere esse valor conforme quiser
+                },
+              }}
             />
           </Grid>
 
@@ -485,6 +530,11 @@ export default function Empresa() {
               label="Número"
               value={companyForm.endereco.numero}
               onChange={(e) => setEndereco("numero", e.target.value)}
+              inputProps={{
+                style: {
+                  fontSize: "0.8rem", // Altere esse valor conforme quiser
+                },
+              }}
             />
           </Grid>
 
@@ -494,6 +544,11 @@ export default function Empresa() {
               label="Bairro"
               value={companyForm.endereco.bairro}
               onChange={(e) => setEndereco("bairro", e.target.value)}
+              inputProps={{
+                style: {
+                  fontSize: "0.8rem", // Altere esse valor conforme quiser
+                },
+              }}
             />
           </Grid>
 
@@ -503,6 +558,11 @@ export default function Empresa() {
               label="Cidade"
               value={companyForm.endereco.cidade}
               onChange={(e) => setEndereco("cidade", e.target.value)}
+              inputProps={{
+                style: {
+                  fontSize: "0.8rem", // Altere esse valor conforme quiser
+                },
+              }}
             />
           </Grid>
 
@@ -513,6 +573,11 @@ export default function Empresa() {
               label="País"
               value={companyForm.endereco.pais}
               onChange={(e) => setEndereco("pais", e.target.value)}
+              inputProps={{
+                style: {
+                  fontSize: "0.8rem", // Altere esse valor conforme quiser
+                },
+              }}
             >
               <MenuItem value="Brasil">Brasil</MenuItem>
               <MenuItem value="Outro">Outro</MenuItem>
@@ -606,7 +671,7 @@ export default function Empresa() {
           <Button
             variant="contained"
             onClick={handleSave}
-            disabled={disableSave}
+            disabled={disableSave || submitLocked || form?.saving}
             startIcon={form?.saving ? <CircularProgress size={18} color="inherit" /> : null}
           >
             {form?.saving ? "Salvando..." : "Salvar alterações"}
