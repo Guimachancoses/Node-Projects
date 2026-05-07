@@ -20,10 +20,14 @@ const getErrorMessage = (err, fallback) =>
   err?.message ||
   fallback;
 
+const SALAOID = `${process.env.REACT_APP_SALAO_ID}`;
+
 // -------- LOAD --------
 function* loadMyCompany() {
   try {
-    const salaoId = yield select(getSalaoId);
+    const salaoIdFromState = yield select(getSalaoId);
+    const salaoId = SALAOID || salaoIdFromState;
+
     if (!salaoId) throw new Error("ID do salão não encontrado.");
 
     const { data } = yield call(api.get, `/salao/${salaoId}`);
@@ -36,18 +40,12 @@ function* loadMyCompany() {
   } catch (err) {
     const message = getErrorMessage(err, "Erro ao carregar dados da empresa.");
     yield put(loadMyCompanyFailure(message));
-    yield put(
-      setAlerta({
-        open: true,
-        tipo: "error",
-        mensagem: message,
-      })
-    );
+    yield put(setAlerta({ open: true, tipo: "error", mensagem: message }));
   }
 }
 
 // -------- FORM DATA --------
-function buildFormData({ data, logoFile, capaFile, fotoFile }) {
+function buildFormData({ data, logoFile, capaFile, apresentacaoFile }) {
   const fd = new FormData();
 
   // Campos simples
@@ -74,10 +72,9 @@ function buildFormData({ data, logoFile, capaFile, fotoFile }) {
     });
   }
 
-  // Arquivos (compatível com backend: req.files.foto / req.files.capa)
-  const foto = logoFile || fotoFile || null;
-  if (foto) fd.append("foto", foto);
+  if (logoFile) fd.append("logo", logoFile);
   if (capaFile) fd.append("capa", capaFile);
+  if (apresentacaoFile) fd.append("apresentacao", apresentacaoFile);
 
   return fd;
 }

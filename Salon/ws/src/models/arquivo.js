@@ -8,7 +8,7 @@ const arquivo = new Schema({
   },
   model: {
     type: String,
-    riquered: true,
+    required: true,
     enum: ["Servico", "Salao"],
   },
   caminho: {

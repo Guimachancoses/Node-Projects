@@ -47,30 +47,96 @@ function pickAllowedFields(body = {}) {
   };
 }
 
-function normalizeKeyFromUrlOrKey(value = "") {
-  if (!value) return "";
-  if (!value.startsWith("http")) return value;
-
-  // se estiver salvo como URL completa
-  const bucketUrl = process.env.AWS_BUCKET_URL || "";
-  if (bucketUrl && value.startsWith(bucketUrl)) {
-    return value.replace(`${bucketUrl}/`, "");
-  }
-
-  try {
-    const url = new URL(value);
-    return url.pathname.replace(/^\//, "");
-  } catch {
-    return value;
-  }
-}
-
 function buildS3Path({ salaoId, fieldName, originalName }) {
   const ext = path.extname(originalName || "").toLowerCase() || ".jpg";
   return `saloes/${salaoId}/${fieldName}-${Date.now()}-${uuidv4()}${ext}`;
 }
 
-// Upload de 1 arquivo (foto/capa)
+// ajuda a lidar com req.files campo único/array
+function getFile(req, field) {
+  const f = req?.files?.[field];
+  if (!f) return null;
+  return Array.isArray(f) ? f[0] : f;
+}
+
+function keyFromUrlOrKey(value = "") {
+  if (!value) return "";
+  if (!value.startsWith("http")) return value;
+
+  const bucketUrl = (process.env.AWS_BUCKET_URL || "").replace(/\/$/, "");
+  if (bucketUrl && value.startsWith(bucketUrl)) {
+    return value.replace(`${bucketUrl}/`, "");
+  }
+
+  try {
+    const u = new URL(value);
+    return u.pathname.replace(/^\//, "");
+  } catch {
+    return value;
+  }
+}
+
+function buildFilename({ salaoId, tipo, originalName }) {
+  const ext = path.extname(originalName || "").toLowerCase() || ".jpg";
+  return `saloes/${salaoId}/${tipo}-${Date.now()}-${uuidv4()}${ext}`;
+}
+
+async function replaceSingleImage({ salao, tipo, file }) {
+  if (!file) return;
+
+  // 1) descobrir caminho antigo
+  const oldKeyDirect = keyFromUrlOrKey(salao[tipo] || "");
+
+  // fallback: se não estiver no campo direto, tenta achar no Arquivo
+  let oldKey = oldKeyDirect;
+  if (!oldKey) {
+    const oldDoc = await Arquivo.findOne({
+      model: "Salao",
+      referenciaId: salao._id,
+      caminho: { $regex: `${tipo}-` }, // logo-, capa-, apresentacao-
+    }).sort({ dataCadastro: -1 });
+
+    oldKey = oldDoc?.caminho || "";
+  }
+
+  // 2) remover antigo do S3 + referência(s)
+  if (oldKey) {
+    await deleteFileS3(oldKey);
+    await Arquivo.deleteMany({
+      model: "Salao",
+      referenciaId: salao._id,
+      caminho: oldKey,
+    });
+  }
+
+  // remove possíveis registros antigos do mesmo tipo
+  await Arquivo.deleteMany({
+    model: "Salao",
+    referenciaId: salao._id,
+    caminho: { $regex: `${tipo}-` },
+  });
+
+  // 3) subir novo
+  const filename = buildFilename({
+    salaoId: salao._id,
+    tipo,
+    originalName: file.name,
+  });
+
+  const up = await uploadToS3(file, filename);
+  if (up.error) throw new Error(up.message || `Erro ao subir ${tipo}`);
+
+  // 4) salvar no model + Arquivo
+  salao[tipo] = filename;
+
+  await Arquivo.create({
+    referenciaId: salao._id,
+    model: "Salao",
+    caminho: filename,
+  });
+}
+
+// Upload de 1 arquivo (logo/capa/apresentacao)
 async function handleUploadField({ file, salaoId, fieldName }) {
   if (!file) return { error: false, caminho: null };
 
@@ -95,26 +161,27 @@ router.post("/", async (req, res) => {
     const salao = await new Salao(payload).save();
 
     // req.files pode vir undefined
-    const fotoFile = req?.files?.foto || null;
+    const logoFile = req?.files?.logo || null;
     const capaFile = req?.files?.capa || null;
+    const apresentacaoFile = req?.files?.apresentacao || null;
 
-    if (fotoFile) {
-      const upFoto = await handleUploadField({
-        file: fotoFile,
+    if (logoFile) {
+      const upLogo = await handleUploadField({
+        file: logoFile,
         salaoId: salao._id,
-        fieldName: "foto",
+        fieldName: "logo",
       });
 
-      if (upFoto.error) {
-        return res.status(400).json({ error: true, message: upFoto.message });
+      if (upLogo.error) {
+        return res.status(400).json({ error: true, message: upLogo.message });
       }
 
-      salao.foto = upFoto.caminho;
+      salao.logo = upLogo.caminho;
 
       await Arquivo.create({
         model: "Salao",
         referenciaId: salao._id,
-        caminho: upFoto.caminho,
+        caminho: upLogo.caminho,
       });
     }
 
@@ -135,6 +202,26 @@ router.post("/", async (req, res) => {
         model: "Salao",
         referenciaId: salao._id,
         caminho: upCapa.caminho,
+      });
+    }
+
+    if (apresentacaoFile) {
+      const upApresentacao = await handleUploadField({
+        file: apresentacaoFile,
+        salaoId: salao._id,
+        fieldName: "apresentacao",
+      });
+
+      if (upApresentacao.error) {
+        return res.status(400).json({ error: true, message: upApresentacao.message });
+      }
+
+      salao.apresentacao = upApresentacao.caminho;
+
+      await Arquivo.create({
+        model: "Salao",
+        referenciaId: salao._id,
+        caminho: upApresentacao.caminho,
       });
     }
 
@@ -159,84 +246,44 @@ router.put("/:id", async (req, res) => {
   try {
     const salao = await Salao.findById(req.params.id);
     if (!salao) {
-      return res.status(404).json({
-        error: true,
-        message: "Salão não encontrado.",
-      });
+      return res.status(404).json({ error: true, message: "Salão não encontrado." });
     }
-
-    const payload = pickAllowedFields(req.body);
 
     // campos textuais
-    salao.nome = payload.nome ?? salao.nome;
-    salao.email = payload.email ?? salao.email;
-    salao.telefone = payload.telefone ?? salao.telefone;
-    salao.endereco = payload.endereco ?? salao.endereco;
-    salao.geo = payload.geo ?? salao.geo;
+    salao.nome = req.body.nome ?? salao.nome;
+    salao.email = req.body.email ?? salao.email;
+    salao.telefone = req.body.telefone ?? salao.telefone;
 
-    const fotoFile = req?.files?.foto || null;
-    const capaFile = req?.files?.capa || null;
+    salao.endereco = {
+      logradouro: req.body?.endereco?.logradouro ?? req.body["endereco[logradouro]"] ?? salao.endereco?.logradouro,
+      bairro: req.body?.endereco?.bairro ?? req.body["endereco[bairro]"] ?? salao.endereco?.bairro,
+      cidade: req.body?.endereco?.cidade ?? req.body["endereco[cidade]"] ?? salao.endereco?.cidade,
+      uf: req.body?.endereco?.uf ?? req.body["endereco[uf]"] ?? salao.endereco?.uf,
+      cep: req.body?.endereco?.cep ?? req.body["endereco[cep]"] ?? salao.endereco?.cep,
+      numero: req.body?.endereco?.numero ?? req.body["endereco[numero]"] ?? salao.endereco?.numero,
+      pais: req.body?.endereco?.pais ?? req.body["endereco[pais]"] ?? salao.endereco?.pais,
+    };
 
-    if (fotoFile) {
-      // remove antiga do S3
-      if (salao.foto) {
-        await deleteFileS3(normalizeKeyFromUrlOrKey(salao.foto));
-      }
+    // arquivos recebidos
+    const logoFile = getFile(req, "logo");
+    const capaFile = getFile(req, "capa");
+    const apresentacaoFile = getFile(req, "apresentacao");
 
-      const upFoto = await handleUploadField({
-        file: fotoFile,
-        salaoId: salao._id,
-        fieldName: "foto",
-      });
-
-      if (upFoto.error) {
-        return res.status(400).json({ error: true, message: upFoto.message });
-      }
-
-      salao.foto = upFoto.caminho;
-
-      await Arquivo.create({
-        model: "Salao",
-        referenciaId: salao._id,
-        caminho: upFoto.caminho,
-      });
+    if (logoFile) {
+      await replaceSingleImage({ salao, tipo: "logo", file: logoFile });
     }
-
     if (capaFile) {
-      if (salao.capa) {
-        await deleteFileS3(normalizeKeyFromUrlOrKey(salao.capa));
-      }
-
-      const upCapa = await handleUploadField({
-        file: capaFile,
-        salaoId: salao._id,
-        fieldName: "capa",
-      });
-
-      if (upCapa.error) {
-        return res.status(400).json({ error: true, message: upCapa.message });
-      }
-
-      salao.capa = upCapa.caminho;
-
-      await Arquivo.create({
-        model: "Salao",
-        referenciaId: salao._id,
-        caminho: upCapa.caminho,
-      });
+      await replaceSingleImage({ salao, tipo: "capa", file: capaFile });
+    }
+    if (apresentacaoFile) {
+      await replaceSingleImage({ salao, tipo: "apresentacao", file: apresentacaoFile });
     }
 
     await salao.save();
 
-    return res.json({
-      error: false,
-      salao,
-    });
+    return res.json({ error: false, salao });
   } catch (err) {
-    return res.status(400).json({
-      error: true,
-      message: err.message,
-    });
+    return res.status(400).json({ error: true, message: err.message });
   }
 });
 
@@ -269,7 +316,7 @@ router.get("/servicos/:salaoId", async (req, res) => {
 router.get("/:id", async (req, res) => {
   try {
     const salao = await Salao.findById(req.params.id).select(
-      "nome email foto capa telefone endereco geo dataCadastro"
+      "nome email logo apresentacao capa telefone endereco geo dataCadastro"
     );
 
     if (!salao) {

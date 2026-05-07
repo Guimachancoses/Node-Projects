@@ -21,6 +21,7 @@ import LocationOnIcon from "@mui/icons-material/LocationOn";
 import ImageIcon from "@mui/icons-material/Image";
 import PhotoCameraBackIcon from "@mui/icons-material/PhotoCameraBack";
 import { useDispatch, useSelector } from "react-redux";
+import consts from "../../consts";
 
 import {
   loadMyCompanyRequest,
@@ -60,15 +61,6 @@ const initialForm = {
   },
 };
 
-const BUCKET_URL = import.meta.env.VITE_AWS_BUCKET_URL || "";
-
-const buildImageUrl = (value = "") => {
-  if (!value) return "";
-  if (value.startsWith("http://") || value.startsWith("https://")) return value;
-  if (!BUCKET_URL) return value;
-  return `${BUCKET_URL.replace(/\/$/, "")}/${String(value).replace(/^\//, "")}`;
-};
-
 const normalizeForm = (form) => ({
   nome: (form?.nome || "").trim(),
   email: (form?.email || "").trim().toLowerCase(),
@@ -105,6 +97,9 @@ export default function Empresa() {
   const [capaFile, setCapaFile] = useState(null);
   const [logoPreview, setLogoPreview] = useState("");
   const [capaPreview, setCapaPreview] = useState("");
+  const [apresentacaoFile, setApresentacaoFile] = useState(null);
+  const [apresentacaoPreview, setApresentacaoPreview] = useState("");
+  const apresentacaoInputRef = useRef(null);
 
   const logoInputRef = useRef(null);
   const capaInputRef = useRef(null);
@@ -113,6 +108,26 @@ export default function Empresa() {
   useEffect(() => {
     dispatch(loadMyCompanyRequest());
   }, [dispatch]);
+
+  const buildImageUrl = (value = "") => {
+    if (!value) return "";
+    if (value.startsWith("http://") || value.startsWith("https://")) return value;
+
+    const base = (consts.bucketUrl || "").replace(/\/$/, "");
+    if (!base) return "";
+
+    return `${base}/${String(value).replace(/^\//, "")}`;
+  };
+
+  const pickLatestByType = (arquivos = [], tipo = "") => {
+    const list = (arquivos || [])
+      .filter((a) => (a?.caminho || "").includes(`${tipo}-`) || (a?.caminho || "").includes(`/${tipo}-`))
+      .sort((a, b) => new Date(b.dataCadastro) - new Date(a.dataCadastro));
+
+    return list[0]?.caminho || "";
+  };
+
+  console.log("empresa", empresa);
 
   useEffect(() => {
     if (!empresa) return;
@@ -145,8 +160,14 @@ export default function Empresa() {
     setPhoneNumber(numero);
     originalRef.current = normalizeForm(payload);
 
-    setLogoPreview(buildImageUrl(empresa.foto || ""));
-    setCapaPreview(buildImageUrl(empresa.capa || ""));
+    const logoPath = empresa?.logo || pickLatestByType(empresa?.arquivos, "logo");
+    const capaPath = empresa?.capa || pickLatestByType(empresa?.arquivos, "capa");
+    const apresentacaoPath =
+      empresa?.apresentacao || pickLatestByType(empresa?.arquivos, "apresentacao");
+
+    setLogoPreview(buildImageUrl(logoPath));
+    setCapaPreview(buildImageUrl(capaPath));
+    setApresentacaoPreview(buildImageUrl(apresentacaoPath));
   }, [empresa]);
 
   useEffect(() => {
@@ -267,6 +288,14 @@ export default function Empresa() {
     setCapaPreview(URL.createObjectURL(file));
   };
 
+  const handleApresentacaoChange = (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (apresentacaoPreview?.startsWith("blob:")) URL.revokeObjectURL(apresentacaoPreview);
+    setApresentacaoFile(file);
+    setApresentacaoPreview(URL.createObjectURL(file));
+  };
+
   const mergedTelefone = useMemo(
     () => `${onlyDigits(phoneArea)}${onlyDigits(phoneNumber)}`,
     [phoneArea, phoneNumber]
@@ -286,9 +315,10 @@ export default function Empresa() {
     return (
       JSON.stringify(normalizedCurrent) !== JSON.stringify(original) ||
       !!logoFile ||
-      !!capaFile
+      !!capaFile ||
+      !!apresentacaoFile
     );
-  }, [normalizedCurrent, logoFile, capaFile]);
+  }, [normalizedCurrent, logoFile, capaFile, apresentacaoFile]);
 
   const requiredFilled = companyForm.nome.trim() && companyForm.email.trim();
   const disableSave = form?.saving || !requiredFilled || !hasChanges;
@@ -309,6 +339,7 @@ export default function Empresa() {
         },
         logoFile,
         capaFile,
+        apresentacaoFile,
       })
     );
   };
@@ -538,6 +569,33 @@ export default function Empresa() {
                   hidden
                   accept="image/*"
                   onChange={handleCapaChange}
+                />
+              </Box>
+            </Stack>
+          </Grid>
+
+          <Grid item xs={12} md={6}>
+            <Stack direction="row" spacing={2} alignItems="center">
+              <Avatar
+                variant="rounded"
+                src={apresentacaoPreview || ""}
+                sx={{ width: 120, height: 72, border: "1px solid", borderColor: "divider" }}
+              />
+              <Box>
+                <Typography fontWeight={600}>Apresentação</Typography>
+                <Button
+                  size="small"
+                  variant="outlined"
+                  onClick={() => apresentacaoInputRef.current?.click()}
+                >
+                  Alterar apresentação
+                </Button>
+                <input
+                  ref={apresentacaoInputRef}
+                  type="file"
+                  hidden
+                  accept="image/*"
+                  onChange={handleApresentacaoChange}
                 />
               </Box>
             </Stack>
