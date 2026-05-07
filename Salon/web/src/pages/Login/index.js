@@ -32,7 +32,7 @@ import TermoServicoLink from "../../components/FooterLinks/TermoServicoLink";
 import PoliticaPrivacidadeLink from "../../components/FooterLinks/PoliticaPrivacidadeLink";
 import FooterSection from "../../components/FooterSection"
 import { isValidEmail } from "../../utils/formValidators";
-import capaFundo from "../../assets/capa_fundo.jpg";
+import capaFundo from "../../assets/capa_fundo.png";
 
 const Alert = React.forwardRef(function Alert(props, ref) {
   return <MuiAlert elevation={6} ref={ref} variant="filled" {...props} />;

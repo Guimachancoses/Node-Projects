@@ -22,10 +22,12 @@ import {
   Box,
   Chip,
   Drawer,
+  TablePagination
 } from "@mui/material";
 import MuiAlert from "@mui/material/Alert";
 import Snackbar from "@mui/material/Snackbar";
 import Slide from "@mui/material/Slide";
+import { alpha } from "@mui/material/styles";
 
 import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
 import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
@@ -90,6 +92,9 @@ const Servicos = () => {
     precoMin: "",
     precoMax: "",
   });
+
+  const [page, setPage] = useState(0);
+  const [rowsPerPage, setRowsPerPage] = useState(5);
 
   useEffect(() => {
     dispatch(allServicos());
@@ -264,6 +269,23 @@ const Servicos = () => {
       );
     });
   }, [servicosProcessados, quickSearch, filtros]);
+
+
+  const rowsPaginadas = useMemo(() => {
+    const start = page * rowsPerPage;
+    const end = start + rowsPerPage;
+    return rowsFiltradas.slice(start, end);
+  }, [rowsFiltradas, page, rowsPerPage]);
+
+  useEffect(() => {
+    setPage(0);
+  }, [quickSearch, filtros, rowsPerPage]);
+
+  // mesma ideia de cor do cabeçalho (ajuste se seu header tiver outra regra)
+  const tableHeaderBg =
+    theme.palette.mode === "dark"
+      ? alpha(theme.palette.common.white, 0.08)
+      : theme.palette.grey[100];
 
   // Atribui cada coluna e seus valores
   const columns = [
@@ -490,7 +512,7 @@ const Servicos = () => {
       <TableComponent
         loading={form.filtering}
         title="Serviços"
-        rows={rowsFiltradas}
+        rows={rowsPaginadas}
         columns={columns}
         buttonLabel="Novo Serviço"
         iconClass="mdi mdi-plus"
@@ -504,7 +526,7 @@ const Servicos = () => {
           >
             <Tooltip title="Filtros avançados">
               <IconButton onClick={() => setFilterOpen(true)}>
-                <FilterListIcon sx={{ color: "#fff" }}/>
+                <FilterListIcon sx={{ color: "#fff" }} />
               </IconButton>
             </Tooltip>
 
@@ -544,7 +566,7 @@ const Servicos = () => {
 
             <Button
               variant="outlined"
-              startIcon={<ClearIcon sx={{ color: "#fff" }}/>}
+              startIcon={<ClearIcon sx={{ color: "#fff" }} />}
               onClick={() => {
                 setQuickSearch("");
                 setFiltros({ nome: "", email: "", telefone: "", chatbotStatus: "" });
@@ -586,6 +608,55 @@ const Servicos = () => {
         checkboxSelection={true}
         renderExpandedRow={renderDetalhesServico}
       />
+      <Box sx={{ mr: 3, display: "flex", justifyContent: "flex-end" }}>
+        <Box
+          sx={{
+            borderRadius: 2,
+            overflow: "hidden",
+            bgcolor: tableHeaderBg,
+            border: `1px solid ${alpha(theme.palette.divider, 0.6)}`,
+            backdropFilter: "blur(2px)",
+            width: "fit-content", // fica compacta
+          }}
+        >
+          <TablePagination
+            component="div"
+            count={rowsFiltradas.length}
+            page={page}
+            rowsPerPage={rowsPerPage}
+            onPageChange={(_, newPage) => setPage(newPage)}
+            onRowsPerPageChange={(e) => {
+              setRowsPerPage(parseInt(e.target.value, 10));
+              setPage(0);
+            }}
+            rowsPerPageOptions={[5, 10, 25, 50]}
+            labelRowsPerPage="Linhas por página"
+            labelDisplayedRows={({ from, to, count }) => `${from}-${to} de ${count}`}
+            sx={{
+              color: "text.primary",
+              "& .MuiTablePagination-toolbar": {
+                minHeight: 38,       // menor altura
+                px: 1,
+                gap: 1,
+              },
+              "& .MuiTablePagination-selectLabel, & .MuiTablePagination-displayedRows": {
+                m: 0,
+                fontSize: "0.8rem",
+              },
+              "& .MuiTablePagination-select": {
+                fontSize: "0.8rem",
+              },
+              "& .MuiIconButton-root": {
+                p: 0.5,              // botões menores
+                color: "text.primary",
+              },
+              "& .MuiSvgIcon-root": {
+                fontSize: "1rem",
+              },
+            }}
+          />
+        </Box>
+      </Box>
       <Drawer anchor="right" open={filterOpen} onClose={() => setFilterOpen(false)}>
         <Box sx={{ width: 320, p: 2 }}>
           <Typography variant="h6" sx={{ mb: 2 }}>
