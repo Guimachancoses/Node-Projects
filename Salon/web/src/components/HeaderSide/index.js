@@ -21,6 +21,7 @@ import {
   Tooltip,
   Menu,
   MenuItem,
+  Skeleton
 } from "@mui/material";
 
 import MenuIcon from "@mui/icons-material/Menu";
@@ -49,12 +50,43 @@ const navItems = [
 
 export default function Layout({ toggleTheme }) {
   const dispatch = useDispatch();
-  const { empresa } = useSelector((state) => state.salao || {});
+  const { empresa, form } = useSelector((state) => state.salao || {});
+  const [assetsReady, setAssetsReady] = useState(false);
 
   useEffect(() => {
-    // evita chamar toda hora
     if (!empresa?._id) dispatch(loadMyCompanyRequest());
   }, [dispatch, empresa?._id]);
+
+  const buildImageUrl = (value = "") => {
+    if (!value) return "";
+    if (value.startsWith("http")) return value;
+    return `${consts.bucketUrl.replace(/\/$/, "")}/${String(value).replace(/^\//, "")}`;
+  };
+
+  const pickLatestByType = (arquivos = [], tipo = "") => {
+    const item = (arquivos || [])
+      .filter((a) => (a?.caminho || "").includes(`${tipo}-`))
+      .sort((a, b) => new Date(b.dataCadastro) - new Date(a.dataCadastro))[0];
+    return item?.caminho || "";
+  };
+
+  const capaUrl = useMemo(() => {
+    const caminho = empresa?.capa || pickLatestByType(empresa?.arquivos, "capa");
+    return buildImageUrl(caminho);
+  }, [empresa]);
+
+  useEffect(() => {
+    const fallback = "/assets/background_parrudus.jpg";
+    document.body.style.backgroundImage = `url('${capaUrl || fallback}')`;
+    document.body.style.backgroundSize = "cover";
+    document.body.style.backgroundPosition = "center";
+    document.body.style.backgroundRepeat = "no-repeat";
+    document.body.style.backgroundAttachment = "fixed";
+
+    return () => {
+      document.body.style.backgroundImage = "";
+    };
+  }, [capaUrl]);
 
   const theme = useTheme();
   const location = useLocation();
@@ -102,6 +134,55 @@ export default function Layout({ toggleTheme }) {
     return build(arqLogo?.caminho || "");
   }, [empresa]);
 
+  const preloadImage = (src) =>
+    new Promise((resolve) => {
+      if (!src) return resolve();
+      const img = new Image();
+      img.onload = () => resolve();
+      img.onerror = () => resolve(); // não bloqueia forever
+      img.src = src;
+    });
+
+  useEffect(() => {
+    let mounted = true;
+
+    const run = async () => {
+      if (form?.loading) {
+        if (mounted) setAssetsReady(false);
+        return;
+      }
+
+      await Promise.all([preloadImage(logoUrl), preloadImage(capaUrl)]);
+      if (mounted) setAssetsReady(true);
+    };
+
+    run();
+    return () => {
+      mounted = false;
+    };
+  }, [form?.loading, logoUrl, capaUrl]);
+
+  useEffect(() => {
+    // cor base imediata (antes da imagem)
+    document.body.style.backgroundColor = "#495057";
+    document.body.style.backgroundImage = "none";
+
+    const fallback = "/assets/background_parrudus.jpg";
+    const finalUrl = capaUrl || fallback;
+
+    if (!finalUrl) return;
+
+    const img = new Image();
+    img.onload = () => {
+      document.body.style.backgroundImage = `url('${finalUrl}')`;
+      document.body.style.backgroundSize = "cover";
+      document.body.style.backgroundPosition = "center";
+      document.body.style.backgroundRepeat = "no-repeat";
+      document.body.style.backgroundAttachment = "fixed";
+    };
+    img.src = finalUrl;
+  }, [capaUrl]);
+
   const drawerContent = (
     <Box sx={{ height: "100%", backgroundColor: "var(--dark)", color: "white" }}>
       <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", px: 1, py: 1 }}>
@@ -116,20 +197,27 @@ export default function Layout({ toggleTheme }) {
         </IconButton>
       </Box>
 
-      <Box
-        component="img"
-        src={logoUrl} // fallback para logo local
-        alt="Logo"
-        sx={{
-          display: showTextInDesktop || showTextInTemporary ? "block" : "none",
-          width: "100%",
-          maxWidth: 180,
-          mx: "auto",
-          mb: 2,
-          px: 2,
-        }}
-      />
+      {!assetsReady ? (
+        <Skeleton
+          variant="rectangular"
+          sx={{ width: "100%", maxWidth: 180, height: 56, mx: "auto", mb: 2, borderRadius: 1 }}
+        />
+      ) : (
 
+        <Box
+          component="img"
+          src={logoUrl} // fallback para logo local
+          alt="Logo"
+          sx={{
+            display: showTextInDesktop || showTextInTemporary ? "block" : "none",
+            width: "100%",
+            maxWidth: 180,
+            mx: "auto",
+            mb: 2,
+            px: 2,
+          }}
+        />
+      )}
       <Box
         sx={{
           opacity: 0.4,
@@ -214,13 +302,11 @@ export default function Layout({ toggleTheme }) {
           )}
 
           <Box sx={{ display: "flex", flexDirection: "column", alignItems: "flex-end", flexGrow: 1 }}>
-            <Typography
-              variant="h6"
-              noWrap
-              sx={{ color: "var(--white)", fontSize: { xs: "1rem", sm: "1.15rem" } }}
-            >
-              {empresa?.nome || "Carregando..."}
-            </Typography>
+            {!assetsReady ? (
+              <Skeleton variant="text" width={180} height={28} sx={{ bgcolor: "rgba(255,255,255,.25)" }} />
+            ) : (
+              empresa?.nome || "Minha Empresa"
+            )}
             <Typography variant="caption" sx={{ color: "var(--Gold)" }}>
               Plano Gold
             </Typography>
@@ -315,6 +401,7 @@ export default function Layout({ toggleTheme }) {
         component="main"
         sx={{
           flexGrow: 1,
+
           minWidth: 0,
           p: { xs: 2, sm: 3 },
           width: isDesktop ? `calc(100% - ${currentDrawerWidth}px)` : "100%",
@@ -323,7 +410,13 @@ export default function Layout({ toggleTheme }) {
         }}
       >
         <Toolbar />
-        <Outlet />
+        {!assetsReady ? (
+          <Box sx={{ p: 3 }}>
+            <Skeleton variant="rectangular" height={220} sx={{ borderRadius: 2 }} />
+          </Box>
+        ) : (
+          <Outlet />
+        )}
       </Box>
     </Box>
   );

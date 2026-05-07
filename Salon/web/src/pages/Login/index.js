@@ -32,6 +32,7 @@ import TermoServicoLink from "../../components/FooterLinks/TermoServicoLink";
 import PoliticaPrivacidadeLink from "../../components/FooterLinks/PoliticaPrivacidadeLink";
 import FooterSection from "../../components/FooterSection"
 import { isValidEmail } from "../../utils/formValidators";
+import capaFundo from "../../assets/capa_fundo.jpg";
 
 const Alert = React.forwardRef(function Alert(props, ref) {
   return <MuiAlert elevation={6} ref={ref} variant="filled" {...props} />;
@@ -134,7 +135,7 @@ const Login = () => {
       sx={{
         minHeight: "100dvh",
         display: "flex",
-        backgroundImage: 'url("/images/salon-background.jpg")',
+        backgroundImage: `url(${capaFundo})`,
         backgroundSize: "cover",
         backgroundPosition: "center",
         position: "relative",

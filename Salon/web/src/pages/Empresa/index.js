@@ -13,6 +13,9 @@ import {
   Stack,
   TextField,
   Typography,
+  FormControl,
+  InputLabel,
+  Select,
 } from "@mui/material";
 import BusinessIcon from "@mui/icons-material/Business";
 import EmailIcon from "@mui/icons-material/Email";
@@ -24,7 +27,6 @@ import { useDispatch, useSelector } from "react-redux";
 import consts from "../../consts";
 
 import {
-  loadMyCompanyRequest,
   updateMyCompanyRequest,
 } from "../../store/modules/salao/actions";
 
@@ -105,10 +107,6 @@ export default function Empresa() {
   const logoInputRef = useRef(null);
   const capaInputRef = useRef(null);
   const originalRef = useRef(null);
-
-  useEffect(() => {
-    dispatch(loadMyCompanyRequest());
-  }, [dispatch]);
 
   const buildImageUrl = (value = "") => {
     if (!value) return "";
@@ -356,6 +354,7 @@ export default function Empresa() {
 
   return (
     <Container maxWidth="lg" sx={{ py: 3 }}>
+      {/* CARD 1: DADOS DA EMPRESA */}
       <Paper
         elevation={0}
         sx={{
@@ -363,6 +362,7 @@ export default function Empresa() {
           border: "1px solid",
           borderColor: "divider",
           borderRadius: 4,
+          mb: 3,
         }}
       >
         <Stack direction="row" justifyContent="space-between" alignItems="center" mb={2}>
@@ -373,9 +373,12 @@ export default function Empresa() {
         </Stack>
 
         <Grid container spacing={2}>
+          {/* nome */}
           <Grid item xs={12} md={8}>
             <TextField
               fullWidth
+              size="small"
+              variant="outlined"
               label="Nome da empresa"
               value={companyForm.nome}
               onChange={(e) => setField("nome", e.target.value)}
@@ -397,10 +400,13 @@ export default function Empresa() {
             />
           </Grid>
 
+          {/* email */}
           <Grid item xs={12} md={4}>
             <TextField
               fullWidth
               label="E-mail"
+              size="small"
+              variant="outlined"
               value={companyForm.email}
               onChange={(e) => setField("email", e.target.value)}
               onBlur={() => validateField("email")}
@@ -421,9 +427,12 @@ export default function Empresa() {
             />
           </Grid>
 
+          {/* ddd */}
           <Grid item xs={12} md={2}>
             <TextField
               fullWidth
+              size="small"
+              variant="outlined"
               label="DDD"
               value={maskArea(phoneArea)}
               onChange={(e) => setPhoneArea(onlyDigits(e.target.value).slice(0, 2))}
@@ -445,10 +454,13 @@ export default function Empresa() {
             />
           </Grid>
 
+          {/* telefone */}
           <Grid item xs={12} md={4}>
             <TextField
               fullWidth
               label="Telefone"
+              size="small"
+              variant="outlined"
               value={maskPhone9(phoneNumber)}
               onChange={(e) => setPhoneNumber(onlyDigits(e.target.value).slice(0, 9))}
               onBlur={() => validateField("telefone")}
@@ -462,9 +474,12 @@ export default function Empresa() {
             />
           </Grid>
 
+          {/* cep */}
           <Grid item xs={12} md={3}>
             <TextField
               fullWidth
+              size="small"
+              variant="outlined"
               label="CEP"
               value={maskCep(companyForm.endereco.cep)}
               onChange={(e) => setEndereco("cep", e.target.value)}
@@ -486,10 +501,13 @@ export default function Empresa() {
             />
           </Grid>
 
+          {/* uf */}
           <Grid item xs={12} md={3}>
             <TextField
               fullWidth
               label="UF"
+              size="small"
+              variant="outlined"
               value={(companyForm.endereco.uf || "").toUpperCase()}
               onChange={(e) => setEndereco("uf", e.target.value.toUpperCase().slice(0, 2))}
               onBlur={() => validateField("uf")}
@@ -503,10 +521,13 @@ export default function Empresa() {
             />
           </Grid>
 
+          {/* logradouro */}
           <Grid item xs={12} md={8}>
             <TextField
               fullWidth
               label="Logradouro"
+              size="small"
+              variant="outlined"
               value={companyForm.endereco.logradouro}
               onChange={(e) => setEndereco("logradouro", e.target.value)}
               InputProps={{
@@ -524,9 +545,12 @@ export default function Empresa() {
             />
           </Grid>
 
+          {/* numero */}
           <Grid item xs={12} md={4}>
             <TextField
               fullWidth
+              size="small"
+              variant="outlined"
               label="Número"
               value={companyForm.endereco.numero}
               onChange={(e) => setEndereco("numero", e.target.value)}
@@ -538,10 +562,13 @@ export default function Empresa() {
             />
           </Grid>
 
+          {/* bairro */}
           <Grid item xs={12} md={4}>
             <TextField
               fullWidth
               label="Bairro"
+              size="small"
+              variant="outlined"
               value={companyForm.endereco.bairro}
               onChange={(e) => setEndereco("bairro", e.target.value)}
               inputProps={{
@@ -552,9 +579,12 @@ export default function Empresa() {
             />
           </Grid>
 
+          {/* cidade */}
           <Grid item xs={12} md={4}>
             <TextField
               fullWidth
+              size="small"
+              variant="outlined"
               label="Cidade"
               value={companyForm.endereco.cidade}
               onChange={(e) => setEndereco("cidade", e.target.value)}
@@ -566,25 +596,45 @@ export default function Empresa() {
             />
           </Grid>
 
+          {/* pais */}
           <Grid item xs={12} md={4}>
-            <TextField
-              select
-              fullWidth
-              label="País"
-              value={companyForm.endereco.pais}
-              onChange={(e) => setEndereco("pais", e.target.value)}
-              inputProps={{
-                style: {
-                  fontSize: "0.8rem", // Altere esse valor conforme quiser
-                },
-              }}
-            >
-              <MenuItem value="Brasil">Brasil</MenuItem>
-              <MenuItem value="Outro">Outro</MenuItem>
-            </TextField>
+            <FormControl fullWidth size="small">
+              <InputLabel>Pais</InputLabel>
+              <Select
+                label="País"
+                value={companyForm.endereco.pais}
+                onChange={(e) => setEndereco("pais", e.target.value)}
+                inputProps={{
+                  style: {
+                    fontSize: "0.8rem", // Altere esse valor conforme quiser
+                  },
+                }}
+                sx={{ fontSize: "0.8rem" }} // Aplica no valor selecionado
+              >
+                <MenuItem value="Brasil">Brasil</MenuItem>
+                <MenuItem value="Outro">Outro</MenuItem>
+              </Select>
+            </FormControl>
           </Grid>
+        </Grid>
+      </Paper>
 
-          <Grid item xs={12} md={6}>
+      {/* CARD 2: IMAGENS DO NEGÓCIO */}
+      <Paper
+        elevation={0}
+        sx={{
+          p: { xs: 2, md: 3 },
+          border: "1px solid",
+          borderColor: "divider",
+          borderRadius: 4,
+        }}
+      >
+        <Typography variant="h6" fontWeight={700} mb={2}>
+          Imagens do Negócio
+        </Typography>
+
+        <Grid container spacing={2}>
+          <Grid item xs={12} md={4}>
             <Stack direction="row" spacing={2} alignItems="center">
               <Avatar
                 src={logoPreview || ""}
@@ -592,26 +642,15 @@ export default function Empresa() {
               />
               <Box>
                 <Typography fontWeight={600}>Logo da empresa</Typography>
-                <Button
-                  size="small"
-                  variant="outlined"
-                  startIcon={<ImageIcon />}
-                  onClick={() => logoInputRef.current?.click()}
-                >
+                <Button size="small" variant="outlined" startIcon={<ImageIcon />} onClick={() => logoInputRef.current?.click()}>
                   Alterar logo
                 </Button>
-                <input
-                  ref={logoInputRef}
-                  type="file"
-                  hidden
-                  accept="image/*"
-                  onChange={handleLogoChange}
-                />
+                <input ref={logoInputRef} type="file" hidden accept="image/*" onChange={handleLogoChange} />
               </Box>
             </Stack>
           </Grid>
 
-          <Grid item xs={12} md={6}>
+          <Grid item xs={12} md={4}>
             <Stack direction="row" spacing={2} alignItems="center">
               <Avatar
                 variant="rounded"
@@ -620,26 +659,15 @@ export default function Empresa() {
               />
               <Box>
                 <Typography fontWeight={600}>Capa</Typography>
-                <Button
-                  size="small"
-                  variant="outlined"
-                  startIcon={<PhotoCameraBackIcon />}
-                  onClick={() => capaInputRef.current?.click()}
-                >
+                <Button size="small" variant="outlined" startIcon={<PhotoCameraBackIcon />} onClick={() => capaInputRef.current?.click()}>
                   Alterar capa
                 </Button>
-                <input
-                  ref={capaInputRef}
-                  type="file"
-                  hidden
-                  accept="image/*"
-                  onChange={handleCapaChange}
-                />
+                <input ref={capaInputRef} type="file" hidden accept="image/*" onChange={handleCapaChange} />
               </Box>
             </Stack>
           </Grid>
 
-          <Grid item xs={12} md={6}>
+          <Grid item xs={12} md={4}>
             <Stack direction="row" spacing={2} alignItems="center">
               <Avatar
                 variant="rounded"
@@ -647,21 +675,11 @@ export default function Empresa() {
                 sx={{ width: 120, height: 72, border: "1px solid", borderColor: "divider" }}
               />
               <Box>
-                <Typography fontWeight={600}>Apresentação</Typography>
-                <Button
-                  size="small"
-                  variant="outlined"
-                  onClick={() => apresentacaoInputRef.current?.click()}
-                >
+                <Typography fontWeight={600}>Apresentação Mobile</Typography>
+                <Button size="small" variant="outlined" onClick={() => apresentacaoInputRef.current?.click()}>
                   Alterar apresentação
                 </Button>
-                <input
-                  ref={apresentacaoInputRef}
-                  type="file"
-                  hidden
-                  accept="image/*"
-                  onChange={handleApresentacaoChange}
-                />
+                <input ref={apresentacaoInputRef} type="file" hidden accept="image/*" onChange={handleApresentacaoChange} />
               </Box>
             </Stack>
           </Grid>
