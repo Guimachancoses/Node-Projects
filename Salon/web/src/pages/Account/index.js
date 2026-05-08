@@ -37,7 +37,7 @@ import PersonOutlineIcon from "@mui/icons-material/PersonOutline";
 import ContentCutIcon from '@mui/icons-material/ContentCut';
 
 
-import { updateMyAccountRequest, loadMyAccountRequest, allServicos } from "../../store/modules/colaborador/actions";
+import { updateMyAccountRequest, allServicos } from "../../store/modules/colaborador/actions";
 
 import {
   isValidName,
@@ -143,14 +143,6 @@ export default function Account() {
     setAccountForm(hydrated);
     originalRef.current = hydrated;
   }, [userStore, user]);
-
-  useEffect(() => {
-    if (!isLoaded || !isSignedIn) return;
-    if (!email) return;
-    if (userStore?._id || userStore?.vinculoId) return;
-
-    dispatch(loadMyAccountRequest(email));
-  }, [dispatch, isLoaded, isSignedIn, email, userStore?._id, userStore?.vinculoId]);
 
   const handleAreaChange = (e) => {
     setTelefone("area", onlyDigits(e.target.value).slice(0, 2));

@@ -311,6 +311,52 @@ router.get("/servicos/:salaoId", async (req, res) => {
 });
 
 // ------------------------
+// GET /empresas
+// ------------------------
+
+router.get("/empresas", async (req, res) => {
+  try {
+    const { nome, email, cidade } = req.query;
+
+    const query = {};
+
+    if (nome?.trim()) {
+      query.nome = { $regex: nome.trim(), $options: "i" };
+    }
+
+    if (email?.trim()) {
+      query.email = { $regex: email.trim(), $options: "i" };
+    }
+
+    // cidade está dentro de endereco.cidade
+    if (cidade?.trim()) {
+      query["endereco.cidade"] = { $regex: cidade.trim(), $options: "i" };
+    }
+
+    const saloes = await Salao.find(query)
+      .select("nome email telefone endereco logo capa apresentacao dataCadastro")
+      .sort({ dataCadastro: -1 });
+
+    return res.json({ error: false, saloes });
+  } catch (err) {
+    return res.status(400).json({
+      error: true,
+      message: err.message || "Erro ao filtrar empresas.",
+    });
+  }
+});
+
+// ------------------------
+// DELETE /empresas/:id
+// ------------------------
+
+router.delete("/empresas/:id", async (req, res) => {
+  await Salao.findByIdAndDelete(req.params.id);
+  await Arquivo.deleteMany({ referenciaId: req.params.id });
+  return res.json({ error: false, message: "Removido com sucesso" });
+});
+
+// ------------------------
 // GET /salao/:id
 // ------------------------
 router.get("/:id", async (req, res) => {
@@ -360,5 +406,6 @@ router.get("/:id", async (req, res) => {
     });
   }
 });
+
 
 module.exports = router;

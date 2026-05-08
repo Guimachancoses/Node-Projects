@@ -46,7 +46,8 @@ const INITIAL_STATE = {
     firstName: "",
     lastName: "",
     imageUrl: "",
-    especialidades: []
+    especialidades: [],
+    funcao: "",
   }
 };
 

@@ -253,11 +253,18 @@ const Servicos = () => {
       const matchStatus = !filtros.status || (s.status || "") === filtros.status;
 
       const preco = Number(s.preco || 0);
-      const precoMin = filtros.precoMin === "" ? null : Number(filtros.precoMin);
-      const precoMax = filtros.precoMax === "" ? null : Number(filtros.precoMax);
+      const precoMin =
+        filtros.precoMin === "" || filtros.precoMin == null
+          ? null
+          : Number(filtros.precoMin);
 
-      const matchPrecoMin = precoMin === null || preco >= precoMin;
-      const matchPrecoMax = precoMax === null || preco <= precoMax;
+      const precoMax =
+        filtros.precoMax === "" || filtros.precoMax == null
+          ? null
+          : Number(filtros.precoMax);
+
+      const matchPrecoMin = precoMin == null || Number.isNaN(precoMin) ? true : preco >= precoMin;
+      const matchPrecoMax = precoMax == null || Number.isNaN(precoMax) ? true : preco <= precoMax;
 
       return (
         matchQuick &&
@@ -569,7 +576,13 @@ const Servicos = () => {
               startIcon={<ClearIcon sx={{ color: "#fff" }} />}
               onClick={() => {
                 setQuickSearch("");
-                setFiltros({ nome: "", email: "", telefone: "", chatbotStatus: "" });
+                setFiltros({
+                  titulo: "",
+                  tipoServico: "",
+                  status: "",
+                  precoMin: "",
+                  precoMax: "",
+                });
               }}
               sx={{ color: "#fff" }}
             >

@@ -33,25 +33,45 @@ import LightModeIcon from "@mui/icons-material/LightMode";
 import SwitchAccountIcon from "@mui/icons-material/SwitchAccount";
 import AutoFixHighIcon from "@mui/icons-material/AutoFixHigh";
 import MoreTimeIcon from "@mui/icons-material/MoreTime";
+import BusinessIcon from "@mui/icons-material/Business";
 
-import { useClerk } from "@clerk/clerk-react";
 import miniLogo from "../../assets/mini_logo.jpg";
+
+import { loadMyAccountRequest } from "../../store/modules/colaborador/actions";
+import { useAuth, useUser, useClerk } from "@clerk/clerk-react";
 
 const DRAWER_EXPANDED = 240;
 const DRAWER_COLLAPSED = 72;
 
-const navItems = [
-  { text: "Agendamentos", icon: <CalendarTodayIcon />, path: "/agendamentos" },
-  { text: "Clientes", icon: <GroupIcon />, path: "/clientes" },
-  { text: "Colaboradores", icon: <SwitchAccountIcon />, path: "/colaboradores" },
-  { text: "Serviços", icon: <AutoFixHighIcon />, path: "/servicos" },
-  { text: "Horários", icon: <MoreTimeIcon />, path: "/horarios" },
-];
-
 export default function Layout({ toggleTheme }) {
   const dispatch = useDispatch();
   const { empresa, form } = useSelector((state) => state.salao || {});
+  const { user: userRaw } = useSelector((state) => state.colaborador);
+  const userStore = userRaw?.user ?? userRaw;
   const [assetsReady, setAssetsReady] = useState(false);
+  const { user } = useUser();
+  const { isLoaded, isSignedIn } = useAuth();
+  const email = user?.emailAddresses?.[0]?.emailAddress ?? "";
+
+  useEffect(() => {
+    if (!isLoaded || !isSignedIn) return;
+    if (!email) return;
+    if (userStore?._id || userStore?.vinculoId) return;
+
+    dispatch(loadMyAccountRequest(email));
+  }, [dispatch, isLoaded, isSignedIn, email, userStore?._id, userStore?.vinculoId]);
+
+  const isYoda = userRaw?.funcao === "yoda";
+
+  const navItems = [
+    ...(!isYoda ? [{ text: "Agendamentos", icon: <CalendarTodayIcon />, path: "/agendamentos" }] : []),
+    { text: "Clientes", icon: <GroupIcon />, path: "/clientes" },
+    { text: "Colaboradores", icon: <SwitchAccountIcon />, path: "/colaboradores" },
+    { text: "Serviços", icon: <AutoFixHighIcon />, path: "/servicos" },
+    { text: "Horários", icon: <MoreTimeIcon />, path: "/horarios" },
+
+    ...(isYoda ? [{ text: "Empresas", icon: <BusinessIcon />, path: "/empresas" }] : []),
+  ];
 
   useEffect(() => {
     if (!empresa?._id) dispatch(loadMyCompanyRequest());
@@ -90,7 +110,7 @@ export default function Layout({ toggleTheme }) {
 
   const theme = useTheme();
   const location = useLocation();
-  const { signOut, user } = useClerk();
+  const { signOut } = useClerk();
 
   // Desktop: drawer fixo. Mobile/tablet: drawer temporário.
   const isDesktop = useMediaQuery(theme.breakpoints.up("md")); // troque para "lg" se quiser desktop só em telas maiores

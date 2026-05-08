@@ -14,6 +14,7 @@ import TermosDeServico from "./pages/TermosDeServico";
 import PoliticaDePrivacidade from "./pages/PoliticaDePrivacidade";
 import ForgotPassword from "./pages/ForgotPassword";
 import Empresa from "./pages/Empresa";
+import Empresas from "./pages/Empresas"
 import "./styles.css";
 
 // Guard de rota privada
@@ -62,6 +63,7 @@ const Main = ({ toggleTheme, colorMode }) => {
         <Route path="/horarios" element={<Horarios />} />
         <Route path="/account" element={<Account />} />
         <Route path="/empresa" element={<Empresa />} />
+        <Route path="/empresas" element={<Empresas />} />
       </Route>
 
       {/* Fallback geral */}

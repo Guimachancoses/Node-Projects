@@ -6,6 +6,7 @@ import colaborador from "./colaborador/reducer";
 import servico from "./servico/reducer";
 import horario from "./horario/reducer";
 import salao from "./salao/reducer";
+import empresas from "./empresas/reducer"
 
 export default combineReducers({
   agendamento,
@@ -14,4 +15,5 @@ export default combineReducers({
   servico,
   horario,
   salao,
+  empresas,
 });

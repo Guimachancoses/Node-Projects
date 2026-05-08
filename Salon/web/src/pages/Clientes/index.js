@@ -303,6 +303,12 @@ const Clientes = () => {
     { field: "chatbotStatus", headerName: "Whatsapp", width: 120 },
   ];
 
+  const formatDateOnly = (value) => {
+    if (!value) return "";
+    const [y, m, d] = value.split("T")[0].split("-");
+    return `${d}/${m}/${y}`;
+  };
+
   const renderDetalhesCliente = (row) => (
     <>
       <Typography variant="h6" gutterBottom>
@@ -319,9 +325,7 @@ const Clientes = () => {
       </Typography>
       <Typography variant="body1">
         Data Nascimento:{" "}
-        <strong>
-          {new Date(row.dataNascimento).toLocaleDateString("pt-BR")}
-        </strong>
+        <strong>{formatDateOnly(row.dataNascimento)}</strong>
       </Typography>
       <Typography variant="body1">
         Data Cadastro:{" "}
@@ -516,7 +520,7 @@ const Clientes = () => {
     "& .MuiChip-deleteIcon:hover": { color: "#fff" },
   };
 
-  //console.log("clientes", clientes)
+  console.log("clientes", clientes)
 
   return (
     <div className="col">
