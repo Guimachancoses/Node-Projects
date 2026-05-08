@@ -24,7 +24,19 @@ function pickAllowedFields(body = {}) {
   return {
     nome: body.nome,
     email: body.email,
-    telefone: body.telefone,
+
+    status: (body.status ?? "A").toUpperCase(),
+
+    telefone: {
+      area: body?.telefone?.area ?? getBodyValue(body, "telefone[area]", ""),
+      numero: body?.telefone?.numero ?? getBodyValue(body, "telefone[numero]", ""),
+    },
+
+    identificacao: {
+      tipoD: body?.identificacao?.tipoD ?? getBodyValue(body, "identificacao[tipoD]", ""),
+      numero: body?.identificacao?.numero ?? getBodyValue(body, "identificacao[numero]", ""),
+    },
+
     endereco: {
       logradouro: body?.endereco?.logradouro ?? getBodyValue(body, "endereco[logradouro]", ""),
       bairro: body?.endereco?.bairro ?? getBodyValue(body, "endereco[bairro]", ""),
@@ -34,6 +46,7 @@ function pickAllowedFields(body = {}) {
       numero: body?.endereco?.numero ?? getBodyValue(body, "endereco[numero]", ""),
       pais: body?.endereco?.pais ?? getBodyValue(body, "endereco[pais]", ""),
     },
+
     geo: {
       tipo: body?.geo?.tipo ?? getBodyValue(body, "geo[tipo]", "Point"),
       coordinates: (() => {
@@ -252,7 +265,33 @@ router.put("/:id", async (req, res) => {
     // campos textuais
     salao.nome = req.body.nome ?? salao.nome;
     salao.email = req.body.email ?? salao.email;
-    salao.telefone = req.body.telefone ?? salao.telefone;
+    salao.status = (req.body.status ?? salao.status ?? "A").toUpperCase();
+
+    salao.telefone = {
+      area:
+        req.body?.telefone?.area ??
+        req.body["telefone[area]"] ??
+        salao.telefone?.area ??
+        "",
+      numero:
+        req.body?.telefone?.numero ??
+        req.body["telefone[numero]"] ??
+        salao.telefone?.numero ??
+        "",
+    };
+
+    salao.identificacao = {
+      tipoD:
+        req.body?.identificacao?.tipoD ??
+        req.body["identificacao[tipoD]"] ??
+        salao.identificacao?.tipoD ??
+        "",
+      numero:
+        req.body?.identificacao?.numero ??
+        req.body["identificacao[numero]"] ??
+        salao.identificacao?.numero ??
+        "",
+    };
 
     salao.endereco = {
       logradouro: req.body?.endereco?.logradouro ?? req.body["endereco[logradouro]"] ?? salao.endereco?.logradouro,
@@ -334,7 +373,7 @@ router.get("/empresas", async (req, res) => {
     }
 
     const saloes = await Salao.find(query)
-      .select("nome email telefone endereco logo capa apresentacao dataCadastro")
+      .select("nome email telefone endereco logo capa apresentacao dataCadastro status identificacao")
       .sort({ dataCadastro: -1 });
 
     return res.json({ error: false, saloes });
@@ -362,7 +401,7 @@ router.delete("/empresas/:id", async (req, res) => {
 router.get("/:id", async (req, res) => {
   try {
     const salao = await Salao.findById(req.params.id).select(
-      "nome email logo apresentacao capa telefone endereco geo dataCadastro"
+      "nome email logo apresentacao capa telefone endereco geo dataCadastro status identificacao"
     );
 
     if (!salao) {

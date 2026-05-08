@@ -56,6 +56,7 @@ import AutorenewIcon from "@mui/icons-material/Autorenew";
 import ContentCutIcon from '@mui/icons-material/ContentCut';
 import SearchIcon from "@mui/icons-material/Search";
 import ClearIcon from "@mui/icons-material/Clear";
+import LocationCityIcon from "@mui/icons-material/LocationCity";
 
 import { buscarEndereco } from "../../services/apiCep";
 
@@ -1119,7 +1120,7 @@ const Colaboradores = () => {
                   InputProps={{
                     startAdornment: (
                       <InputAdornment position="start">
-                        <SignpostIcon />
+                        <LocationCityIcon />
                       </InputAdornment>
                     ),
                   }}

@@ -65,12 +65,13 @@ export default function Layout({ toggleTheme }) {
 
   const navItems = [
     ...(!isYoda ? [{ text: "Agendamentos", icon: <CalendarTodayIcon />, path: "/agendamentos" }] : []),
+
+    ...(isYoda ? [{ text: "Empresas", icon: <BusinessIcon />, path: "/empresas" }] : []),
     { text: "Clientes", icon: <GroupIcon />, path: "/clientes" },
     { text: "Colaboradores", icon: <SwitchAccountIcon />, path: "/colaboradores" },
     { text: "Serviços", icon: <AutoFixHighIcon />, path: "/servicos" },
     { text: "Horários", icon: <MoreTimeIcon />, path: "/horarios" },
 
-    ...(isYoda ? [{ text: "Empresas", icon: <BusinessIcon />, path: "/empresas" }] : []),
   ];
 
   useEffect(() => {
@@ -94,19 +95,6 @@ export default function Layout({ toggleTheme }) {
     const caminho = empresa?.capa || pickLatestByType(empresa?.arquivos, "capa");
     return buildImageUrl(caminho);
   }, [empresa]);
-
-  useEffect(() => {
-    const fallback = "/assets/background_parrudus.jpg";
-    document.body.style.backgroundImage = `url('${capaUrl || fallback}')`;
-    document.body.style.backgroundSize = "cover";
-    document.body.style.backgroundPosition = "center";
-    document.body.style.backgroundRepeat = "no-repeat";
-    document.body.style.backgroundAttachment = "fixed";
-
-    return () => {
-      document.body.style.backgroundImage = "";
-    };
-  }, [capaUrl]);
 
   const theme = useTheme();
   const location = useLocation();

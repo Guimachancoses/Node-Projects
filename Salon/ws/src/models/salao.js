@@ -1,42 +1,111 @@
-const mongoose = require('mongoose');
-const Schema = mongoose.Schema;
+const mongoose = require("mongoose");
+const { Schema } = mongoose;
 
-const salao = new Schema({
-    nome: {
-        type: String,
-        required: [true, 'Nome é obrigatório'],
+const TelefoneSchema = new Schema(
+  {
+    area: { type: String, default: "" },   // ex: "19"
+    numero: { type: String, default: "" }, // ex: "992721056"
+  },
+  { _id: false }
+);
+
+const IdentificacaoSchema = new Schema(
+  {
+    tipoD: {
+      type: String,
+      enum: ["CPF", "CNPJ", ""],
+      default: "",
     },
-    logo: String,
-    capa: String,
-    apresentacao: String,
-    email: {
-        type: String,
-        required: [true, 'E-mail é obrigatório'],
+    numero: {
+      type: String,
+      default: "",
     },
-    senha: {
-        type: String,
-        default: null,
+  },
+  { _id: false }
+);
+
+const EnderecoSchema = new Schema(
+  {
+    logradouro: { type: String, default: "" },
+    bairro: { type: String, default: "" },
+    cidade: { type: String, default: "" },
+    uf: { type: String, default: "" },
+    cep: { type: String, default: "" },
+    numero: { type: String, default: "" },
+    pais: { type: String, default: "" },
+  },
+  { _id: false }
+);
+
+const GeoSchema = new Schema(
+  {
+    tipo: { type: String, default: "Point" },
+    coordinates: {
+      type: [Number],
+      default: [],
     },
-    telefone: String,
-    endereco: {
-        logradouro: String,
-        bairro: String,
-        cidade: String,
-        uf: String,
-        cep: String,
-        numero: String,
-        pais: String,
-    },
-    geo: {
-        tipo: String,
-        coordinates: [Number],
-    },
-    dataCadastro: {
-        type: Date,
-        default: Date.now,
-    },
+  },
+  { _id: false }
+);
+
+const salaoSchema = new Schema({
+  nome: {
+    type: String,
+    required: [true, "Nome é obrigatório"],
+    trim: true,
+  },
+  logo: String,
+  capa: String,
+  apresentacao: String,
+
+  email: {
+    type: String,
+    required: [true, "E-mail é obrigatório"],
+    trim: true,
+    lowercase: true,
+  },
+
+  senha: {
+    type: String,
+    default: null,
+  },
+
+  // novo formato (área + número)
+  telefone: {
+    type: TelefoneSchema,
+    default: () => ({}),
+  },
+
+  // novo campo de status
+  status: {
+    type: String,
+    enum: ["A", "I", "E"], // Ativo, Inativo, Desativado
+    default: "A",
+    uppercase: true,
+  },
+
+  // novo campo de documento
+  identificacao: {
+    type: IdentificacaoSchema,
+    default: () => ({}),
+  },
+
+  endereco: {
+    type: EnderecoSchema,
+    default: () => ({}),
+  },
+
+  geo: {
+    type: GeoSchema,
+    default: () => ({ tipo: "Point", coordinates: [] }),
+  },
+
+  dataCadastro: {
+    type: Date,
+    default: Date.now,
+  },
 });
 
-salao.index({ geo: '2dsphere' });
+salaoSchema.index({ geo: "2dsphere" });
 
-module.exports = mongoose.model('Salao', salao)
+module.exports = mongoose.model("Salao", salaoSchema);

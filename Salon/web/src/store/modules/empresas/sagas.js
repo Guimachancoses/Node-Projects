@@ -52,6 +52,9 @@ function buildFormData(payload) {
   fd.append("nome", data?.nome || "");
   fd.append("email", data?.email || "");
   fd.append("telefone", data?.telefone || "");
+  fd.append("status", data?.status || "A");
+  fd.append("identificacao[tipoD]", data?.identificacao?.tipoD || "");
+  fd.append("identificacao[numero]", data?.identificacao?.numero || "");
 
   const endereco = data?.endereco || {};
   Object.keys(endereco).forEach((key) => {
