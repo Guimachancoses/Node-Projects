@@ -622,7 +622,7 @@ const Colaboradores = () => {
     "& .MuiChip-deleteIcon:hover": { color: "#fff" },
   };
 
-  console.log("colaboradores", colaboradores)
+  console.log("colaborador", colaborador)
 
   return (
     <div className="col">

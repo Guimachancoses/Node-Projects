@@ -233,7 +233,7 @@ router.post("/filter", async (req, res) => {
     if (salaoId) queryVinculo.salaoId = salaoId;
 
     const vinculo = await SalaoColaborador.findOne(queryVinculo)
-      .select("_id status dataCadastro salaoId colaboradorId")
+      .select("_id status dataCadastro salaoId colaboradorId salaoId")
       .sort({ dataCadastro: -1 });
 
     if (!vinculo) {
@@ -283,7 +283,7 @@ router.get("/salao/:salaoId", async (req, res) => {
       status: { $ne: "E" },
     })
       .populate({ path: "colaboradorId", select: "-senha -recipientId" }) // faz um join com a colaboradorId
-      .select("colaboradorId dataCadastro status"); // apenas os campos de vinculo que quero no retorno
+      .select("colaboradorId dataCadastro status salaoId"); // apenas os campos de vinculo que quero no retorno
 
     // Encontrar o vinculo dos colaboradores com as especialidades
     for (let vinculo of salaoColaboradores) {

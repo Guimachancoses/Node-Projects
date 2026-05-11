@@ -28,7 +28,7 @@ export function* allColaboradores() {
 
     yield put(updateColaborador({ form: { ...form, filtering: false } }));
 
-    //console.log("Resposta da API:", res);
+    console.log("Resposta da API:", res);
 
     if (res.error) {
       alert(res.message);
@@ -56,6 +56,8 @@ export function* filterColaboradores({ filters }) {
       ...filters,
       email: emailBusca,
     });
+
+    console.log("res", res)
 
     if (res?.error) {
       yield put(updateColaborador({ form: { ...form, filtering: false } }));
