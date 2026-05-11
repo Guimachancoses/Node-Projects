@@ -622,6 +622,8 @@ const Colaboradores = () => {
     "& .MuiChip-deleteIcon:hover": { color: "#fff" },
   };
 
+  console.log("colaboradores", colaboradores)
+
   return (
     <div className="col">
       <Stack direction="row" spacing={1} useFlexGap flexWrap="wrap" sx={{ mb: 1 }}>
