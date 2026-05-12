@@ -473,12 +473,13 @@ export function* allServicos() {
   }
 }
 
-export function* checkUser() {
-  const { user } = yield select((state) => state.colaborador);
-
+export function* checkUser({ email }) {
   try {
-    //console.log("userSagas: ", user);
-    const { data: res } = yield call(api.get, `/colaborador/check/${user.email}`);
+    if (!email) throw new Error("Email ausente no checkUser");
+    const { data: res } = yield call(
+      api.get,
+      `/colaborador/check/${encodeURIComponent(email)}`
+    );
 
     if (res.error) {
       yield put(
@@ -492,7 +493,7 @@ export function* checkUser() {
       return false;
     }
 
-    //console.log("res API: ", res);
+    console.log("res API: ", res);
 
     if (res.colaborador) {
       yield put(updateUser({ user: res.colaborador }));

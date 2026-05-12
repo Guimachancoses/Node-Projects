@@ -1,4 +1,4 @@
-import { all, call, put, takeLatest, select } from "redux-saga/effects";
+import { all, call, put, takeLatest, select, delay } from "redux-saga/effects";
 import api from "../../../services/api";
 import types from "./types";
 import {
@@ -11,6 +11,7 @@ import { setAlerta } from "../colaborador/actions";
 
 // Ajuste conforme seu estado real
 const getSalaoId = (state) =>
+  state.colaborador?.user?.salaoId ||
   state.auth?.salaoId ||
   state.auth?.user?.salaoId ||
   state.salao?.empresa?._id;
@@ -20,15 +21,42 @@ const getErrorMessage = (err, fallback) =>
   err?.message ||
   fallback;
 
+function* waitForUserReady(maxTentativas = 20, intervaloMs = 150) {
+  for (let i = 0; i < maxTentativas; i++) {
+    const userRaw = yield select((state) => state.colaborador?.user);
+    const user = userRaw?.user ? userRaw.user : userRaw;
+
+    const hasEmail = !!user?.email;
+    const hasSalao = !!user?.salaoId;
+    const isYoda = user?.funcao === "yoda";
+
+    // yoda pode não ter salaoId -> ok
+    if (hasEmail && (hasSalao || isYoda)) return user;
+
+    yield delay(intervaloMs);
+  }
+  return null;
+}
+
 const SALAOID = `${process.env.REACT_APP_SALAO_ID}`;
 
 // -------- LOAD --------
 function* loadMyCompany() {
   try {
+    const user = yield call(waitForUserReady);
     const salaoIdFromState = yield select(getSalaoId);
-    const salaoId = SALAOID || salaoIdFromState;
+    const salaoId = salaoIdFromState || SALAOID; // prioriza estado, depois EN
 
-    if (!salaoId) throw new Error("ID do salão não encontrado.");
+    // se for yoda e não houver salaoId definido, não força erro aqui
+    if (!salaoId && user?.funcao !== "yoda") {
+      throw new Error("ID do salão não encontrado.");
+    }
+
+    // yoda sem salaoId -> pode optar por não carregar empresa única
+    if (!salaoId && user?.funcao === "yoda") {
+      yield put(loadMyCompanySuccess(null));
+      return;
+    }
 
     const { data } = yield call(api.get, `/salao/${salaoId}`);
 
@@ -82,14 +110,14 @@ function buildFormData({ data, logoFile, capaFile, apresentacaoFile }) {
 // -------- UPDATE --------
 function* updateMyCompany({ payload }) {
   try {
-    const salaoId = yield select(getSalaoId);
-    if (!salaoId) throw new Error("ID do salão não encontrado.");
 
     const formData = buildFormData(payload);
 
+    const { user } = yield select((state) => state.colaborador);
+
     // Importante: não setar Content-Type manualmente
     // Axios define multipart/form-data com boundary corretamente
-    const { data } = yield call(api.put, `/salao/${salaoId}`, formData);
+    const { data } = yield call(api.put, `/salao/${user?.salaoId}`, formData);
 
     if (data?.error) {
       throw new Error(data?.message || "Erro ao salvar empresa.");

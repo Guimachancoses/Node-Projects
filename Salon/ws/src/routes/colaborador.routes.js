@@ -224,12 +224,27 @@ router.get("/check/:email", async (req, res) => {
     }
 
     let vinculo = null;
+    let vinculos = [];
+
     if (salaoId) {
+      // comportamento atual: vínculo específico do salão informado
       vinculo = await SalaoColaborador.findOne({
         salaoId,
         colaboradorId: colaborador._id,
         status: { $ne: "E" },
-      }).select("_id status dataCadastro");
+      })
+        .select("_id status dataCadastro salaoId")
+        .sort({ dataCadastro: -1 });
+    } else {
+      // novo: sem salaoId na query, busca todos vínculos ativos
+      vinculos = await SalaoColaborador.find({
+        colaboradorId: colaborador._id,
+        status: { $ne: "E" },
+      })
+        .select("_id status dataCadastro salaoId")
+        .sort({ dataCadastro: -1 });
+
+      vinculo = vinculos[0] || null; // principal (mais recente)
     }
 
     const especialidades = await ColaboradorServico.find({
@@ -246,8 +261,17 @@ router.get("/check/:email", async (req, res) => {
         ...colaborador._doc,
         vinculoId: vinculo?._id || "",
         vinculo: vinculo?.status || "A",
+        salaoId: vinculo?.salaoId || "", // <-- NOVO
         especialidades: especialidadesIds,
         dataCadastro: vinculo?.dataCadastro || null,
+
+        // opcional, mas útil para multiempresa
+        vinculos: (vinculos || []).map((v) => ({
+          vinculoId: v._id,
+          status: v.status,
+          salaoId: v.salaoId,
+          dataCadastro: v.dataCadastro,
+        })),
       },
     });
   } catch (err) {

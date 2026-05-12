@@ -126,7 +126,7 @@ export default function Empresa() {
     return list[0]?.caminho || "";
   };
 
-  console.log("empresa", empresa);
+  //console.log("empresa", empresa);
 
   useEffect(() => {
     if (!empresa) return;

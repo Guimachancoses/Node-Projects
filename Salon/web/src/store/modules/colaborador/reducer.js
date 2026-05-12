@@ -49,6 +49,7 @@ const INITIAL_STATE = {
     imageUrl: "",
     especialidades: [],
     funcao: "",
+    salaoId: "",
   }
 };
 
@@ -91,7 +92,7 @@ function colaborador(state = INITIAL_STATE, action) {
     case types.UPDATE_USER: {
       return produce(state, (draft) => {
         const normalizedUser = action.user?.user ? action.user.user : action.user;
-        draft.user = normalizedUser || {};
+        draft.user = { ...draft.user, ...(normalizedUser || {}) };
       });
     }
 

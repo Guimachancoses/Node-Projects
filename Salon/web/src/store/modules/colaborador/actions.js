@@ -31,8 +31,8 @@ export function allServicos() {
   return { type: types.ALL_SERVICOS };
 }
 
-export function checkUser() {
-  return { type: types.CHECK_USER };
+export function checkUser({ email }) {
+  return { type: types.CHECK_USER, email };
 }
 
 export function updateUser(user) {

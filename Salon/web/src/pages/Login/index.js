@@ -82,7 +82,7 @@ const Login = () => {
         imageUrl,
       })
     );
-    dispatch(checkUser());
+    dispatch(checkUser(emailAddress));
   }, [isSignedIn, emailAddress, firstName, lastName, imageUrl, dispatch]);
 
   const handleSubmit = async (e) => {
