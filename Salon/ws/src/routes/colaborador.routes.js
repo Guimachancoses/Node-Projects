@@ -225,22 +225,18 @@ router.post("/filter", async (req, res) => {
       return res.json({ error: false, colaboradores: [] });
     }
 
-    // busca vínculo do colaborador com salão (se salaoId vier, melhor)
-    const queryVinculo = {
-      colaboradorId: colaborador._id
-    };
+    // vínculos do colaborador (pode ter vários)
+    const queryVinculos = { colaboradorId: colaborador._id, status: { $ne: "E" } };
+    if (salaoId) queryVinculos.salaoId = salaoId;
 
-    if (salaoId) queryVinculo.salaoId = salaoId;
-
-    const vinculo = await SalaoColaborador.findOne(queryVinculo)
-      .select("_id status dataCadastro salaoId colaboradorId salaoId")
+    const vinculos = await SalaoColaborador.find(queryVinculos)
+      .select("_id status dataCadastro salaoId colaboradorId")
       .sort({ dataCadastro: -1 });
 
-    if (!vinculo) {
+    if (!vinculos.length) {
       return res.json({ error: false, colaboradores: [] });
     }
 
-    // especialidades do colaborador (mesma lógica do /salao/:salaoId)
     const especialidades = await ColaboradorServico.find({
       colaboradorId: colaborador._id,
     }).populate({
@@ -252,17 +248,21 @@ router.post("/filter", async (req, res) => {
       .filter((item) => item.servicoId)
       .map((item) => item.servicoId._id);
 
-    // mesmo shape usado no front ao clicar na tabela
     return res.json({
       error: false,
       colaboradores: [
         {
           ...colaborador._doc,
-          vinculoId: vinculo._id,
-          vinculo: vinculo.status,
-          salaoId: vinculo.salaoId,
+
+          // NOVO: array de vínculos
+          vinculos: vinculos.map((v) => ({
+            vinculoId: v._id,
+            status: v.status,
+            salaoId: v.salaoId,
+            dataCadastro: v.dataCadastro,
+          })),
+
           especialidades: especialidadesIds,
-          dataCadastro: vinculo.dataCadastro,
         },
       ],
     });
@@ -304,11 +304,18 @@ router.get("/salao/:salaoId", async (req, res) => {
       error: false,
       colaboradores: listaColaboradores.map((vinculo) => ({
         ...vinculo.colaboradorId._doc,
-        vinculoId: vinculo._id,
-        vinculo: vinculo.status,
-        salaoId: vinculo.salaoId,
+
+        // NOVO padrão
+        vinculos: [
+          {
+            vinculoId: vinculo._id,
+            status: vinculo.status,
+            salaoId: vinculo.salaoId,
+            dataCadastro: vinculo.dataCadastro,
+          },
+        ],
+
         especialidades: vinculo.especialidades,
-        dataCadastro: vinculo.dataCadastro,
       })),
     });
   } catch (err) {

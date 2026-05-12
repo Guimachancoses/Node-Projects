@@ -166,12 +166,12 @@ router.post("/", async (req, res) => {
   const reqId = `POST_SALAO_${Date.now()}`;
 
   try {
-    console.log(`\n[${reqId}] ===== INÍCIO POST /salao =====`);
-    console.log(`[${reqId}] content-type:`, req.headers["content-type"]);
+    //console.log(`\n[${reqId}] ===== INÍCIO POST /salao =====`);
+    //console.log(`[${reqId}] content-type:`, req.headers["content-type"]);
 
     // body bruto
-    console.log(`[${reqId}] req.body keys:`, Object.keys(req.body || {}));
-    console.log(`[${reqId}] req.body:`, req.body);
+    //console.log(`[${reqId}] req.body keys:`, Object.keys(req.body || {}));
+    //console.log(`[${reqId}] req.body:`, req.body);
 
     // arquivos recebidos
     const filesInfo = Object.fromEntries(
@@ -185,11 +185,11 @@ router.post("/", async (req, res) => {
         ];
       })
     );
-    console.log(`[${reqId}] req.files:`, filesInfo);
+    //console.log(`[${reqId}] req.files:`, filesInfo);
 
     // mapeamento permitido
     const payload = pickAllowedFields(req.body);
-    console.log(`[${reqId}] payload mapeado:`, payload);
+    //console.log(`[${reqId}] payload mapeado:`, payload);
 
     // validação pré-save (muito útil)
     const salaoDoc = new Salao(payload);
@@ -205,7 +205,7 @@ router.post("/", async (req, res) => {
 
     // save inicial
     const salao = await salaoDoc.save();
-    console.log(`[${reqId}] salão salvo inicial:`, salao._id);
+    //console.log(`[${reqId}] salão salvo inicial:`, salao._id);
 
     // arquivos
     const logoFile = req?.files?.logo || null;
@@ -213,16 +213,16 @@ router.post("/", async (req, res) => {
     const apresentacaoFile = req?.files?.apresentacao || null;
 
     if (logoFile) {
-      console.log(`[${reqId}] upload logo: início`);
+      //console.log(`[${reqId}] upload logo: início`);
       const upLogo = await handleUploadField({
         file: logoFile,
         salaoId: salao._id,
         fieldName: "logo",
       });
-      console.log(`[${reqId}] upload logo: retorno`, upLogo);
+      //console.log(`[${reqId}] upload logo: retorno`, upLogo);
 
       if (upLogo.error) {
-        console.error(`[${reqId}] upload logo erro:`, upLogo.message);
+        //console.error(`[${reqId}] upload logo erro:`, upLogo.message);
         return res.status(400).json({ error: true, message: upLogo.message });
       }
 
@@ -232,17 +232,17 @@ router.post("/", async (req, res) => {
         referenciaId: salao._id,
         caminho: upLogo.caminho,
       });
-      console.log(`[${reqId}] upload logo: concluído`);
+      //console.log(`[${reqId}] upload logo: concluído`);
     }
 
     if (capaFile) {
-      console.log(`[${reqId}] upload capa: início`);
+      //console.log(`[${reqId}] upload capa: início`);
       const upCapa = await handleUploadField({
         file: capaFile,
         salaoId: salao._id,
         fieldName: "capa",
       });
-      console.log(`[${reqId}] upload capa: retorno`, upCapa);
+      //console.log(`[${reqId}] upload capa: retorno`, upCapa);
 
       if (upCapa.error) {
         console.error(`[${reqId}] upload capa erro:`, upCapa.message);
@@ -255,20 +255,20 @@ router.post("/", async (req, res) => {
         referenciaId: salao._id,
         caminho: upCapa.caminho,
       });
-      console.log(`[${reqId}] upload capa: concluído`);
+      //console.log(`[${reqId}] upload capa: concluído`);
     }
 
     if (apresentacaoFile) {
-      console.log(`[${reqId}] upload apresentacao: início`);
+      //console.log(`[${reqId}] upload apresentacao: início`);
       const upApresentacao = await handleUploadField({
         file: apresentacaoFile,
         salaoId: salao._id,
         fieldName: "apresentacao",
       });
-      console.log(`[${reqId}] upload apresentacao: retorno`, upApresentacao);
+      //console.log(`[${reqId}] upload apresentacao: retorno`, upApresentacao);
 
       if (upApresentacao.error) {
-        console.error(`[${reqId}] upload apresentacao erro:`, upApresentacao.message);
+        //console.error(`[${reqId}] upload apresentacao erro:`, upApresentacao.message);
         return res.status(400).json({ error: true, message: upApresentacao.message });
       }
 
@@ -278,29 +278,29 @@ router.post("/", async (req, res) => {
         referenciaId: salao._id,
         caminho: upApresentacao.caminho,
       });
-      console.log(`[${reqId}] upload apresentacao: concluído`);
+      //console.log(`[${reqId}] upload apresentacao: concluído`);
     }
 
     await salao.save();
-    console.log(`[${reqId}] salão salvo final com arquivos`);
-    console.log(`[${reqId}] ===== FIM POST /salao SUCESSO =====\n`);
+    //console.log(`[${reqId}] salão salvo final com arquivos`);
+    //console.log(`[${reqId}] ===== FIM POST /salao SUCESSO =====\n`);
 
     return res.status(201).json({ error: false, salao });
   } catch (err) {
-    console.error(`\n[${reqId}] ===== ERRO POST /salao =====`);
-    console.error(`[${reqId}] name:`, err?.name);
-    console.error(`[${reqId}] message:`, err?.message);
-    console.error(`[${reqId}] code:`, err?.code);
-    console.error(`[${reqId}] stack:`, err?.stack);
+    // console.error(`\n[${reqId}] ===== ERRO POST /salao =====`);
+    // console.error(`[${reqId}] name:`, err?.name);
+    // console.error(`[${reqId}] message:`, err?.message);
+    // console.error(`[${reqId}] code:`, err?.code);
+    // console.error(`[${reqId}] stack:`, err?.stack);
 
-    if (err?.errors) {
-      console.error(`[${reqId}] mongoose errors detalhados:`);
-      Object.entries(err.errors).forEach(([field, e]) => {
-        console.error(` - ${field}:`, e.message);
-      });
-    }
+    // if (err?.errors) {
+    //   //console.error(`[${reqId}] mongoose errors detalhados:`);
+    //   Object.entries(err.errors).forEach(([field, e]) => {
+    //     //console.error(` - ${field}:`, e.message);
+    //   });
+    // }
 
-    console.error(`[${reqId}] ===== FIM ERRO =====\n`);
+    //console.error(`[${reqId}] ===== FIM ERRO =====\n`);
 
     return res.status(400).json({
       error: true,

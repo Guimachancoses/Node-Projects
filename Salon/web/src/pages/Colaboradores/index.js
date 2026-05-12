@@ -225,6 +225,30 @@ const Colaboradores = () => {
 
   const alerta = useSelector((state) => state.colaborador.alerta);
 
+  const currentSalaoId = String(process.env.REACT_APP_SALAO_ID || "");
+
+  const getVinculoAtual = useCallback((c) => {
+    const vinculos = Array.isArray(c?.vinculos) ? c.vinculos : [];
+    return (
+      vinculos.find((v) => String(v?.salaoId) === currentSalaoId) ||
+      vinculos[0] ||
+      null
+    );
+  }, [currentSalaoId]);
+
+  const normalizeColabWithVinculo = useCallback((c = {}) => {
+    const v = getVinculoAtual(c);
+
+    return {
+      ...c,
+      vinculos: Array.isArray(c.vinculos) ? c.vinculos : [],
+      vinculoId: v?.vinculoId || v?._id || "",
+      vinculo: v?.status || "A",
+      salaoId: v?.salaoId || "",
+      dataCadastro: v?.dataCadastro || c?.dataCadastro || null,
+    };
+  }, [getVinculoAtual]);
+
   const handleClose = () => {
     dispatch(setAlerta({ ...alerta, open: false }));
   };
@@ -360,9 +384,10 @@ const Colaboradores = () => {
 
   const colaboradoresFiltrados = useMemo(() => {
     return (colaboradores || []).filter((c) => {
-      const email = (c?.email || "").trim().toLowerCase();
-      const vinculoId = String(c?.vinculoId || "");
-      const colaboradorId = String(c?._id || "");
+      const cNorm = normalizeColabWithVinculo(c);
+      const email = (cNorm?.email || "").trim().toLowerCase();
+      const vinculoId = String(cNorm?.vinculoId || "");
+      const colaboradorId = String(cNorm?._id || "");
 
       const sameByEmail = loggedEmail && email === loggedEmail;
       const sameByVinculo = loggedVinculoId && vinculoId === loggedVinculoId;
@@ -370,23 +395,18 @@ const Colaboradores = () => {
 
       return !(sameByEmail || sameByVinculo || sameById);
     });
-  }, [colaboradores, loggedEmail, loggedVinculoId, loggedColaboradorId]);
+  }, [colaboradores, loggedEmail, loggedVinculoId, loggedColaboradorId, normalizeColabWithVinculo]);
 
-  const colaboradoresProcessados = colaboradoresFiltrados.map((colaborador, index) => {
+  const colaboradoresProcessados = colaboradoresFiltrados.map((item, index) => {
+    const colaborador = normalizeColabWithVinculo(item);
+
     const telefone = colaborador.telefone;
     let telefoneFormatado = "Telefone inválido";
-
-    if (telefone && telefone.area && telefone.numero) {
-      const numero = telefone.numero ? String(telefone.numero) : "";
-      telefoneFormatado = `(${numero.substring(0, 2)}) ${numero.substring(2, 7)}-${numero.substring(7)}`;
+    if (telefone?.area && telefone?.numero) {
+      telefoneFormatado = `(${telefone.area}) ${String(telefone.numero).slice(0, 5)}-${String(telefone.numero).slice(5)}`;
     }
 
-    // vinculo pode vir string ("A"/"I") ou objeto
-    const statusRaw =
-      typeof colaborador?.vinculo === "string"
-        ? colaborador.vinculo
-        : colaborador?.vinculo?.status || colaborador?.status || "A";
-
+    const statusRaw = colaborador?.vinculo || "A";
     const statusFormat = String(statusRaw).toUpperCase() === "A" ? "Ativo" : "Inativo";
 
     return {
@@ -718,17 +738,20 @@ const Colaboradores = () => {
             </Button>
           </Stack>
         )}
-        onRowClick={(colaborador) => {
+        onRowClick={(row) => {
+          const colaboradorNormalizado = normalizeColabWithVinculo(row);
+
           dispatch(
             updateColaborador({
               behavior: "update",
-              colaborador,
+              colaborador: colaboradorNormalizado,
               form: {
-                ...colaborador.form,
-                disabled: false, // <- ativa edição manualmente aqui
+                ...form,
+                disabled: false,
               },
             })
           );
+
           setComponent("drawer", true);
         }}
         checkboxSelection={true}
@@ -1337,11 +1360,24 @@ const Colaboradores = () => {
         content="Tem certeza que deseja excluir os colaborador selecionado? Essa ação não poderá ser desfeita."
         onClose={handleCloseDialog}
         onConfirm={() => {
-          if (selectedId) {
-            const vinculoId = colaboradoresProcessados[selectedId - 1]?.vinculoIx;
-            //console.log("Excluir:", colaboradoresProcessados[selectedId -1]?.vinculoIx);
-            removeColab(vinculoId); // use o ID diretamente
+          if (!selectedId) return;
+
+          const row = colaboradoresProcessados.find(
+            (r) => String(r.selectedIx) === String(selectedId) || String(r.id) === String(selectedId)
+          );
+
+          const vinculoId = row?.vinculoId;
+          if (!vinculoId) {
+            dispatch(setAlerta({
+              open: true,
+              severity: "error",
+              title: "Erro",
+              message: "Vínculo não encontrado para este colaborador.",
+            }));
+            return;
           }
+
+          removeColab(vinculoId);
         }}
         confirmLabel="Excluir"
         cancelLabel="Cancelar"

@@ -15,7 +15,7 @@ const INITIAL_STATE = {
   colaboradores: [],
   servicos: [],
   colaborador: {
-    vinculo: "A",
+    vinculos: [],
     especialidades: [],
     telefone: { area: "", numero: "" },
     identificacao: { tipoD: "", numero: "" },
