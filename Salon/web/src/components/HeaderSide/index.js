@@ -23,7 +23,6 @@ import {
   MenuItem,
   Skeleton,
   Fade,
-  Slide
 } from "@mui/material";
 import { alpha } from "@mui/material/styles";
 
@@ -58,7 +57,6 @@ export default function Layout({ toggleTheme }) {
   const email = user?.emailAddresses?.[0]?.emailAddress ?? "";
   const isUiLoading = form?.loading || !assetsReady;
   const [fadeInReady, setFadeInReady] = useState(false);
-  const [mainReady, setMainReady] = useState(false);
 
   useEffect(() => {
     if (!isLoaded || !isSignedIn) return;
@@ -93,16 +91,6 @@ export default function Layout({ toggleTheme }) {
     }
     return () => clearTimeout(t);
   }, [isUiLoading]);
-
-  useEffect(() => {
-    let t;
-    if (!assetsReady) {
-      setMainReady(false);
-    } else {
-      t = setTimeout(() => setMainReady(true), 80); // pequeno delay para transição suave
-    }
-    return () => clearTimeout(t);
-  }, [assetsReady]);
 
   const buildImageUrl = (value = "") => {
     if (!value) return "";
