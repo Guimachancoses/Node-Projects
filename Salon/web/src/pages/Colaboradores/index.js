@@ -114,6 +114,7 @@ const Colaboradores = () => {
     nome: "",
     email: "",
     telefone: "",
+    empresaId: "",
   });
 
   const [page, setPage] = useState(0);
@@ -221,14 +222,6 @@ const Colaboradores = () => {
 
     setErrors((p) => ({ ...p, area: "" }));
   };
-
-  const loggedEmail =
-    (userStore?.email || user?.emailAddresses?.[0]?.emailAddress || "")
-      .trim()
-      .toLowerCase();
-
-  const loggedVinculoId = String(userStore?.vinculoId || "");
-  const loggedColaboradorId = String(userStore?._id || "");
 
   const alerta = useSelector((state) => state.colaborador.alerta);
 
@@ -394,19 +387,41 @@ const Colaboradores = () => {
   }, []);
 
   const colaboradoresFiltrados = useMemo(() => {
+    const myEmail = String(
+      userStore?.email || user?.emailAddresses?.[0]?.emailAddress || ""
+    )
+      .trim()
+      .toLowerCase();
+
+    const myColabId = String(userStore?._id || "");
+    const myVinculoId = String(userStore?.vinculoId || "");
+
     return (colaboradores || []).filter((c) => {
       const cNorm = normalizeColabWithVinculo(c);
-      const email = (cNorm?.email || "").trim().toLowerCase();
-      const vinculoId = String(cNorm?.vinculoId || "");
-      const colaboradorId = String(cNorm?._id || "");
+      const cEmail = String(cNorm?.email || "").trim().toLowerCase();
+      const cId = String(cNorm?._id || "");
+      const cVinculoId = String(cNorm?.vinculoId || "");
 
-      const sameByEmail = loggedEmail && email === loggedEmail;
-      const sameByVinculo = loggedVinculoId && vinculoId === loggedVinculoId;
-      const sameById = loggedColaboradorId && colaboradorId === loggedColaboradorId;
+      // Regra geral: nunca listar a si mesmo
+      const isMeById = myColabId && cId === myColabId;
+      const isMeByEmail = myEmail && cEmail === myEmail;
+      const isMeByVinculo = myVinculoId && cVinculoId === myVinculoId;
 
-      return !(sameByEmail || sameByVinculo || sameById);
+      // Se for Yoda, reforça por ID/EMAIL (mais confiável no /all)
+      if (isYoda) {
+        return !(isMeById || isMeByEmail);
+      }
+
+      return !(isMeById || isMeByEmail || isMeByVinculo);
     });
-  }, [colaboradores, loggedEmail, loggedVinculoId, loggedColaboradorId, normalizeColabWithVinculo]);
+  }, [colaboradores, userStore, user, normalizeColabWithVinculo, isYoda]);
+
+  const empresaNomeById = useMemo(() => {
+    return (empresasList || []).reduce((acc, emp) => {
+      acc[String(emp._id)] = emp.nome;
+      return acc;
+    }, {});
+  }, [empresasList]);
 
   const colaboradoresProcessados = colaboradoresFiltrados.map((item, index) => {
     const colaborador = normalizeColabWithVinculo(item);
@@ -420,10 +435,13 @@ const Colaboradores = () => {
     const statusRaw = colaborador?.vinculo || "A";
     const statusFormat = String(statusRaw).toUpperCase() === "A" ? "Ativo" : "Inativo";
 
+    const empresaNome = empresaNomeById[String(colaborador?.salaoId)] || "Não vinculada";
+
     return {
       ...colaborador,
       telefoneFormatado,
       statusFormat,
+      empresaNome,
       id: index + 1,
       selectedIx: colaborador._id,
     };
@@ -454,10 +472,14 @@ const Colaboradores = () => {
         !filtros.telefone ||
         (c.telefoneFormatado || "").replace(/\D/g, "").includes(filtros.telefone.replace(/\D/g, ""));
 
+      const matchEmpresa =
+        !isYoda ||
+        !filtros.empresaId ||
+        String(c?.salaoId || "") === String(filtros.empresaId);
 
-      return matchQuick && matchNome && matchEmail && matchTelefone;
+      return matchQuick && matchNome && matchEmail && matchTelefone && matchEmpresa;
     });
-  }, [colaboradoresProcessados, quickSearch, filtros]);
+  }, [colaboradoresProcessados, quickSearch, filtros, isYoda]);
 
 
   const rowsPaginadas = useMemo(() => {
@@ -476,14 +498,22 @@ const Colaboradores = () => {
       ? alpha(theme.palette.common.white, 0.08)
       : theme.palette.grey[100];
 
-  const columns = [
-    { field: "id", headerName: "ID", width: 10, fixed: true },
-    { field: "nome", headerName: "Nome", width: 100 },
-    { field: "sobrenome", headerName: "Sobrenome", width: 100 },
-    { field: "email", headerName: "E-mail", width: 150 },
-    { field: "telefoneFormatado", headerName: "Telefone", width: 150 },
-    { field: "statusFormat", headerName: "Status", width: 120 },
-  ];
+  const columns = useMemo(() => {
+    const base = [
+      { field: "id", headerName: "ID", width: 10, fixed: true },
+      { field: "nome", headerName: "Nome", width: 100 },
+      { field: "sobrenome", headerName: "Sobrenome", width: 100 },
+      { field: "email", headerName: "E-mail", width: 150 },
+      { field: "telefoneFormatado", headerName: "Telefone", width: 150 },
+      { field: "statusFormat", headerName: "Status", width: 120 },
+    ];
+
+    if (isYoda) {
+      base.splice(5, 0, { field: "empresaNome", headerName: "Empresa", width: 180 });
+    }
+
+    return base;
+  }, [isYoda]);
 
   const formatDateOnly = (value) => {
     if (!value) return "";
@@ -528,8 +558,6 @@ const Colaboradores = () => {
       ...colaborador,
       empresasIds: (colaborador?.empresasIds || []).map(String),
     };
-
-    console.log("atualizado", atualizado)
 
     dispatch(updateColaborador({ colaborador: atualizado }));
     dispatch(addColaborador());
@@ -576,6 +604,11 @@ const Colaboradores = () => {
     email: (c.email || "").trim().toLowerCase(),
     vinculo: c.vinculo || "A",
     especialidades: (c.especialidades || []).map(String).sort(),
+
+    empresasIds: Array.isArray(c?.empresasIds)
+      ? c.empresasIds.map(String).filter(Boolean).sort()
+      : [],
+
     telefone: {
       area: onlyDigits(c?.telefone?.area || ""),
       numero: onlyDigits(c?.telefone?.numero || ""),
@@ -604,7 +637,7 @@ const Colaboradores = () => {
     const identity = `${colaboradorId}-${vinculoId}`;
     if (!identity) return;
 
-    if (loadedIdentityRef.current !== identity) {
+    if (loadedIdentityRef.current !== identity && Array.isArray(colaborador?.empresasIds)) {
       originalRef.current = normalizeForCompare(colaborador);
       loadedIdentityRef.current = identity;
     }
@@ -680,6 +713,12 @@ const Colaboradores = () => {
         {filtros.telefone && (
           <Chip label={`Telefone: ${filtros.telefone}`} onDelete={() => setFiltros((p) => ({ ...p, telefone: "" }))} sx={chipSx} />
         )}
+        {isYoda && filtros.empresaId && (
+          <Chip
+            label={`Empresa: ${(empresasList || []).find(e => String(e._id) === String(filtros.empresaId))?.nome || "Selecionada"}`}
+            onDelete={() => setFiltros((p) => ({ ...p, empresaId: "" }))}
+          />
+        )}
       </Stack>
       <TableComponent
         loading={form.filtering}
@@ -741,7 +780,7 @@ const Colaboradores = () => {
               startIcon={<ClearIcon sx={{ color: "#fff" }} />}
               onClick={() => {
                 setQuickSearch("");
-                setFiltros({ nome: "", email: "", telefone: "" });
+                setFiltros({ nome: "", email: "", telefone: "", empresaId: "" });
               }}
               sx={{ color: "#fff" }}
             >
@@ -763,7 +802,8 @@ const Colaboradores = () => {
 
           const empresasIdsFromVinculos = (row?.vinculos || [])
             .map((v) => String(v?.salaoId || ""))
-            .filter(Boolean);
+            .filter(Boolean)
+            .sort();
 
           const colaboradorNormalizado = {
             ...normalizeColabWithVinculo(row), // se já existe, mantém
@@ -860,6 +900,24 @@ const Colaboradores = () => {
             value={filtros.telefone}
             onChange={(e) => setFiltros((p) => ({ ...p, telefone: e.target.value }))}
           />
+
+          {isYoda && (
+            <FormControl fullWidth margin="normal">
+              <InputLabel>Empresa</InputLabel>
+              <Select
+                value={filtros.empresaId}
+                label="Empresa"
+                onChange={(e) => setFiltros((p) => ({ ...p, empresaId: String(e.target.value || "") }))}
+              >
+                <MenuItem value="">Todas as empresas</MenuItem>
+                {(empresasList || []).map((emp) => (
+                  <MenuItem key={String(emp._id)} value={String(emp._id)}>
+                    {emp.nome}
+                  </MenuItem>
+                ))}
+              </Select>
+            </FormControl>
+          )}
 
           <Stack direction="row" spacing={1} sx={{ mt: 2 }}>
             <Button
