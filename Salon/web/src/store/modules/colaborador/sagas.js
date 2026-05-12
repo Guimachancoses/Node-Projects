@@ -16,26 +16,48 @@ import { delay } from "redux-saga/effects";
 
 const SALAOID = `${process.env.REACT_APP_SALAO_ID}`;
 
+const toStr = (v) => String(v || "").trim();
+
+const uniqueIds = (arr = []) => [...new Set((arr || []).map(toStr).filter(Boolean))];
+
+const getSelectedSalaoIds = (colaborador) =>
+  uniqueIds([
+    ...(Array.isArray(colaborador?.empresasIds) ? colaborador.empresasIds : []),
+    // fallback para compatibilidade antiga
+    colaborador?.salaoId,
+  ]);
+
+const getSalaoIdFromVinculo = (v) => toStr(v?.salaoId);
+const getVinculoIdFromVinculo = (v) => toStr(v?.vinculoId || v?._id);
+
+const isDuplicateRelationshipError = (res) =>
+  !!res?.error && /já cadastrado/i.test(String(res?.message || ""));
+
+
 export function* allColaboradores() {
-  const { form } = yield select((state) => state.colaborador);
+  const { form, user } = yield select((state) => state.colaborador);
+
+  // cobre os 2 formatos possíveis do user no store
+  const userNorm = user?.user ? user.user : user;
+  const isYoda = userNorm?.funcao === "yoda";
 
   try {
     yield put(updateColaborador({ form: { ...form, filtering: true } }));
-    const { data: res } = yield call(
-      api.get,
-      `/colaborador/salao/${SALAOID}`
-    );
+
+    const endpoint = isYoda
+      ? "/colaborador/all"
+      : `/colaborador/salao/${SALAOID}`;
+
+    const { data: res } = yield call(api.get, endpoint);
 
     yield put(updateColaborador({ form: { ...form, filtering: false } }));
 
-    console.log("Resposta da API:", res);
-
-    if (res.error) {
+    if (res?.error) {
       alert(res.message);
       return false;
     }
 
-    yield put(updateColaborador({ colaboradores: res.colaboradores }));
+    yield put(updateColaborador({ colaboradores: res?.colaboradores || [] }));
   } catch (err) {
     yield put(updateColaborador({ form: { ...form, filtering: false } }));
     alert(err.message);
@@ -186,47 +208,133 @@ export function* addColaborador() {
 
   try {
     yield put(updateColaborador({ form: { ...form, saving: true } }));
-    let res = {};
 
-    if (behavior === "create") {
-      const response = yield call(api.post, "/colaborador", {
-        salaoId: SALAOID,
-        colaborador,
-      });
-      res = response.data;
-    } else {
-      const response = yield call(api.put, `/colaborador/${colaborador._id}`, {
-        ...colaborador,
-        vinculo: colaborador.vinculo,
-        vinculoId: colaborador.vinculoId,
-        especialidades: colaborador.especialidades,
-      });
-      res = response.data;
-    }
-
-
-    yield put(updateColaborador({ form: { ...form, saving: false } }));
-
-    //console.log("Resposta da API:", res);
-
-    if (res.error) {
+    const selectedSalaoIds = getSelectedSalaoIds(colaborador);
+    console.log("Sagas Id Salao: ", selectedSalaoIds)
+    if (!selectedSalaoIds.length) {
       yield put(
         setAlerta({
           open: true,
-          severity: "error",
-          title: "Erro",
-          message: res.message,
+          severity: "warning",
+          title: "Atenção",
+          message: "Selecione ao menos uma empresa.",
         })
       );
-      return false;
+      yield put(updateColaborador({ form: { ...form, saving: false } }));
+      return;
     }
 
-    yield put(allColaboradoresActrions());
-    yield put(
-      updateColaborador({ components: { ...components, drawer: false } })
-    );
-    yield put(resetColaborador());
+    let res = { error: false };
 
+    if (behavior === "create") {
+      // 1) cria no primeiro salão (ou vincula se já existir por email/telefone)
+      const firstSalaoId = selectedSalaoIds[0];
+      const firstResponse = yield call(api.post, "/colaborador", {
+        salaoId: firstSalaoId,
+        colaborador,
+      });
+      res = firstResponse.data;
+
+      if (res?.error && !isDuplicateRelationshipError(res)) {
+        throw new Error(res.message || "Erro ao criar colaborador.");
+      }
+
+      // 2) cria vínculos adicionais para os outros salões selecionados
+      for (const salaoId of selectedSalaoIds.slice(1)) {
+        const extraResponse = yield call(api.post, "/colaborador", {
+          salaoId,
+          colaborador,
+        });
+        const extraRes = extraResponse.data;
+
+        // se já existe vínculo nesse salão, ignora; se outro erro, falha
+        if (extraRes?.error && !isDuplicateRelationshipError(extraRes)) {
+          throw new Error(extraRes.message || "Erro ao criar vínculos adicionais.");
+        }
+      }
+    } else {
+      // UPDATE: sincroniza vínculos na ordem correta
+
+      // pega vínculos completos/atuais do colaborador (todos os salões)
+      const { data: fullRes } = yield call(api.post, "/colaborador/filter", {
+        filters: { email: colaborador.email }, // importante: nested em filters
+      });
+
+      const vinculosServidor = fullRes?.colaboradores?.[0]?.vinculos || [];
+      const currentVinculos = vinculosServidor.length
+        ? vinculosServidor
+        : (Array.isArray(colaborador?.vinculos) ? colaborador.vinculos : []);
+
+      const currentBySalao = new Map(
+        currentVinculos
+          .map((v) => [getSalaoIdFromVinculo(v), v])
+          .filter(([salaoId]) => !!salaoId)
+      );
+
+      const currentSalaoIds = [...currentBySalao.keys()];
+
+      const toRemove = currentSalaoIds.filter((id) => !selectedSalaoIds.includes(id));
+
+      // 1) remove vínculos desmarcados
+      for (const salaoId of toRemove) {
+        const vinculo = currentBySalao.get(salaoId);
+        const vinculoId = getVinculoIdFromVinculo(vinculo);
+
+        if (vinculoId) {
+          console.log("Tentou deletar o vinculo: ", vinculoId)
+          const delResponse = yield call(api.delete, `/colaborador/vinculo/${vinculoId}`);
+          const delRes = delResponse.data;
+          if (delRes?.error) {
+            throw new Error(delRes.message || "Erro ao remover vínculo.");
+          }
+        }
+      }
+
+      // 2) garante vínculo para cada empresa selecionada
+      // (se não existir cria; se existir mantém/atualiza status no backend)
+      for (const salaoId of selectedSalaoIds) {
+        console.log("Sagas salaoId:", salaoId)
+        const upsertResponse = yield call(api.post, "/colaborador", {
+          salaoId,
+          colaborador,
+        });
+        const upsertRes = upsertResponse.data;
+
+        if (upsertRes?.error && !isDuplicateRelationshipError(upsertRes)) {
+          throw new Error(upsertRes.message || "Erro ao sincronizar vínculos.");
+        }
+      }
+
+      // 3) atualiza somente perfil + especialidades (não força vínculo aqui)
+      const {
+        _id,
+        id,
+        selectedIx,
+        statusFormat,
+        telefoneFormatado,
+        vinculos,
+        empresasIds,
+        vinculoId,
+        vinculo,
+        salaoId,
+        ...perfilLimpo
+      } = colaborador;
+
+      const response = yield call(api.put, `/colaborador/${colaborador._id}`, {
+        ...perfilLimpo,
+        especialidades: colaborador.especialidades || [],
+      });
+
+      res = response.data;
+      if (res?.error) {
+        throw new Error(res.message || "Erro ao atualizar colaborador.");
+      }
+    }
+
+    yield put(updateColaborador({ form: { ...form, saving: false } }));
+    yield put(allColaboradoresActrions());
+    yield put(updateColaborador({ components: { ...components, drawer: false } }));
+    yield put(resetColaborador());
     yield put(
       setAlerta({
         open: true,
@@ -238,10 +346,8 @@ export function* addColaborador() {
             : "Colaborador atualizado com sucesso!",
       })
     );
-
-    // dispara o alerta de sucesso
   } catch (err) {
-    // dispara o alerta de erro:
+    yield put(updateColaborador({ form: { ...form, saving: false } }));
     yield put(
       setAlerta({
         open: true,
@@ -250,7 +356,6 @@ export function* addColaborador() {
         message: err.message,
       })
     );
-    yield put(updateColaborador({ form: { ...form, saving: false } }));
   }
 }
 

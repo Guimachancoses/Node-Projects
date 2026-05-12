@@ -7,116 +7,6 @@ const Colaborador = require("../models/colaborador");
 const SalaoColaborador = require("../models/relationship/salaoColaborador");
 const ColaboradorServico = require("../models/relationship/colaboradorServico");
 
-// Rota para criar o colaborador no banco de dados MongoDB e no MercadoPago
-router.post("/", async (req, res) => {
-  const db = mongoose.connection;
-  const session = await db.startSession();
-  session.startTransaction();
-
-  try {
-    const { colaborador, salaoId } = req.body;
-    let newColaborador = null;
-
-    const existenteColaborador = await Colaborador.findOne({
-      $or: [{ email: colaborador.email }, { telefone: colaborador.telefone }],
-    });
-
-    if (!existenteColaborador) {
-      // 1. Salva no MongoDB (sem recipientId por enquanto)
-      newColaborador = await new Colaborador({
-        ...colaborador,
-        recipientId: null,
-      }).save({ session });
-
-      // 2. Tenta criar no Mercado Pago
-      const mercadoPgAccount = await mercadopg("/v1/customers", {
-        email: colaborador.email,
-        nome: colaborador.nome,
-        sobrenome: colaborador.sobrenome,
-        telefone: {
-          area: colaborador.telefone.area,
-          numbero: colaborador.telefone.numero,
-        },
-        identificacao: {
-          tipoD: colaborador.identificacao.tipoD,
-          numero: colaborador.identificacao.numero,
-        },
-        enderecoPadrao: colaborador.enderecoPadrao,
-        endereco: {
-          cep: colaborador.endereco.cep,
-          nomeRua: colaborador.endereco.nomeRua,
-          numero: colaborador.endereco.numero,
-          cidade: {
-            nome: colaborador.endereco.cidade.nome,
-          },
-        },
-      }, "post");
-
-      // console.log(
-      //   "response mercadoPago:",
-      //   JSON.stringify(mercadoPgAccount, null, 2)
-      // );
-
-      if (mercadoPgAccount.error) {
-        throw new Error("Erro no Mercado Pago: " + mercadoPgAccount.message);
-      }
-
-      const customerId = mercadoPgAccount.data.id;
-
-      // 3. Atualiza o recipientId no colaborador
-      newColaborador.recipientId = customerId;
-      await newColaborador.save({ session });
-    }
-
-    const colaboradorId = existenteColaborador
-      ? existenteColaborador._id
-      : newColaborador._id;
-
-    const existentRelationship = await SalaoColaborador.findOne({
-      salaoId,
-      colaboradorId,
-      status: { $ne: "E" },
-    });
-
-    if (!existentRelationship) {
-      await new SalaoColaborador({
-        salaoId,
-        colaboradorId,
-        status: colaborador.vinculo,
-      }).save({ session });
-    }
-
-    if (existenteColaborador) {
-      await SalaoColaborador.findOneAndUpdate(
-        { salaoId, colaboradorId },
-        { status: colaborador.vinculo },
-        { session }
-      );
-    }
-
-    await ColaboradorServico.insertMany(
-      colaborador.especialidades.map((servicoId) => ({
-        servicoId,
-        colaboradorId,
-      })),
-      { session }
-    );
-
-    await session.commitTransaction();
-    session.endSession();
-
-    if (existenteColaborador && existentRelationship) {
-      res.json({ error: true, message: "Colaborador já cadastrado." });
-    } else {
-      res.json({ error: false });
-    }
-  } catch (err) {
-    await session.abortTransaction();
-    session.endSession();
-    res.json({ error: true, message: err.message });
-  }
-});
-
 // Rota de atualização do colaborador no banco de dados MongoDB e no MercadoPago
 router.put("/:colaboradorId", async (req, res) => {
   try {
@@ -128,12 +18,7 @@ router.put("/:colaboradorId", async (req, res) => {
         ? JSON.parse(req.body.colaborador)
         : req.body;
 
-    const {
-      vinculo,
-      vinculoId,
-      especialidades = [],
-      ...perfil
-    } = body;
+    const { vinculo, vinculoId, salaoId, especialidades = [], ...perfil } = body;
 
     // =============================
     // 1. Atualiza dados do colaborador
@@ -152,6 +37,7 @@ router.put("/:colaboradorId", async (req, res) => {
     if (vinculoId) {
       await SalaoColaborador.findByIdAndUpdate(vinculoId, {
         status: vinculo,
+        ...(salaoId ? { salaoId } : {}), // <-- agora troca empresa também
       });
     }
 
@@ -365,6 +251,200 @@ router.get("/check/:email", async (req, res) => {
       },
     });
   } catch (err) {
+    return res.json({ error: true, message: err.message });
+  }
+});
+
+// GET /colaborador/all
+// Retorna todos os colaboradores com todos os vínculos ativos e especialidades
+router.get("/all", async (req, res) => {
+  try {
+    // 1) Colaboradores base
+    const colaboradores = await Colaborador.find({})
+      .select("-senha -recipientId")
+      .lean();
+
+    if (!colaboradores.length) {
+      return res.json({ error: false, colaboradores: [] });
+    }
+
+    const colaboradorIds = colaboradores.map((c) => c._id);
+
+    // 2) Todos os vínculos ativos desses colaboradores
+    const vinculos = await SalaoColaborador.find({
+      colaboradorId: { $in: colaboradorIds },
+      status: { $ne: "E" },
+    })
+      .select("_id status dataCadastro salaoId colaboradorId")
+      .sort({ dataCadastro: -1 })
+      .lean();
+
+    // 3) Especialidades
+    const especialidades = await ColaboradorServico.find({
+      colaboradorId: { $in: colaboradorIds },
+    })
+      .populate("servicoId", "_id nome titulo")
+      .lean();
+
+    // 4) Agrupar vínculos por colaboradorId
+    const vinculosPorColaborador = vinculos.reduce((acc, v) => {
+      const key = String(v.colaboradorId);
+      if (!acc[key]) acc[key] = [];
+      acc[key].push({
+        vinculoId: v._id,
+        status: v.status,
+        salaoId: v.salaoId,
+        dataCadastro: v.dataCadastro,
+      });
+      return acc;
+    }, {});
+
+    // 5) Agrupar especialidades por colaboradorId
+    const especialidadesPorColaborador = especialidades.reduce((acc, e) => {
+      const key = String(e.colaboradorId);
+      if (!acc[key]) acc[key] = [];
+      if (e.servicoId?._id) acc[key].push(e.servicoId._id);
+      return acc;
+    }, {});
+
+    // 6) Montar resposta final
+    const resultado = colaboradores.map((c) => {
+      const key = String(c._id);
+      return {
+        ...c,
+        vinculos: vinculosPorColaborador[key] || [],
+        especialidades: [...new Set((especialidadesPorColaborador[key] || []).map(String))],
+      };
+    });
+
+    return res.json({ error: false, colaboradores: resultado });
+  } catch (err) {
+    return res.json({ error: true, message: err.message });
+  }
+});
+
+// Rota para criar o colaborador no banco de dados MongoDB e no MercadoPago
+router.post("/", async (req, res) => {
+  const db = mongoose.connection;
+  const session = await db.startSession();
+  session.startTransaction();
+
+  try {
+    const { colaborador, salaoId } = req.body;
+    let newColaborador = null;
+
+    const existenteColaborador = await Colaborador.findOne({
+      $or: [{ email: colaborador.email }, { telefone: colaborador.telefone }],
+    });
+
+    if (!existenteColaborador) {
+      // 1) cria colaborador
+      newColaborador = await new Colaborador({
+        ...colaborador,
+        recipientId: null,
+      }).save({ session });
+
+      // 2) cria no Mercado Pago
+      const mercadoPgAccount = await mercadopg(
+        "/v1/customers",
+        {
+          email: colaborador.email,
+          nome: colaborador.nome,
+          sobrenome: colaborador.sobrenome,
+          telefone: {
+            area: colaborador.telefone.area,
+            numbero: colaborador.telefone.numero,
+          },
+          identificacao: {
+            tipoD: colaborador.identificacao.tipoD,
+            numero: colaborador.identificacao.numero,
+          },
+          enderecoPadrao: colaborador.enderecoPadrao,
+          endereco: {
+            cep: colaborador.endereco.cep,
+            nomeRua: colaborador.endereco.nomeRua,
+            numero: colaborador.endereco.numero,
+            cidade: { nome: colaborador.endereco.cidade.nome },
+          },
+        },
+        "post"
+      );
+
+      if (mercadoPgAccount.error) {
+        throw new Error("Erro no Mercado Pago: " + mercadoPgAccount.message);
+      }
+
+      newColaborador.recipientId = mercadoPgAccount.data.id;
+      await newColaborador.save({ session });
+    }
+
+    const colaboradorId = existenteColaborador
+      ? existenteColaborador._id
+      : newColaborador._id;
+
+    // vínculo ativo existente nesse salão
+    const existentRelationship = await SalaoColaborador.findOne({
+      salaoId,
+      colaboradorId,
+      status: { $ne: "E" },
+    });
+
+    // cria vínculo se não existir
+    if (!existentRelationship) {
+      await new SalaoColaborador({
+        salaoId,
+        colaboradorId,
+        status: colaborador.vinculo || "A",
+      }).save({ session });
+    } else {
+      // se existir, apenas garante status atualizado
+      await SalaoColaborador.findByIdAndUpdate(
+        existentRelationship._id,
+        { status: colaborador.vinculo || existentRelationship.status || "A" },
+        { session }
+      );
+    }
+
+    // ✅ IMPORTANTE: só insere especialidades quando colaborador for novo
+    // (evita duplicação quando POST for chamado para criar vínculos em outros salões)
+    if (!existenteColaborador) {
+      const especialidades = Array.isArray(colaborador.especialidades)
+        ? [...new Set(colaborador.especialidades.map(String).filter(Boolean))]
+        : [];
+
+      if (especialidades.length) {
+        await ColaboradorServico.insertMany(
+          especialidades.map((servicoId) => ({
+            servicoId,
+            colaboradorId,
+          })),
+          { session }
+        );
+      }
+    }
+
+    await session.commitTransaction();
+    session.endSession();
+
+    // ✅ não tratar vínculo já existente como erro
+    if (existenteColaborador && existentRelationship) {
+      return res.json({
+        error: false,
+        message: "Vínculo já existente, mantido.",
+        colaboradorId,
+      });
+    }
+
+    return res.json({
+      error: false,
+      message: existenteColaborador
+        ? "Vínculo criado com sucesso para colaborador existente."
+        : "Colaborador cadastrado com sucesso.",
+      colaboradorId,
+    });
+  } catch (err) {
+    await session.abortTransaction();
+    session.endSession();
     return res.json({ error: true, message: err.message });
   }
 });

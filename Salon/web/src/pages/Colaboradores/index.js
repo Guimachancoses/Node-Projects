@@ -38,6 +38,8 @@ import {
   allServicos,
 } from "../../store/modules/colaborador/actions";
 
+import { allEmpresas } from "../../store/modules/empresas/actions";
+
 // components
 import TableComponent from "../../components/Table";
 import CustomDrawer from "../../components/Drawer";
@@ -57,6 +59,7 @@ import ContentCutIcon from '@mui/icons-material/ContentCut';
 import SearchIcon from "@mui/icons-material/Search";
 import ClearIcon from "@mui/icons-material/Clear";
 import LocationCityIcon from "@mui/icons-material/LocationCity";
+import BusinessIcon from '@mui/icons-material/Business';
 
 import { buscarEndereco } from "../../services/apiCep";
 
@@ -93,6 +96,10 @@ const Colaboradores = () => {
   const isTablet = useMediaQuery(theme.breakpoints.between("sm", "md"));
   const { user: userStore, colaborador, colaboradores, behavior, form, components, servicos } =
     useSelector((state) => state.colaborador);
+
+  const isYoda = userStore?.funcao === "yoda";
+
+  const { empresas: empresasList = [] } = useSelector((state) => state.empresas || {});
 
   const { user } = useUser();
 
@@ -249,6 +256,7 @@ const Colaboradores = () => {
     };
   }, [getVinculoAtual]);
 
+
   const handleClose = () => {
     dispatch(setAlerta({ ...alerta, open: false }));
   };
@@ -256,7 +264,8 @@ const Colaboradores = () => {
   useEffect(() => {
     dispatch(allColaboradores());
     dispatch(allServicos());
-  }, [dispatch]);
+    if (isYoda) dispatch(allEmpresas());
+  }, [dispatch, isYoda]);
 
   const setComponent = (component, state) => {
     dispatch(
@@ -282,6 +291,7 @@ const Colaboradores = () => {
         behavior: "create",
         form: { disabled: true },
         colaborador: {
+          vinculos: [],
           nome: "",
           sobrenome: "",
           email: "",
@@ -297,6 +307,7 @@ const Colaboradores = () => {
             numero: null,
           },
         },
+        empresasIds: [],
       })
     );
     ultimoEmailVerificadoRef.current = "";
@@ -508,8 +519,20 @@ const Colaboradores = () => {
   );
 
   const saveColab = () => {
+    if (!isYoda) {
+      dispatch(addColaborador());
+      return;
+    }
+
+    const atualizado = {
+      ...colaborador,
+      empresasIds: (colaborador?.empresasIds || []).map(String),
+    };
+
+    console.log("atualizado", atualizado)
+
+    dispatch(updateColaborador({ colaborador: atualizado }));
     dispatch(addColaborador());
-    //console.log("Clicou em salvar");
   };
 
   const removeColab = (vinculoId) => {
@@ -642,8 +665,6 @@ const Colaboradores = () => {
     "& .MuiChip-deleteIcon:hover": { color: "#fff" },
   };
 
-  console.log("colaborador", colaborador)
-
   return (
     <div className="col">
       <Stack direction="row" spacing={1} useFlexGap flexWrap="wrap" sx={{ mb: 1 }}>
@@ -739,7 +760,15 @@ const Colaboradores = () => {
           </Stack>
         )}
         onRowClick={(row) => {
-          const colaboradorNormalizado = normalizeColabWithVinculo(row);
+
+          const empresasIdsFromVinculos = (row?.vinculos || [])
+            .map((v) => String(v?.salaoId || ""))
+            .filter(Boolean);
+
+          const colaboradorNormalizado = {
+            ...normalizeColabWithVinculo(row), // se já existe, mantém
+            empresasIds: empresasIdsFromVinculos,
+          };
 
           dispatch(
             updateColaborador({
@@ -1303,6 +1332,70 @@ const Colaboradores = () => {
                 </FormControl>
               </div>
             </div>
+            {isYoda && (
+              <div className="form-group col-12 mb-3">
+                <FormControl fullWidth variant="outlined">
+                  <InputLabel>Empresas</InputLabel>
+                  <Select
+                    label="Empresas"
+                    multiple
+                    disabled={form?.disabled}
+                    value={(colaborador?.empresasIds || []).map(String)}
+                    onChange={(e) => {
+                      const nextEmpresasIds = (e.target.value || []).map(String);
+                      const principalSalaoId = nextEmpresasIds[0] || "";
+
+                      const vinculoPrincipal = (colaborador?.vinculos || []).find(
+                        (v) => String(v?.salaoId || "") === principalSalaoId
+                      );
+
+                      dispatch(
+                        updateColaborador({
+                          colaborador: {
+                            ...colaborador,
+                            empresasIds: nextEmpresasIds,
+                            salaoId: principalSalaoId || colaborador?.salaoId || "",
+                            vinculoId: vinculoPrincipal?.vinculoId || "",
+                            vinculo: vinculoPrincipal?.status || "A",
+                          },
+                        })
+                      );
+                    }}
+                    renderValue={(selected) =>
+                      (empresasList || [])
+                        .filter((emp) => selected.includes(String(emp._id)))
+                        .map((emp) => emp.nome)
+                        .join(", ")
+                    }
+                    startAdornment={
+                      <InputAdornment position="start">
+                        <BusinessIcon />
+                      </InputAdornment>
+                    }
+                    sx={{ fontSize: "0.8rem" }} // Aplica no valor selecionado
+                    MenuProps={{
+                      PaperProps: {
+                        sx: {
+                          fontSize: "0.8rem", // Aplica no dropdown
+                        },
+                      },
+                    }}
+                  >
+                    {(empresasList || []).map((emp) => {
+                      const id = String(emp._id);
+                      const checked = (colaborador?.empresasIds || []).map(String).includes(id);
+
+                      return (
+                        <MenuItem key={id} value={id}>
+                          <Checkbox checked={checked} />
+                          <ListItemText primary={emp.nome} />
+                        </MenuItem>
+                      );
+                    })}
+                  </Select>
+                </FormControl>
+              </div>
+            )}
           </div>
           <Button
             fullWidth
