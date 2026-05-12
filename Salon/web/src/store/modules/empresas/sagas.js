@@ -72,13 +72,13 @@ function buildFormData(payload) {
     fd.append(`endereco[${key}]`, endereco[key] ?? "");
   });
 
-  // geo
-  fd.append("geo[tipo]", data?.geo?.tipo ?? "Point");
-  if (Array.isArray(data?.geo?.coordinates)) {
-    data.geo.coordinates.forEach((coord, i) => {
-      fd.append(`geo[coordinates][${i}]`, String(coord));
-    });
-  }
+// geo -> só envia se vier completo [lng, lat]
+const coords = data?.geo?.coordinates;
+if (Array.isArray(coords) && coords.length === 2) {
+  fd.append("geo[type]", "Point");
+  fd.append("geo[coordinates][0]", String(coords[0]));
+  fd.append("geo[coordinates][1]", String(coords[1]));
+}
 
   if (logoFile) fd.append("logo", logoFile);
   if (capaFile) fd.append("capa", capaFile);

@@ -16,10 +16,6 @@ const { uploadToS3, deleteFileS3 } = require("../services/aws");
 // ------------------------
 // helpers
 // ------------------------
-function getBodyValue(body, key, fallback = "") {
-  return body?.[key] ?? fallback;
-}
-
 function pickAllowedFields(body = {}) {
   const c0 = body?.geo?.coordinates?.[0] ?? body["geo[coordinates][0]"];
   const c1 = body?.geo?.coordinates?.[1] ?? body["geo[coordinates][1]"];
@@ -29,17 +25,14 @@ function pickAllowedFields(body = {}) {
     nome: body.nome,
     email: body.email,
     status: (body.status || "A").toUpperCase(),
-
     telefone: {
       area: body?.telefone?.area ?? body["telefone[area]"] ?? "",
       numero: body?.telefone?.numero ?? body["telefone[numero]"] ?? "",
     },
-
     identificacao: {
       tipoD: body?.identificacao?.tipoD ?? body["identificacao[tipoD]"] ?? "",
       numero: body?.identificacao?.numero ?? body["identificacao[numero]"] ?? "",
     },
-
     endereco: {
       logradouro: body?.endereco?.logradouro ?? body["endereco[logradouro]"] ?? "",
       bairro: body?.endereco?.bairro ?? body["endereco[bairro]"] ?? "",
@@ -51,10 +44,9 @@ function pickAllowedFields(body = {}) {
     },
   };
 
-  // só inclui geo se vier completo
   if (hasGeo) {
     payload.geo = {
-      tipo: body?.geo?.tipo ?? body["geo[tipo]"] ?? "Point",
+      type: "Point",
       coordinates: [Number(c0), Number(c1)],
     };
   }

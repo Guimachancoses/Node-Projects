@@ -39,10 +39,18 @@ const EnderecoSchema = new Schema(
 
 const GeoSchema = new Schema(
   {
-    tipo: { type: String, default: "Point" },
+    type: {
+      type: String,
+      enum: ["Point"],
+      required: true,
+    },
     coordinates: {
-      type: [Number],
-      default: [],
+      type: [Number], // [longitude, latitude]
+      required: true,
+      validate: {
+        validator: (arr) => Array.isArray(arr) && arr.length === 2,
+        message: "GeoJSON Point precisa de [longitude, latitude]",
+      },
     },
   },
   { _id: false }
@@ -97,7 +105,7 @@ const salaoSchema = new Schema({
 
   geo: {
     type: GeoSchema,
-    default: () => ({ tipo: "Point", coordinates: [] }),
+    default: undefined,
   },
 
   dataCadastro: {
