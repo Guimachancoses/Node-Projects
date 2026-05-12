@@ -171,86 +171,151 @@ async function handleUploadField({ file, salaoId, fieldName }) {
 // POST /salao
 // ------------------------
 router.post("/", async (req, res) => {
-  try {
-    const payload = pickAllowedFields(req.body);
-    const salao = await new Salao(payload).save();
+  const reqId = `POST_SALAO_${Date.now()}`;
 
-    // req.files pode vir undefined
+  try {
+    console.log(`\n[${reqId}] ===== INÍCIO POST /salao =====`);
+    console.log(`[${reqId}] content-type:`, req.headers["content-type"]);
+
+    // body bruto
+    console.log(`[${reqId}] req.body keys:`, Object.keys(req.body || {}));
+    console.log(`[${reqId}] req.body:`, req.body);
+
+    // arquivos recebidos
+    const filesInfo = Object.fromEntries(
+      Object.entries(req.files || {}).map(([k, v]) => {
+        const f = Array.isArray(v) ? v[0] : v;
+        return [
+          k,
+          f
+            ? { name: f.name, mimetype: f.mimetype, size: f.size }
+            : null,
+        ];
+      })
+    );
+    console.log(`[${reqId}] req.files:`, filesInfo);
+
+    // mapeamento permitido
+    const payload = pickAllowedFields(req.body);
+    console.log(`[${reqId}] payload mapeado:`, payload);
+
+    // validação pré-save (muito útil)
+    const salaoDoc = new Salao(payload);
+    const validationError = salaoDoc.validateSync();
+    if (validationError) {
+      console.error(`[${reqId}] validateSync error:`, validationError);
+      return res.status(400).json({
+        error: true,
+        message: "Erro de validação ao criar salão.",
+        details: Object.values(validationError.errors || {}).map((e) => e.message),
+      });
+    }
+
+    // save inicial
+    const salao = await salaoDoc.save();
+    console.log(`[${reqId}] salão salvo inicial:`, salao._id);
+
+    // arquivos
     const logoFile = req?.files?.logo || null;
     const capaFile = req?.files?.capa || null;
     const apresentacaoFile = req?.files?.apresentacao || null;
 
     if (logoFile) {
+      console.log(`[${reqId}] upload logo: início`);
       const upLogo = await handleUploadField({
         file: logoFile,
         salaoId: salao._id,
         fieldName: "logo",
       });
+      console.log(`[${reqId}] upload logo: retorno`, upLogo);
 
       if (upLogo.error) {
+        console.error(`[${reqId}] upload logo erro:`, upLogo.message);
         return res.status(400).json({ error: true, message: upLogo.message });
       }
 
       salao.logo = upLogo.caminho;
-
       await Arquivo.create({
         model: "Salao",
         referenciaId: salao._id,
         caminho: upLogo.caminho,
       });
+      console.log(`[${reqId}] upload logo: concluído`);
     }
 
     if (capaFile) {
+      console.log(`[${reqId}] upload capa: início`);
       const upCapa = await handleUploadField({
         file: capaFile,
         salaoId: salao._id,
         fieldName: "capa",
       });
+      console.log(`[${reqId}] upload capa: retorno`, upCapa);
 
       if (upCapa.error) {
+        console.error(`[${reqId}] upload capa erro:`, upCapa.message);
         return res.status(400).json({ error: true, message: upCapa.message });
       }
 
       salao.capa = upCapa.caminho;
-
       await Arquivo.create({
         model: "Salao",
         referenciaId: salao._id,
         caminho: upCapa.caminho,
       });
+      console.log(`[${reqId}] upload capa: concluído`);
     }
 
     if (apresentacaoFile) {
+      console.log(`[${reqId}] upload apresentacao: início`);
       const upApresentacao = await handleUploadField({
         file: apresentacaoFile,
         salaoId: salao._id,
         fieldName: "apresentacao",
       });
+      console.log(`[${reqId}] upload apresentacao: retorno`, upApresentacao);
 
       if (upApresentacao.error) {
+        console.error(`[${reqId}] upload apresentacao erro:`, upApresentacao.message);
         return res.status(400).json({ error: true, message: upApresentacao.message });
       }
 
       salao.apresentacao = upApresentacao.caminho;
-
       await Arquivo.create({
         model: "Salao",
         referenciaId: salao._id,
         caminho: upApresentacao.caminho,
       });
+      console.log(`[${reqId}] upload apresentacao: concluído`);
     }
 
     await salao.save();
+    console.log(`[${reqId}] salão salvo final com arquivos`);
+    console.log(`[${reqId}] ===== FIM POST /salao SUCESSO =====\n`);
 
-    return res.status(201).json({
-      error: false,
-      salao,
-    });
+    return res.status(201).json({ error: false, salao });
   } catch (err) {
-    console.log("BACKEND ERROR:", err?.response?.data);
+    console.error(`\n[${reqId}] ===== ERRO POST /salao =====`);
+    console.error(`[${reqId}] name:`, err?.name);
+    console.error(`[${reqId}] message:`, err?.message);
+    console.error(`[${reqId}] code:`, err?.code);
+    console.error(`[${reqId}] stack:`, err?.stack);
+
+    if (err?.errors) {
+      console.error(`[${reqId}] mongoose errors detalhados:`);
+      Object.entries(err.errors).forEach(([field, e]) => {
+        console.error(` - ${field}:`, e.message);
+      });
+    }
+
+    console.error(`[${reqId}] ===== FIM ERRO =====\n`);
+
     return res.status(400).json({
       error: true,
-      message: err.message,
+      message: err.message || "Erro ao criar salão.",
+      details: err?.errors
+        ? Object.values(err.errors).map((e) => e.message)
+        : undefined,
     });
   }
 });
