@@ -131,8 +131,6 @@ const Empresas = () => {
   const originalRef = useRef(null);
   const loadedIdentityRef = useRef("");
 
-  console.log("empresas", empresas)
-
   const isReativar = behavior !== "create" && empresa?.status === "E";
 
   useEffect(() => {

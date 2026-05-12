@@ -106,6 +106,6 @@ const salaoSchema = new Schema({
   },
 });
 
-salaoSchema.index({ geo: "2dsphere" });
+salaoSchema.index({ geo: "2dsphere" }, { sparse: true });
 
 module.exports = mongoose.model("Salao", salaoSchema);

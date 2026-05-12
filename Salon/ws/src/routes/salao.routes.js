@@ -21,43 +21,45 @@ function getBodyValue(body, key, fallback = "") {
 }
 
 function pickAllowedFields(body = {}) {
-  return {
+  const c0 = body?.geo?.coordinates?.[0] ?? body["geo[coordinates][0]"];
+  const c1 = body?.geo?.coordinates?.[1] ?? body["geo[coordinates][1]"];
+  const hasGeo = c0 !== undefined && c0 !== "" && c1 !== undefined && c1 !== "";
+
+  const payload = {
     nome: body.nome,
     email: body.email,
-
-    status: (body.status ?? "A").toUpperCase(),
+    status: (body.status || "A").toUpperCase(),
 
     telefone: {
-      area: body?.telefone?.area ?? getBodyValue(body, "telefone[area]", ""),
-      numero: body?.telefone?.numero ?? getBodyValue(body, "telefone[numero]", ""),
+      area: body?.telefone?.area ?? body["telefone[area]"] ?? "",
+      numero: body?.telefone?.numero ?? body["telefone[numero]"] ?? "",
     },
 
     identificacao: {
-      tipoD: body?.identificacao?.tipoD ?? getBodyValue(body, "identificacao[tipoD]", ""),
-      numero: body?.identificacao?.numero ?? getBodyValue(body, "identificacao[numero]", ""),
+      tipoD: body?.identificacao?.tipoD ?? body["identificacao[tipoD]"] ?? "",
+      numero: body?.identificacao?.numero ?? body["identificacao[numero]"] ?? "",
     },
 
     endereco: {
-      logradouro: body?.endereco?.logradouro ?? getBodyValue(body, "endereco[logradouro]", ""),
-      bairro: body?.endereco?.bairro ?? getBodyValue(body, "endereco[bairro]", ""),
-      cidade: body?.endereco?.cidade ?? getBodyValue(body, "endereco[cidade]", ""),
-      uf: body?.endereco?.uf ?? getBodyValue(body, "endereco[uf]", ""),
-      cep: body?.endereco?.cep ?? getBodyValue(body, "endereco[cep]", ""),
-      numero: body?.endereco?.numero ?? getBodyValue(body, "endereco[numero]", ""),
-      pais: body?.endereco?.pais ?? getBodyValue(body, "endereco[pais]", ""),
-    },
-
-    geo: {
-      tipo: body?.geo?.tipo ?? getBodyValue(body, "geo[tipo]", "Point"),
-      coordinates: (() => {
-        if (Array.isArray(body?.geo?.coordinates)) return body.geo.coordinates;
-        const c0 = getBodyValue(body, "geo[coordinates][0]", "");
-        const c1 = getBodyValue(body, "geo[coordinates][1]", "");
-        if (c0 !== "" && c1 !== "") return [Number(c0), Number(c1)];
-        return [];
-      })(),
+      logradouro: body?.endereco?.logradouro ?? body["endereco[logradouro]"] ?? "",
+      bairro: body?.endereco?.bairro ?? body["endereco[bairro]"] ?? "",
+      cidade: body?.endereco?.cidade ?? body["endereco[cidade]"] ?? "",
+      uf: body?.endereco?.uf ?? body["endereco[uf]"] ?? "",
+      cep: body?.endereco?.cep ?? body["endereco[cep]"] ?? "",
+      numero: body?.endereco?.numero ?? body["endereco[numero]"] ?? "",
+      pais: body?.endereco?.pais ?? body["endereco[pais]"] ?? "",
     },
   };
+
+  // só inclui geo se vier completo
+  if (hasGeo) {
+    payload.geo = {
+      tipo: body?.geo?.tipo ?? body["geo[tipo]"] ?? "Point",
+      coordinates: [Number(c0), Number(c1)],
+    };
+  }
+
+  return payload;
 }
 
 function buildS3Path({ salaoId, fieldName, originalName }) {
@@ -245,6 +247,7 @@ router.post("/", async (req, res) => {
       salao,
     });
   } catch (err) {
+    console.log("BACKEND ERROR:", err?.response?.data);
     return res.status(400).json({
       error: true,
       message: err.message,

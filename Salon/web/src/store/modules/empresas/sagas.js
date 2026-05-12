@@ -23,7 +23,7 @@ function* loadEmpresas() {
   try {
     const { data } = yield call(api.get, "/salao/empresas");
     yield put(allEmpresasSuccess(data.saloes || data || []));
-    console.log("data", data)
+    // console.log("data", data)
   } catch (err) {
     const message = getErrorMessage(err, "Erro ao carregar empresas.");
     yield put(allEmpresasFailure(message));
@@ -45,22 +45,35 @@ function* filterEmpresas({ payload }) {
 
 // -------- BUILD FORM DATA --------
 function buildFormData(payload) {
-  const data = payload?.data || payload;
-  const { logoFile, capaFile, apresentacaoFile } = payload;
+  const data = payload?.data || payload || {};
+  const { logoFile, capaFile, apresentacaoFile } = payload || {};
 
   const fd = new FormData();
-  fd.append("nome", data?.nome || "");
-  fd.append("email", data?.email || "");
-  fd.append("telefone", data?.telefone || "");
-  fd.append("status", data?.status || "A");
-  fd.append("identificacao[tipoD]", data?.identificacao?.tipoD || "");
-  fd.append("identificacao[numero]", data?.identificacao?.numero || "");
 
+  fd.append("nome", data?.nome ?? "");
+  fd.append("email", data?.email ?? "");
+  fd.append("status", data?.status ?? "A");
+
+  // telefone (objeto)
+  const telArea = data?.telefone?.area ?? "";
+  const telNumero = data?.telefone?.numero ?? "";
+
+  // envie os dois formatos para compatibilidade
+  fd.append("telefone[area]", String(telArea));
+  fd.append("telefone[numero]", String(telNumero));
+
+  // identificacao
+  fd.append("identificacao[tipoD]", data?.identificacao?.tipoD ?? "");
+  fd.append("identificacao[numero]", data?.identificacao?.numero ?? "");
+
+  // endereco
   const endereco = data?.endereco || {};
   Object.keys(endereco).forEach((key) => {
-    fd.append(`endereco[${key}]`, endereco[key] || "");
+    fd.append(`endereco[${key}]`, endereco[key] ?? "");
   });
 
+  // geo
+  fd.append("geo[tipo]", data?.geo?.tipo ?? "Point");
   if (Array.isArray(data?.geo?.coordinates)) {
     data.geo.coordinates.forEach((coord, i) => {
       fd.append(`geo[coordinates][${i}]`, String(coord));
@@ -78,7 +91,13 @@ function buildFormData(payload) {
 function* createEmpresa({ payload }) {
   try {
     const formData = buildFormData(payload);
+    for (const [k, v] of formData.entries()) {
+      console.log("formData =>", k, v);
+    }
     const { data } = yield call(api.post, "/salao", formData);
+
+    console.log("Response Error", data?.error)
+    console.log("Response Message", data?.message)
 
     if (data?.error) throw new Error(data.message);
 
