@@ -2,15 +2,37 @@
 import { useEffect, useRef } from "react";
 import { Box, useMediaQuery, useTheme } from "@mui/material";
 import { animate } from "animejs";
+import { useDispatch } from "react-redux";
+import { useUser } from "@clerk/clerk-react";
 
+import { checkUser } from "../../store/modules/colaborador/actions";
 import splashVideo from "../../assets/splash/video.mp4";
 
 export default function SplashScreen() {
+  const dispatch = useDispatch();
   const videoRef = useRef(null);
   const bgVideoRef = useRef(null);
+  const checkedEmailRef = useRef("");
+
+  const { isLoaded, isSignedIn, user } = useUser();
+  const emailAddress = user?.primaryEmailAddress?.emailAddress
+    || user?.emailAddresses?.[0]?.emailAddress
+    || "";
 
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
+
+  useEffect(() => {
+    if (!isLoaded || !isSignedIn) return;
+
+    const email = emailAddress.trim();
+
+    if (!email) return;
+    if (checkedEmailRef.current === email) return;
+
+    checkedEmailRef.current = email;
+    dispatch(checkUser(email));
+  }, [dispatch, emailAddress, isLoaded, isSignedIn]);
 
   useEffect(() => {
     animate("#splash-stage", {
@@ -113,13 +135,13 @@ export default function SplashScreen() {
           position: "relative",
           width: isMobile
             ? {
-                xs: "86vw",
-              }
+              xs: "86vw",
+            }
             : {
-                sm: "92vw",
-                md: "86vw",
-                lg: "78vw",
-              },
+              sm: "92vw",
+              md: "86vw",
+              lg: "78vw",
+            },
           height: isMobile ? "76dvh" : "auto",
           maxWidth: isMobile ? "420px" : "1480px",
           maxHeight: isMobile ? "760px" : "none",

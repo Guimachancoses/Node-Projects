@@ -478,9 +478,10 @@ export function* allServicos() {
   }
 }
 
-export function* checkUser({ email }) {
+export function* checkUser(email) {
   try {
     if (!email) throw new Error("Email ausente no checkUser");
+
     const { data: res } = yield call(
       api.get,
       `/colaborador/check/${encodeURIComponent(email)}`
@@ -499,22 +500,27 @@ export function* checkUser({ email }) {
     }
 
     if (res.colaborador) {
+      console.log("Res: ", res.colaborador)
       const colaborador = res.colaborador;
+      const funcao = colaborador.funcao || "";
+      const isYoda = funcao === "yoda";
 
-      yield put(updateUser({
-        colaboradorId: colaborador._id,
-        email: colaborador.email,
-        firstName: colaborador.nome,
-        lastName: colaborador.sobrenome,
-        imageUrl: colaborador.foto,
-        especialidades: colaborador.especialidades || [],
-        funcao: colaborador.funcao || "",
-        salaoId: colaborador.salaoId || colaborador.vinculos?.[0]?.salaoId || "",
-        vinculoId: colaborador.vinculoId || colaborador.vinculos?.[0]?.vinculoId || "",
-        vinculo: colaborador.vinculo || colaborador.vinculos?.[0]?.status || "",
-      }));
+      yield put(
+        updateUser({
+          colaboradorId: colaborador._id,
+          email: colaborador.email,
+          firstName: colaborador.nome,
+          lastName: colaborador.sobrenome,
+          imageUrl: colaborador.foto,
+          especialidades: colaborador.especialidades || [],
+          funcao,
+          salaoId: colaborador.salaoId || colaborador.vinculos?.[0]?.salaoId || "",
+          vinculoId: colaborador.vinculoId || colaborador.vinculos?.[0]?.vinculoId || "",
+          vinculo: colaborador.vinculo || colaborador.vinculos?.[0]?.status || "",
+        })
+      );
 
-      history.push("/agendamentos");
+      history.push(isYoda ? "/empresas" : "/agendamentos");
     } else {
       yield put(
         setAlerta({
@@ -525,13 +531,12 @@ export function* checkUser({ email }) {
         })
       );
 
-      yield delay(5000); // espera 2 segundos para o usuário ver o alerta
+      yield delay(5000);
 
       yield call(signOutClerk);
       history.push("/");
     }
   } catch (err) {
-    // dispara o alerta de erro:
     yield put(
       setAlerta({
         open: true,

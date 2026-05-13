@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { Routes, Route, Navigate, Outlet, useLocation } from "react-router-dom";
 import { SignedIn, SignedOut } from "@clerk/clerk-react";
 import { useSelector } from "react-redux";
+
 import SplashScreen from "./components/SplashScreen";
 
 import Login from "./pages/Login";
@@ -33,6 +34,25 @@ const privatePaths = [
   "/empresas",
 ];
 
+const getUserStore = (userRaw) => userRaw?.user ?? userRaw ?? {};
+
+const isUserLoaded = (user) =>
+  Boolean(user?.colaboradorId || user?._id || user?.vinculoId || user?.email);
+
+const getInitialPrivatePath = (user) =>
+  user?.funcao === "yoda" ? "/empresas" : "/agendamentos";
+
+const SignedInRedirect = () => {
+  const { user: userRaw } = useSelector((state) => state.colaborador);
+  const userStore = getUserStore(userRaw);
+
+  if (!isUserLoaded(userStore)) {
+    return <SplashScreen />;
+  }
+
+  return <Navigate to={getInitialPrivatePath(userStore)} replace />;
+};
+
 const PrivateRoute = ({ toggleTheme, colorMode }) => (
   <>
     <SignedIn>
@@ -52,12 +72,6 @@ const Main = ({ toggleTheme, colorMode }) => {
   const previousPathRef = useRef(location.pathname);
   const [showSplash, setShowSplash] = useState(false);
   const [displayLocation, setDisplayLocation] = useState(location);
-
-  const { user: userRaw } = useSelector((state) => state.colaborador);
-  const userStore = userRaw?.user ?? userRaw;
-  const isYoda = userStore?.funcao === "yoda";
-  const initialPrivatePath = isYoda ? "/empresas" : "/agendamentos";
-
 
   useEffect(() => {
     const previousPath = previousPathRef.current;
@@ -88,7 +102,6 @@ const Main = ({ toggleTheme, colorMode }) => {
 
   return (
     <Routes location={displayLocation}>
-      {/* Públicas */}
       <Route
         path="/"
         element={
@@ -98,9 +111,8 @@ const Main = ({ toggleTheme, colorMode }) => {
             </SignedOut>
 
             <SignedIn>
-              <Navigate to={initialPrivatePath} replace />
+              <SignedInRedirect />
             </SignedIn>
-
           </>
         }
       />
@@ -110,7 +122,6 @@ const Main = ({ toggleTheme, colorMode }) => {
       <Route path="/politica-de-privacidade" element={<PoliticaDePrivacidade />} />
       <Route path="/forgot-password" element={<ForgotPassword />} />
 
-      {/* Privadas */}
       <Route element={<PrivateRoute toggleTheme={toggleTheme} colorMode={colorMode} />}>
         <Route path="/agendamentos" element={<Agendamentos />} />
         <Route path="/clientes" element={<Clientes />} />
@@ -122,15 +133,13 @@ const Main = ({ toggleTheme, colorMode }) => {
         <Route path="/empresas" element={<Empresas />} />
       </Route>
 
-      {/* Fallback geral */}
       <Route
         path="*"
         element={
           <>
             <SignedIn>
-              <Navigate to={initialPrivatePath} replace />
+              <SignedInRedirect />
             </SignedIn>
-
 
             <SignedOut>
               <Navigate to="/" replace />
