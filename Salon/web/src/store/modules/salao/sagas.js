@@ -38,15 +38,12 @@ function* waitForUserReady(maxTentativas = 20, intervaloMs = 150) {
   return null;
 }
 
-const SALAOID = `${process.env.REACT_APP_SALAO_ID}`;
-
 // -------- LOAD --------
 function* loadMyCompany() {
   try {
     const user = yield call(waitForUserReady);
     const salaoIdFromState = yield select(getSalaoId);
-    const salaoId = salaoIdFromState || SALAOID; // prioriza estado, depois EN
-
+    const salaoId = salaoIdFromState; // prioriza estado, depois EN
     // se for yoda e não houver salaoId definido, não força erro aqui
     if (!salaoId && user?.funcao !== "yoda") {
       throw new Error("ID do salão não encontrado.");

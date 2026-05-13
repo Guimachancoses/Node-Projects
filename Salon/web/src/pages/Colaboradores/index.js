@@ -225,7 +225,7 @@ const Colaboradores = () => {
 
   const alerta = useSelector((state) => state.colaborador.alerta);
 
-  const currentSalaoId = String(process.env.REACT_APP_SALAO_ID || "");
+  const currentSalaoId = userStore?.salaoId;
 
   const getVinculoAtual = useCallback((c) => {
     const vinculos = Array.isArray(c?.vinculos) ? c.vinculos : [];

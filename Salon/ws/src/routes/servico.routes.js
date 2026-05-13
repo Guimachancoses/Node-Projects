@@ -140,6 +140,40 @@ router.put("/:id", async (req, res) => {
   }
 });
 
+// Rota para exibir todos os serviços cadastrados, independente do salão
+router.get("/all", async (req, res) => {
+  try {
+    const servicos = await Servico.find({
+      status: { $ne: "E" },
+    });
+
+    const servicosComArquivos = await Promise.all(
+      servicos.map(async (servico) => {
+        const arquivos = await Arquivo.find({
+          model: "Servico",
+          referenciaId: servico._id,
+        });
+
+        return {
+          ...servico._doc,
+          arquivos,
+        };
+      })
+    );
+
+    res.json({
+      error: false,
+      servicos: servicosComArquivos,
+    });
+  } catch (err) {
+    res.json({
+      error: true,
+      message: err.message,
+    });
+  }
+});
+
+
 // Rota para exibir todos os serviços e arquivos de um determinado salão
 router.get("/salao/:salaoId", async (req, res) => {
   try {

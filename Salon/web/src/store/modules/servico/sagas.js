@@ -8,31 +8,37 @@ import {
 import types from "./types";
 import api from "../../../services/api";
 
-const SALAOID = `${process.env.REACT_APP_SALAO_ID}`;
 
 export function* allServicos() {
   const { form } = yield select((state) => state.servico);
+  const { user } = yield select((state) => state.colaborador);
+
+  const isYoda = user?.funcao === "yoda";
+  const salaoId = user?.salaoId;
 
   try {
+    if (!isYoda && !salaoId) {
+      throw new Error("Salão não identificado para carregar os serviços.");
+    }
+
     yield put(updateServico({ form: { ...form, filtering: true } }));
-    const { data: res } = yield call(
-      api.get,
-      `/servico/salao/${SALAOID}`
-    );
 
-    yield put(updateServico({ form: { ...form, filtering: false } }));
+    const endpoint = isYoda
+      ? "/servico/all"
+      : `/servico/salao/${encodeURIComponent(salaoId)}`;
 
-    //console.log("Resposta da API:", res);
+    const { data: res } = yield call(api.get, endpoint);
 
     if (res.error) {
       alert(res.message);
       return false;
     }
 
-    yield put(updateServico({ servicos: res.servicos }));
+    yield put(updateServico({ servicos: res.servicos || [] }));
   } catch (err) {
-    yield put(updateServico({ form: { ...form, filtering: false } }));
     alert(err.message);
+  } finally {
+    yield put(updateServico({ form: { ...form, filtering: false } }));
   }
 }
 
@@ -43,11 +49,13 @@ export function* addServicos() {
 
   try {
     yield put(updateServico({ form: { ...form, saving: true } }));
+    const { user: userRaw } = yield select((state) => state.colaborador);
     //console.log("salaoId:", consts.salaoId); // Verifique se o valor é correto antes de enviar
 
+    const salaoId = userRaw?.salaoId;
     const formData = new FormData();
 
-    formData.append("salaoId", SALAOID);
+    formData.append("salaoId", salaoId);
     formData.append("servico", JSON.stringify(servico));
     servico.arquivos.forEach((arquivo, index) => {
       formData.append(`arquivo_${index}`, arquivo);

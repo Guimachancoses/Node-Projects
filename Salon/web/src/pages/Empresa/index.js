@@ -44,10 +44,38 @@ import {
 
 import { buscarEndereco } from "../../services/apiCep";
 
+const normalizeTelefone = (telefone) => {
+  if (!telefone) {
+    return { area: "", numero: "", completo: "" };
+  }
+
+  if (typeof telefone === "object") {
+    const area = onlyDigits(telefone.area || "").slice(0, 2);
+    const numero = onlyDigits(telefone.numero || "").slice(0, 9);
+
+    return {
+      area,
+      numero,
+      completo: `${area}${numero}`,
+    };
+  }
+
+  const digits = onlyDigits(telefone).slice(0, 11);
+
+  return {
+    area: digits.slice(0, 2),
+    numero: digits.slice(2, 11),
+    completo: digits,
+  };
+};
+
 const initialForm = {
   nome: "",
   email: "",
-  telefone: "",
+  telefone: {
+    area: "",
+    numero: "",
+  },
   endereco: {
     logradouro: "",
     bairro: "",
@@ -66,7 +94,7 @@ const initialForm = {
 const normalizeForm = (form) => ({
   nome: (form?.nome || "").trim(),
   email: (form?.email || "").trim().toLowerCase(),
-  telefone: onlyDigits(form?.telefone || ""),
+  telefone: normalizeTelefone(form?.telefone).completo,
   endereco: {
     logradouro: (form?.endereco?.logradouro || "").trim(),
     bairro: (form?.endereco?.bairro || "").trim(),
@@ -81,6 +109,7 @@ const normalizeForm = (form) => ({
     coordinates: Array.isArray(form?.geo?.coordinates) ? form.geo.coordinates : [],
   },
 });
+
 
 export default function Empresa() {
   const dispatch = useDispatch();
@@ -131,14 +160,12 @@ export default function Empresa() {
   useEffect(() => {
     if (!empresa) return;
 
-    const telefoneDigits = onlyDigits(empresa.telefone || "");
-    const area = telefoneDigits.slice(0, 2);
-    const numero = telefoneDigits.slice(2, 11);
+    const telefone = normalizeTelefone(empresa.telefone);
 
     const payload = {
       nome: empresa.nome || "",
       email: empresa.email || "",
-      telefone: telefoneDigits,
+      telefone: telefone.completo,
       endereco: {
         logradouro: empresa.endereco?.logradouro || "",
         bairro: empresa.endereco?.bairro || "",
@@ -155,8 +182,9 @@ export default function Empresa() {
     };
 
     setCompanyForm(payload);
-    setPhoneArea(area);
-    setPhoneNumber(numero);
+    setPhoneArea(telefone.area);
+    setPhoneNumber(telefone.numero);
+
     originalRef.current = normalizeForm(payload);
 
     const logoPath = empresa?.logo || pickLatestByType(empresa?.arquivos, "logo");
@@ -351,6 +379,8 @@ export default function Empresa() {
       setSubmitLocked(false);
     }
   }, [form?.saving]);
+
+  console.log("empresa: ", empresa)
 
   return (
     <Container maxWidth="lg" sx={{ py: 3 }}>

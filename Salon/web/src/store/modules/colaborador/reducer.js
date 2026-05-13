@@ -35,6 +35,7 @@ const INITIAL_STATE = {
     dataNascimento: "",
     sexo: "",
   },
+  saloId: "",
   alerta: {
     severity: "", // "success", "error", "info", "warning"
     message: "",
@@ -91,8 +92,7 @@ function colaborador(state = INITIAL_STATE, action) {
 
     case types.UPDATE_USER: {
       return produce(state, (draft) => {
-        const normalizedUser = action.user?.user ? action.user.user : action.user;
-        draft.user = { ...draft.user, ...(normalizedUser || {}) };
+        draft.user = { ...draft.user, ...(action.user || action.payload || {}) };
       });
     }
 

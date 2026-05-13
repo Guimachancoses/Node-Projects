@@ -382,7 +382,7 @@ export default function Layout({ toggleTheme }) {
     </Box>
   );
 
-  console.log("userRaw", userRaw)
+  //console.log("userRaw", userRaw)
 
   return (
     <Box sx={{ display: "flex", minHeight: "100dvh" }}>

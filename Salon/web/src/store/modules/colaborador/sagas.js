@@ -14,7 +14,6 @@ import history from "../../../history";
 import { signOutClerk } from "../../../utils/clerk";
 import { delay } from "redux-saga/effects";
 
-const SALAOID = `${process.env.REACT_APP_SALAO_ID}`;
 
 const toStr = (v) => String(v || "").trim();
 
@@ -40,13 +39,14 @@ export function* allColaboradores() {
   // cobre os 2 formatos possíveis do user no store
   const userNorm = user?.user ? user.user : user;
   const isYoda = userNorm?.funcao === "yoda";
+  const salaoId = user?.salaoId;
 
   try {
     yield put(updateColaborador({ form: { ...form, filtering: true } }));
 
     const endpoint = isYoda
       ? "/colaborador/all"
-      : `/colaborador/salao/${SALAOID}`;
+      : `/colaborador/salao/${salaoId}`;
 
     const { data: res } = yield call(api.get, endpoint);
 
@@ -202,9 +202,11 @@ export function* filterColaboradores({ filters }) {
 }
 
 export function* addColaborador() {
-  const { form, colaborador, components, behavior } = yield select(
+  const { form, colaborador, components, behavior, user } = yield select(
     (state) => state.colaborador
   );
+
+  const salaoIdUser = user?.salaoId;
 
   try {
     yield put(updateColaborador({ form: { ...form, saving: true } }));
@@ -229,8 +231,9 @@ export function* addColaborador() {
     if (behavior === "create") {
       // 1) cria no primeiro salão (ou vincula se já existir por email/telefone)
       const firstSalaoId = selectedSalaoIds[0];
+      const salaoIdX = firstSalaoId || salaoIdUser
       const firstResponse = yield call(api.post, "/colaborador", {
-        salaoId: firstSalaoId,
+        salaoId: salaoIdX,
         colaborador,
       });
       res = firstResponse.data;
@@ -423,14 +426,16 @@ export function* unlinkColaborador({ vinculoId }) {
 }
 
 export function* allServicos() {
-  const { form } = yield select((state) => state.colaborador);
+  const { form, user } = yield select((state) => state.colaborador);
+
+  const salaoId = user?.salaoId;
 
   try {
     yield put(updateColaborador({ form: { ...form, filtering: true } }));
 
     const { data: res } = yield call(
       api.get,
-      `/salao/servicos/${SALAOID}`
+      `/salao/servicos/${salaoId}`
     );
 
     yield put(updateColaborador({ form: { ...form, filtering: false } }));
@@ -493,10 +498,22 @@ export function* checkUser({ email }) {
       return false;
     }
 
-    console.log("res API: ", res);
-
     if (res.colaborador) {
-      yield put(updateUser({ user: res.colaborador }));
+      const colaborador = res.colaborador;
+
+      yield put(updateUser({
+        colaboradorId: colaborador._id,
+        email: colaborador.email,
+        firstName: colaborador.nome,
+        lastName: colaborador.sobrenome,
+        imageUrl: colaborador.foto,
+        especialidades: colaborador.especialidades || [],
+        funcao: colaborador.funcao || "",
+        salaoId: colaborador.salaoId || colaborador.vinculos?.[0]?.salaoId || "",
+        vinculoId: colaborador.vinculoId || colaborador.vinculos?.[0]?.vinculoId || "",
+        vinculo: colaborador.vinculo || colaborador.vinculos?.[0]?.status || "",
+      }));
+
       history.push("/agendamentos");
     } else {
       yield put(
@@ -528,6 +545,8 @@ export function* checkUser({ email }) {
 
 export function* updateMyAccount({ payload, fotoFile }) {
   const { form, user } = yield select((state) => state.colaborador);
+
+  const salaoId = user?.salaoId;
 
   //console.log("fotoFile", fotoFile)
 
@@ -575,7 +594,7 @@ export function* updateMyAccount({ payload, fotoFile }) {
     let res;
     if (fotoFile) {
       const formData = new FormData();
-      formData.append("salaoId", SALAOID);
+      formData.append("salaoId", salaoId);
       formData.append("colaborador", JSON.stringify({ ...baseUpdate, ...perfil }));
 
       // for (let [key, value] of formData.entries()) {
@@ -624,7 +643,7 @@ export function* loadMyAccount({ email }) {
 
     const { data: res } = yield call(
       api.get,
-      `/colaborador/check/${encodeURIComponent(email)}?salaoId=${SALAOID}`
+      `/colaborador/check/${encodeURIComponent(email)}`
     );
 
     const colaborador = res?.colaborador

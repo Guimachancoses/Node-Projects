@@ -8,8 +8,6 @@ import {
 import types from "./types";
 import api from "../../../services/api";
 
-const SALAOID = `${process.env.REACT_APP_SALAO_ID}`;
-
 const getId = (item) => {
   if (!item) return "";
   if (typeof item === "string") return item;
@@ -22,12 +20,15 @@ function toIdArray(arr) {
 
 export function* allHorarios() {
   const { form } = yield select((state) => state.horario);
+  const { user: userRaw } = yield select((state) => state.colaborador);
+
+  const salaoId = userRaw?.salaoId;
 
   try {
     yield put(updateHorario({ form: { ...form, filtering: true } }));
     const { data: res } = yield call(
       api.get,
-      `/horario/salao/${SALAOID}`
+      `/horario/salao/${salaoId}`
     );
 
     yield put(updateHorario({ form: { ...form, filtering: false } }));
@@ -48,6 +49,9 @@ export function* allHorarios() {
 
 export function* filterColaboradores(action) {
   const { form, horario } = yield select((state) => state.horario);
+  const { user: userRaw } = yield select((state) => state.colaborador);
+
+  const salaoId = userRaw?.salaoId;
 
   try {
     yield put(updateHorario({ form: { ...form, filtering: true } }));
@@ -71,7 +75,7 @@ export function* filterColaboradores(action) {
 
     const { data: res } = yield call(api.post, "/horario/colaboradores", {
       especialidades,
-      salaoId: SALAOID,
+      salaoId: salaoId,
     });
 
     if (res?.error) {
@@ -130,13 +134,17 @@ export function* addHorario() {
     (state) => state.horario
   );
 
+  const { user: userRaw } = yield select((state) => state.colaborador);
+
+  const salaoId = userRaw?.salaoId;
+
   try {
     yield put(updateHorario({ form: { ...form, saving: true } }));
     let res = {};
 
     if (behavior === "create") {
       const response = yield call(api.post, "/horario", {
-        salaoId: SALAOID,
+        salaoId: salaoId,
         ...horario,
       });
       res = response.data;
@@ -257,13 +265,16 @@ export function* removeHorario() {
 
 export function* allServicos() {
   const { form } = yield select((state) => state.horario);
+  const { user: userRaw } = yield select((state) => state.colaborador);
+
+  const salaoId = userRaw?.salaoId;
 
   try {
     yield put(updateHorario({ form: { ...form, filtering: true } }));
 
     const { data: res } = yield call(
       api.get,
-      `/salao/servicos/${SALAOID}`
+      `/salao/servicos/${salaoId}`
     );
 
     yield put(updateHorario({ form: { ...form, filtering: false } }));

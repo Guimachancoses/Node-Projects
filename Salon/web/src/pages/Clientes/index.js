@@ -88,6 +88,8 @@ const Clientes = () => {
     (state) => state.cliente
   );
 
+  const { user: userRaw } = useSelector((state) => state.colaborador);
+
   const alerta = useSelector((state) => state.cliente.alerta);
 
   const [errors, setErrors] = useState({});
@@ -387,7 +389,7 @@ const Clientes = () => {
       filterClientes({
         filters: {
           email: emailNormalizado,
-          salaoId: process.env.REACT_APP_SALAO_ID,
+          salaoId: userRaw?.salaoId,
         },
       })
     );

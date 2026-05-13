@@ -185,6 +185,25 @@ router.post("/filter", async (req, res) => {
   }
 });
 
+// Rota para retornar todos os clientes cadastrados no banco, independente do salão
+router.get("/all", async (req, res) => {
+  try {
+    const clientes = await Cliente.find({
+      status: { $ne: "E" },
+    }).sort({ dataCadastro: -1 });
+
+    res.json({
+      error: false,
+      clientes,
+    });
+  } catch (err) {
+    res.json({
+      error: true,
+      message: err.message,
+    });
+  }
+});
+
 // Rota para retornar todos os clientes de um determinado salão
 router.get("/salao/:salaoId", async (req, res) => {
   try {

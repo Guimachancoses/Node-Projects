@@ -12,7 +12,6 @@ import {
   updateColaboradoresAgendamento
 } from "./actions";
 
-const SALAOID = `${process.env.REACT_APP_SALAO_ID}`;
 
 /**
  * Helper para atualizar loading do form no state.agendamento
@@ -30,11 +29,14 @@ function* setLoading(loading) {
  * Lista agendamentos por período
  */
 export function* filterAgendamentos({ start, end }) {
+  const { user: userRaw } = yield select((state) => state.colaborador);
+
+  const salaoId = userRaw?.salaoId;
   try {
     yield* setLoading(true);
 
     const { data: res } = yield call(api.post, "/agendamento/filter", {
-      salaoId: SALAOID,
+      salaoId: salaoId,
       periodo: {
         inicio: start,
         final: end,
@@ -73,8 +75,11 @@ export function* filterAgendamentos({ start, end }) {
  * Carrega serviços para Select no Drawer de agendamento
  */
 export function* allServicosAgendamento() {
+  const { user: userRaw } = yield select((state) => state.colaborador);
+
+  const salaoId = userRaw?.salaoId;
   try {
-    const { data: res } = yield call(api.get, `/servico/salao/${SALAOID}`);
+    const { data: res } = yield call(api.get, `/servico/salao/${salaoId}`);
 
     if (res.error) {
       yield put(
@@ -111,8 +116,11 @@ export function* allServicosAgendamento() {
  * Carrega clientes para Select no Drawer de agendamento
  */
 export function* allClientesAgendamento() {
+  const { user: userRaw } = yield select((state) => state.colaborador);
+
+  const salaoId = userRaw?.salaoId;
   try {
-    const { data: res } = yield call(api.get, `/cliente/salao/${SALAOID}`);
+    const { data: res } = yield call(api.get, `/cliente/salao/${salaoId}`);
 
     if (res.error) {
       yield put(
@@ -150,12 +158,15 @@ export function* allClientesAgendamento() {
  */
 export function* createAgendamento({ payload }) {
   const { components } = yield select((state) => state.agendamento);
+  const { user: userRaw } = yield select((state) => state.colaborador);
+
+  const salaoId = userRaw?.salaoId;
 
   try {
     yield* setLoading(true);
 
     const { data: res } = yield call(api.post, "/agendamento", {
-      salaoId: SALAOID,
+      salaoId: salaoId,
       ...payload,
     });
 
@@ -333,8 +344,11 @@ export function* deleteAgendamento({ id }) {
  * Lista colaboradores
  */
 export function* allColaboradoresAgendamento() {
+  const { user: userRaw } = yield select((state) => state.colaborador);
+
+  const salaoId = userRaw?.salaoId;
   try {
-    const { data: res } = yield call(api.get, `/colaborador/salao/${SALAOID}`);
+    const { data: res } = yield call(api.get, `/colaborador/salao/${salaoId}`);
     if (res.error) return;
 
     const colaboradores = (res.colaboradores || []).map((c) => ({

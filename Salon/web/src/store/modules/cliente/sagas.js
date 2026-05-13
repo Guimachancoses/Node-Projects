@@ -8,31 +8,37 @@ import {
 import types from "./types";
 import api from "../../../services/api";
 
-const SALAOID = `${process.env.REACT_APP_SALAO_ID}`;
 
 export function* allClientes() {
   const { form } = yield select((state) => state.cliente);
+  const { user } = yield select((state) => state.colaborador);
+
+  const isYoda = user?.funcao === "yoda";
+  const salaoId = user?.salaoId;
 
   try {
+    if (!isYoda && !salaoId) {
+      throw new Error("Salão não identificado para carregar os clientes.");
+    }
+
     yield put(updateCliente({ form: { ...form, filtering: true } }));
-    const { data: res } = yield call(
-      api.get,
-      `/cliente/salao/${SALAOID}`
-    );
 
-    yield put(updateCliente({ form: { ...form, filtering: false } }));
+    const endpoint = isYoda
+      ? "/cliente/all"
+      : `/cliente/salao/${encodeURIComponent(salaoId)}`;
 
-    //console.log("Resposta da API:", res);
+    const { data: res } = yield call(api.get, endpoint);
 
     if (res.error) {
       alert(res.message);
       return false;
     }
 
-    yield put(updateCliente({ clientes: res.clientes }));
+    yield put(updateCliente({ clientes: res.clientes || [] }));
   } catch (err) {
-    yield put(updateCliente({ form: { ...form, filtering: false } }));
     alert(err.message);
+  } finally {
+    yield put(updateCliente({ form: { ...form, filtering: false } }));
   }
 }
 
@@ -76,6 +82,9 @@ export function* filterClientes({ filters }) {
 
 export function* addCliente() {
   const { form, cliente, components, behavior } = yield select((state) => state.cliente);
+  const { user: userRaw } = yield select((state) => state.colaborador);
+
+  const salaoId = userRaw?.salaoId;
 
   try {
     yield put(updateCliente({ form: { ...form, saving: true } }));
@@ -83,7 +92,7 @@ export function* addCliente() {
 
     if (behavior === "create") {
       const response = yield call(api.post, "/cliente", {
-        salaoId: SALAOID,
+        salaoId: salaoId,
         cliente,
       });
       res = response.data;
