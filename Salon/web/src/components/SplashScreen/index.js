@@ -1,6 +1,9 @@
 // src/components/SplashScreen/index.jsx
-import { useEffect, useRef } from "react";
-import { Box, useMediaQuery, useTheme } from "@mui/material";
+import { useEffect, useRef, useState } from "react";
+import { Box, IconButton, Tooltip, useMediaQuery, useTheme } from "@mui/material";
+import VolumeUpIcon from "@mui/icons-material/VolumeUp";
+import VolumeOffIcon from "@mui/icons-material/VolumeOff";
+
 import { animate } from "animejs";
 import { useDispatch } from "react-redux";
 import { useUser } from "@clerk/clerk-react";
@@ -13,6 +16,9 @@ export default function SplashScreen() {
   const videoRef = useRef(null);
   const bgVideoRef = useRef(null);
   const checkedEmailRef = useRef("");
+  const [muted, setMuted] = useState(false);
+  const [soundBlocked, setSoundBlocked] = useState(false);
+
 
   const { isLoaded, isSignedIn, user } = useUser();
   const emailAddress = user?.primaryEmailAddress?.emailAddress
@@ -42,9 +48,50 @@ export default function SplashScreen() {
       ease: "easeOutExpo",
     });
 
-    videoRef.current?.play?.().catch(() => {});
-    bgVideoRef.current?.play?.().catch(() => {});
+    const playMainVideo = async () => {
+      if (!videoRef.current) return;
+
+      try {
+        videoRef.current.muted = false;
+        videoRef.current.volume = 1;
+        await videoRef.current.play();
+        setMuted(false);
+        setSoundBlocked(false);
+      } catch {
+        videoRef.current.muted = true;
+        await videoRef.current.play().catch(() => { });
+        setMuted(true);
+        setSoundBlocked(true);
+      }
+    };
+
+    const playBgVideo = async () => {
+      if (!bgVideoRef.current) return;
+
+      bgVideoRef.current.muted = true;
+      await bgVideoRef.current.play().catch(() => { });
+    };
+
+    playMainVideo();
+    playBgVideo();
   }, [isMobile]);
+
+  const handleEnableSound = async () => {
+    if (!videoRef.current) return;
+
+    videoRef.current.muted = false;
+    videoRef.current.volume = 1;
+
+    try {
+      await videoRef.current.play();
+      setMuted(false);
+      setSoundBlocked(false);
+    } catch {
+      setMuted(true);
+      setSoundBlocked(true);
+    }
+  };
+
 
   return (
     <Box
@@ -68,7 +115,7 @@ export default function SplashScreen() {
             ref={bgVideoRef}
             src={splashVideo}
             autoPlay
-            muted
+            muted={muted}
             playsInline
             preload="auto"
             sx={{
@@ -111,7 +158,7 @@ export default function SplashScreen() {
           ref={bgVideoRef}
           src={splashVideo}
           autoPlay
-          muted
+          muted={muted}
           playsInline
           preload="auto"
           sx={{
@@ -157,6 +204,29 @@ export default function SplashScreen() {
             : "0 0 80px rgba(0,220,240,.22), 0 24px 90px rgba(0,0,0,.65)",
         }}
       >
+        {soundBlocked && (
+          <Tooltip title="Ativar som">
+            <IconButton
+              onClick={handleEnableSound}
+              sx={{
+                position: "absolute",
+                right: { xs: 18, md: 32 },
+                bottom: { xs: 18, md: 32 },
+                zIndex: 2,
+                color: "#fff",
+                bgcolor: "rgba(255,255,255,.12)",
+                border: "1px solid rgba(255,255,255,.25)",
+                backdropFilter: "blur(8px)",
+                "&:hover": {
+                  bgcolor: "rgba(255,255,255,.2)",
+                },
+              }}
+            >
+              {muted ? <VolumeOffIcon /> : <VolumeUpIcon />}
+            </IconButton>
+          </Tooltip>
+        )}
+
         <Box
           component="video"
           ref={videoRef}
