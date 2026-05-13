@@ -478,7 +478,7 @@ export function* allServicos() {
   }
 }
 
-export function* checkUser(email) {
+export function* checkUser({email}) {
   try {
     if (!email) throw new Error("Email ausente no checkUser");
 

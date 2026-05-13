@@ -16,6 +16,7 @@ import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 import GavelIcon from "@mui/icons-material/Gavel";
 import PrivacyTipIcon from "@mui/icons-material/PrivacyTip";
 import SecurityIcon from "@mui/icons-material/Security";
+import capaFundo from "../../assets/capa_fundo.png";
 
 const secoes = [
   {
@@ -87,15 +88,16 @@ const secoes = [
 
 const TermosDeServico = () => {
   return (
-    <Box sx={{
-      minHeight: "100vh",
-      py: 6,
-      backgroundImage: 'url("/images/salon-background.jpg")', // mesmo do login/fale conosco
-      backgroundSize: "cover",
-      backgroundPosition: "center",
-      backgroundRepeat: "no-repeat",
-      position: "relative",
-    }}>
+    <Box
+      sx={{
+        minHeight: "100dvh",
+        backgroundImage: `linear-gradient(rgba(0,0,0,.42), rgba(0,0,0,.58)), url(${capaFundo})`,
+        backgroundSize: "cover",
+        backgroundPosition: "center",
+        backgroundRepeat: "no-repeat",
+        backgroundAttachment: { xs: "scroll", md: "fixed" },
+        padding: 5
+      }}>
       {/* Botão no extremo superior esquerdo */}
       <Tooltip title="Voltar para início">
         <IconButton
@@ -106,8 +108,8 @@ const TermosDeServico = () => {
             top: 8,
             left: 8,
             zIndex: 9999,
-            bgcolor: "rgba(255,255,255,0.95)",
-            "&:hover": { bgcolor: "#fff" },
+            bgcolor: "linear-gradient(135deg,hsl(185, 80.50%, 22.20%) 0%, #0a3f44 100%)",
+            "&:hover": { bgcolor: "#000" },
             boxShadow: 2,
           }}
         >
@@ -141,7 +143,7 @@ const TermosDeServico = () => {
             </Stack>
           </Box>
 
-          <CardContent sx={{ p: 3 }}>
+          <CardContent sx={{ p: 3, background: "#000" }}>
             <Alert severity="info" sx={{ mb: 3 }}>
               Este documento é um modelo robusto para publicação. Para máxima conformidade,
               recomenda-se revisão jurídica especializada conforme seu negócio.

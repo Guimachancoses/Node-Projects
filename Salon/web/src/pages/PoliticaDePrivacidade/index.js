@@ -18,6 +18,8 @@ import PrivacyTipIcon from "@mui/icons-material/PrivacyTip";
 import SecurityIcon from "@mui/icons-material/Security";
 import GavelIcon from "@mui/icons-material/Gavel";
 
+import capaFundo from "../../assets/capa_fundo.png";
+
 const empresa = {
   razaoSocial: "GUIMAC TECH SOLUTIONS LTDA",
   cnpj: "66.472.231/0001-06",
@@ -96,15 +98,17 @@ const secoes = [
 
 const PoliticaDePrivacidade = () => {
   return (
-    <Box sx={{
-      minHeight: "100vh",
-      py: 6,
-      backgroundImage: 'url("/images/salon-background.jpg")', // mesmo do login/fale conosco
-      backgroundSize: "cover",
-      backgroundPosition: "center",
-      backgroundRepeat: "no-repeat",
-      position: "relative",
-    }}>
+    <Box
+      sx={{
+        minHeight: "100dvh",
+        backgroundImage: `linear-gradient(rgba(0,0,0,.42), rgba(0,0,0,.58)), url(${capaFundo})`,
+        backgroundSize: "cover",
+        backgroundPosition: "center",
+        backgroundRepeat: "no-repeat",
+        backgroundAttachment: { xs: "scroll", md: "fixed" },
+        padding: 5
+      }}
+    >
       {/* Botão no extremo superior esquerdo */}
       <Tooltip title="Voltar para início">
         <IconButton
@@ -115,8 +119,8 @@ const PoliticaDePrivacidade = () => {
             top: 8,
             left: 8,
             zIndex: 9999,
-            bgcolor: "rgba(255,255,255,0.95)",
-            "&:hover": { bgcolor: "#fff" },
+            bgcolor: "linear-gradient(135deg,hsl(185, 80.50%, 22.20%) 0%, #0a3f44 100%)",
+            "&:hover": { bgcolor: "#000" },
             boxShadow: 2,
           }}
         >
@@ -149,7 +153,7 @@ const PoliticaDePrivacidade = () => {
             </Stack>
           </Box>
 
-          <CardContent sx={{ p: 3 }}>
+          <CardContent sx={{ p: 3, background: "#000" }}>
             <Alert severity="info" sx={{ mb: 3 }}>
               Esta política foi estruturada para boas práticas de conformidade. Recomendamos revisão jurídica antes da publicação final.
             </Alert>

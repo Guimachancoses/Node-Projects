@@ -1,7 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { Routes, Route, Navigate, Outlet, useLocation } from "react-router-dom";
 import { SignedIn, SignedOut } from "@clerk/clerk-react";
-import { useSelector } from "react-redux";
 
 import SplashScreen from "./components/SplashScreen";
 
@@ -21,7 +20,7 @@ import Empresa from "./pages/Empresa";
 import Empresas from "./pages/Empresas";
 import "./styles.css";
 
-const SPLASH_DURATION = 7500;
+const SPLASH_DURATION = 8000;
 
 const privatePaths = [
   "/agendamentos",
@@ -33,25 +32,6 @@ const privatePaths = [
   "/empresa",
   "/empresas",
 ];
-
-const getUserStore = (userRaw) => userRaw?.user ?? userRaw ?? {};
-
-const isUserLoaded = (user) =>
-  Boolean(user?.colaboradorId || user?._id || user?.vinculoId || user?.email);
-
-const getInitialPrivatePath = (user) =>
-  user?.funcao === "yoda" ? "/empresas" : "/agendamentos";
-
-const SignedInRedirect = () => {
-  const { user: userRaw } = useSelector((state) => state.colaborador);
-  const userStore = getUserStore(userRaw);
-
-  if (!isUserLoaded(userStore)) {
-    return <SplashScreen />;
-  }
-
-  return <Navigate to={getInitialPrivatePath(userStore)} replace />;
-};
 
 const PrivateRoute = ({ toggleTheme, colorMode }) => (
   <>
@@ -70,10 +50,29 @@ const PrivateRoute = ({ toggleTheme, colorMode }) => (
 const Main = ({ toggleTheme, colorMode }) => {
   const location = useLocation();
   const previousPathRef = useRef(location.pathname);
-  const [showSplash, setShowSplash] = useState(false);
+  const initialSplashDoneRef = useRef(false);
+
+  const [showSplash, setShowSplash] = useState(location.pathname === "/");
   const [displayLocation, setDisplayLocation] = useState(location);
 
   useEffect(() => {
+    if (initialSplashDoneRef.current) return;
+    if (location.pathname !== "/") {
+      initialSplashDoneRef.current = true;
+      return;
+    }
+
+    const timeout = setTimeout(() => {
+      initialSplashDoneRef.current = true;
+      setShowSplash(false);
+    }, SPLASH_DURATION);
+
+    return () => clearTimeout(timeout);
+  }, [location.pathname]);
+
+  useEffect(() => {
+    if (!initialSplashDoneRef.current) return;
+
     const previousPath = previousPathRef.current;
     const nextPath = location.pathname;
 
@@ -111,7 +110,7 @@ const Main = ({ toggleTheme, colorMode }) => {
             </SignedOut>
 
             <SignedIn>
-              <SignedInRedirect />
+              <Navigate to="/agendamentos" replace />
             </SignedIn>
           </>
         }
@@ -138,7 +137,7 @@ const Main = ({ toggleTheme, colorMode }) => {
         element={
           <>
             <SignedIn>
-              <SignedInRedirect />
+              <Navigate to="/agendamentos" replace />
             </SignedIn>
 
             <SignedOut>
