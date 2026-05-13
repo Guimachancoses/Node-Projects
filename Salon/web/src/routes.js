@@ -1,5 +1,8 @@
-import { Routes, Route, Navigate, Outlet } from "react-router-dom";
+import { useEffect, useRef, useState } from "react";
+import { Routes, Route, Navigate, Outlet, useLocation } from "react-router-dom";
 import { SignedIn, SignedOut } from "@clerk/clerk-react";
+import { useSelector } from "react-redux";
+import SplashScreen from "./components/SplashScreen";
 
 import Login from "./pages/Login";
 import Agendamentos from "./pages/Agendamentos";
@@ -14,10 +17,22 @@ import TermosDeServico from "./pages/TermosDeServico";
 import PoliticaDePrivacidade from "./pages/PoliticaDePrivacidade";
 import ForgotPassword from "./pages/ForgotPassword";
 import Empresa from "./pages/Empresa";
-import Empresas from "./pages/Empresas"
+import Empresas from "./pages/Empresas";
 import "./styles.css";
 
-// Guard de rota privada
+const SPLASH_DURATION = 7500;
+
+const privatePaths = [
+  "/agendamentos",
+  "/clientes",
+  "/colaboradores",
+  "/servicos",
+  "/horarios",
+  "/account",
+  "/empresa",
+  "/empresas",
+];
+
 const PrivateRoute = ({ toggleTheme, colorMode }) => (
   <>
     <SignedIn>
@@ -33,8 +48,46 @@ const PrivateRoute = ({ toggleTheme, colorMode }) => (
 );
 
 const Main = ({ toggleTheme, colorMode }) => {
+  const location = useLocation();
+  const previousPathRef = useRef(location.pathname);
+  const [showSplash, setShowSplash] = useState(false);
+  const [displayLocation, setDisplayLocation] = useState(location);
+
+  const { user: userRaw } = useSelector((state) => state.colaborador);
+  const userStore = userRaw?.user ?? userRaw;
+  const isYoda = userStore?.funcao === "yoda";
+  const initialPrivatePath = isYoda ? "/empresas" : "/agendamentos";
+
+
+  useEffect(() => {
+    const previousPath = previousPathRef.current;
+    const nextPath = location.pathname;
+
+    const isFromHome = previousPath === "/";
+    const isGoingToPrivatePage = privatePaths.includes(nextPath);
+
+    if (isFromHome && isGoingToPrivatePage) {
+      setShowSplash(true);
+
+      const timeout = setTimeout(() => {
+        setDisplayLocation(location);
+        setShowSplash(false);
+        previousPathRef.current = nextPath;
+      }, SPLASH_DURATION);
+
+      return () => clearTimeout(timeout);
+    }
+
+    setDisplayLocation(location);
+    previousPathRef.current = nextPath;
+  }, [location]);
+
+  if (showSplash) {
+    return <SplashScreen />;
+  }
+
   return (
-    <Routes>
+    <Routes location={displayLocation}>
       {/* Públicas */}
       <Route
         path="/"
@@ -43,12 +96,15 @@ const Main = ({ toggleTheme, colorMode }) => {
             <SignedOut>
               <Login />
             </SignedOut>
+
             <SignedIn>
-              <Navigate to="/agendamentos" replace />
+              <Navigate to={initialPrivatePath} replace />
             </SignedIn>
+
           </>
         }
       />
+
       <Route path="/fale-conosco" element={<FaleConosco />} />
       <Route path="/termos-de-servico" element={<TermosDeServico />} />
       <Route path="/politica-de-privacidade" element={<PoliticaDePrivacidade />} />
@@ -72,8 +128,10 @@ const Main = ({ toggleTheme, colorMode }) => {
         element={
           <>
             <SignedIn>
-              <Navigate to="/agendamentos" replace />
+              <Navigate to={initialPrivatePath} replace />
             </SignedIn>
+
+
             <SignedOut>
               <Navigate to="/" replace />
             </SignedOut>

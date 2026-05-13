@@ -66,7 +66,7 @@ export default function Layout({ toggleTheme }) {
     dispatch(loadMyAccountRequest(email));
   }, [dispatch, isLoaded, isSignedIn, email, userStore?._id, userStore?.vinculoId]);
 
-  const isYoda = userRaw?.funcao === "yoda";
+  const isYoda = userStore?.funcao === "yoda";
 
   const navItems = [
     ...(!isYoda ? [{ text: "Agendamentos", icon: <CalendarTodayIcon />, path: "/agendamentos" }] : []),
@@ -283,8 +283,16 @@ export default function Layout({ toggleTheme }) {
 
             ...(isYoda
               ? {
-                width: { xs: 96, md: 140 },
-                height: 140,
+                width: {
+                  xs: 88,
+                  sm: 104,
+                  md: collapsed ? 48 : 140,
+                },
+                height: {
+                  xs: 88,
+                  sm: 104,
+                  md: collapsed ? 48 : 140,
+                },
                 borderRadius: "50%",
                 objectFit: "cover",
                 border: "3px solid rgba(255,255,255,0.35)",
@@ -295,6 +303,7 @@ export default function Layout({ toggleTheme }) {
                 maxWidth: 180,
                 px: 2,
               }),
+
           }}
         />
       )}
