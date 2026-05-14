@@ -428,15 +428,17 @@ export function* unlinkColaborador({ vinculoId }) {
 export function* allServicos() {
   const { form, user } = yield select((state) => state.colaborador);
 
+  const isYoda = user?.funcao === "yoda";
   const salaoId = user?.salaoId;
 
   try {
     yield put(updateColaborador({ form: { ...form, filtering: true } }));
 
-    const { data: res } = yield call(
-      api.get,
-      `/salao/servicos/${salaoId}`
-    );
+    const endpoint = isYoda
+      ? "/servico/all"
+      : `/salao/servoco/${encodeURIComponent(salaoId)}`;
+
+    const { data: res } = yield call(api.get, endpoint);
 
     yield put(updateColaborador({ form: { ...form, filtering: false } }));
 
