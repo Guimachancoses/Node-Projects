@@ -88,6 +88,8 @@ const Clientes = () => {
     (state) => state.cliente
   );
 
+  const isDark = theme.palette.mode === "dark"
+
   const { user: userRaw } = useSelector((state) => state.colaborador);
 
   const alerta = useSelector((state) => state.cliente.alerta);
@@ -522,7 +524,7 @@ const Clientes = () => {
     "& .MuiChip-deleteIcon:hover": { color: "#fff" },
   };
 
-  console.log("clientes", clientes)
+  //console.log("clientes", clientes)
 
   return (
     <div className="col">
@@ -564,7 +566,7 @@ const Clientes = () => {
           >
             <Tooltip title="Filtros avançados">
               <IconButton onClick={() => setFilterOpen(true)}>
-                <FilterListIcon sx={{ color: "#fff" }} />
+                <FilterListIcon sx={{  color: isDark ? "#fff" : "var(--primary-light)" }} />
               </IconButton>
             </Tooltip>
             <TextField
@@ -576,16 +578,17 @@ const Clientes = () => {
                 startAdornment: (
                   <SearchIcon
                     fontSize="small"
-                    style={{ marginRight: 8, opacity: 0.85, color: "#fff" }}
+                    style={{ marginRight: 8, opacity: 0.85,  color: isDark ? "#fff" : "var(--primary-light)" }}
                   />
                 ),
               }}
               sx={{
                 minWidth: { xs: "100%", sm: 320 },
                 "& .MuiOutlinedInput-root": {
-                  color: "#fff",
+                   color: isDark ? "#fff" : "var(--primary-light)",
                   "& fieldset": {
-                    borderColor: "rgba(255, 255, 255, 0.14)", // borda padrão
+                    borderColor: isDark ? "#fff" : "var(--primary-light)", // borda padrão
+                    borderRadius: 2
                   },
                   "&:hover fieldset": {
                     borderColor: "primary.main", // hover
@@ -595,16 +598,16 @@ const Clientes = () => {
                   },
                 },
                 "& .MuiInputBase-input::placeholder": {
-                  color: "rgba(255,255,255,0.9)",
+                  color: isDark ? "#fff" : "var(--primary-light)",
                   opacity: 1,
                 },
               }}
             />
 
             <Button
-              sx={{ color: "#fff" }}
+              sx={{  color: isDark ? "#fff" : "var(--primary-light)" ,borderColor: isDark ? "#fff" : "var(--primary-light)" }}
               variant="outlined"
-              startIcon={<ClearIcon sx={{ color: "#fff" }} />}
+              startIcon={<ClearIcon sx={{  color: isDark ? "#fff" : "var(--primary-light)" }} />}
               onClick={() => {
                 setQuickSearch("");
                 setFiltros({ nome: "", email: "", telefone: "", chatbotStatus: "" });
@@ -612,16 +615,17 @@ const Clientes = () => {
             >
               Limpar filtros
             </Button>
-
-            <Button
-              variant="outlined"
-              color="error"
-              disabled={selectedIds.length === 0}
-              onClick={() => handleOpenDialog(selectedIds)}
-              sx={{ ml: { sm: "auto" } }}
-            >
-              Excluir {selectedIds.length > 0 ? `(${selectedIds.length})` : ""}
-            </Button>
+            {selectedIds?.length > 0 && (
+              <Button
+                variant="outlined"
+                color="error"
+                disabled={selectedIds.length === 0}
+                onClick={() => handleOpenDialog(selectedIds)}
+                sx={{ ml: { sm: "auto" } }}
+              >
+                Excluir {selectedIds.length > 0 ? `(${selectedIds.length})` : ""}
+              </Button>
+            )}
           </Stack>
         )}
         onRowClick={(cliente) => {

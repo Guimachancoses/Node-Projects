@@ -97,6 +97,8 @@ const Colaboradores = () => {
   const { user: userStore, colaborador, colaboradores, behavior, form, components, servicos } =
     useSelector((state) => state.colaborador);
 
+  const isDark = theme.palette.mode === "dark"
+
   const isYoda = userStore?.funcao === "yoda";
 
   const { empresas: empresasList = [] } = useSelector((state) => state.empresas || {});
@@ -737,7 +739,7 @@ const Colaboradores = () => {
           >
             <Tooltip title="Filtros avançados">
               <IconButton onClick={() => setFilterOpen(true)}>
-                <FilterListIcon sx={{ color: "#fff" }} />
+                <FilterListIcon sx={{  color: isDark ? "#fff" : "var(--primary-light)" }} />
               </IconButton>
             </Tooltip>
 
@@ -750,16 +752,17 @@ const Colaboradores = () => {
                 startAdornment: (
                   <SearchIcon
                     fontSize="small"
-                    style={{ marginRight: 8, opacity: 0.85, color: "#fff" }}
+                    style={{ marginRight: 8, opacity: 0.85,  color: isDark ? "#fff" : "var(--primary-light)" }}
                   />
                 ),
               }}
               sx={{
                 minWidth: { xs: "100%", sm: 320 },
                 "& .MuiOutlinedInput-root": {
-                  color: "#fff",
+                  color: isDark ? "#fff" : "var(--primary-light)",
                   "& fieldset": {
-                    borderColor: "rgba(255, 255, 255, 0.1)", // borda padrão
+                    borderColor: isDark ? "#fff" : "var(--primary-light)", // borda padrão
+                    borderRadius: 2
                   },
                   "&:hover fieldset": {
                     borderColor: "primary.main", // hover
@@ -769,7 +772,7 @@ const Colaboradores = () => {
                   },
                 },
                 "& .MuiInputBase-input::placeholder": {
-                  color: "rgba(255,255,255,0.9)",
+                  color: isDark ? "#fff" : "var(--primary-light)",
                   opacity: 1,
                 },
               }}
@@ -777,25 +780,26 @@ const Colaboradores = () => {
 
             <Button
               variant="outlined"
-              startIcon={<ClearIcon sx={{ color: "#fff" }} />}
+              startIcon={<ClearIcon sx={{  color: isDark ? "#fff" : "var(--primary-light)" }} />}
               onClick={() => {
                 setQuickSearch("");
                 setFiltros({ nome: "", email: "", telefone: "", empresaId: "" });
               }}
-              sx={{ color: "#fff" }}
+              sx={{  color: isDark ? "#fff" : "var(--primary-light)",borderColor: isDark ? "#fff" : "var(--primary-light)" }}
             >
               Limpar filtros
             </Button>
-
-            <Button
-              variant="outlined"
-              color="error"
-              disabled={selectedIds.length === 0}
-              onClick={() => handleOpenDialog(selectedIds)}
-              sx={{ ml: { sm: "auto" } }}
-            >
-              Excluir {selectedIds.length > 0 ? `(${selectedIds.length})` : ""}
-            </Button>
+            {selectedIds?.length > 0 && (
+              <Button
+                variant="outlined"
+                color="error"
+                disabled={selectedIds.length === 0}
+                onClick={() => handleOpenDialog(selectedIds)}
+                sx={{ ml: { sm: "auto" } }}
+              >
+                Excluir {selectedIds.length > 0 ? `(${selectedIds.length})` : ""}
+              </Button>
+            )}
           </Stack>
         )}
         onRowClick={(row) => {

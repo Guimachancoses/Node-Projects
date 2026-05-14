@@ -19,9 +19,9 @@ import {
   MenuItem,
   Stack,
   useMediaQuery,
+  useTheme
 } from "@mui/material";
 import MuiAlert from "@mui/material/Alert";
-import { useTheme } from "@mui/material/styles";
 
 import CustomDrawer from "../../components/Drawer";
 import CustomDialog from "../../components/DialogAlert";
@@ -58,6 +58,7 @@ const Agendamentos = () => {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
   const isTablet = useMediaQuery(theme.breakpoints.between("sm", "md"));
+  const isDark = theme.palette.mode === "dark"
 
   const views = useMemo(() => {
     if (isMobile) return { day: true, agenda: true };
@@ -252,6 +253,7 @@ const Agendamentos = () => {
       theme.palette.mode === "dark"
         ? "rgba(11, 16, 25, 0.78)"
         : "rgba(255, 255, 255, 0.90)",
+
     backdropFilter: "blur(6px)",
     color: theme.palette.mode === "dark" ? "#f3f6fb" : "#0f172a",
     height: isMobile ? "calc(100dvh - 230px)" : "calc(100dvh - 220px)",
@@ -259,11 +261,22 @@ const Agendamentos = () => {
     borderRadius: 12,
     boxShadow: theme.shadows[3],
     padding: isMobile ? 4 : 8,
-    border: `1px solid ${
-      theme.palette.mode === "dark"
+
+    border: `1px solid ${theme.palette.mode === "dark"
         ? "rgba(255,255,255,0.14)"
         : "rgba(0,0,0,0.08)"
-    }`,
+      }`,
+
+    transition: "all 0.2s ease",
+
+    "&:hover": {
+      transform: "translateY(-2px)",
+      boxShadow: theme.shadows[8],
+      borderColor:
+        theme.palette.mode === "dark"
+          ? "rgba(255,255,255,0.28)"
+          : "rgba(0,0,0,0.18)",
+    },
   };
 
   const servicosOptions = (servicos || []).map((s) => ({
@@ -384,7 +397,10 @@ const Agendamentos = () => {
       >
         <Typography
           variant={isMobile ? "h6" : "h5"}
-          sx={{ color: "white", fontWeight: 700 }}
+          sx={{
+            color: isDark ? "#fff" : "var(--primary-light)",
+            fontWeight: 700,
+          }}
         >
           Agendamentos
         </Typography>

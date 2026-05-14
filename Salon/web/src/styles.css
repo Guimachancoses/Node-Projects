@@ -48,12 +48,19 @@ body {
 }
 
 .rbc-btn-group button:hover {
-  background-color: #007bff; /* Exemplo de cor para hover */
+  filter: brightness(1.1);
+  color: #fff;
+  background-color: var(--primary); /* Exemplo de cor para hover */
 }
 
 .rbc-btn-group button:focus {
   outline: none;
   box-shadow: none;
+}
+
+.rbc-toolbar button.rbc-active {
+  background-color: var(--primary) !important;
+  color: #fff !important;
 }
 
 :root {
@@ -458,4 +465,24 @@ body.light .rbc-day-slot .rbc-time-slot {
 
 body.light .rbc-time-gutter .rbc-label {
   color: #334155 !important;
+}
+
+/* DIA ATUAL */
+.rbc-today {
+  background-color: var(--primary-light) !important;
+}
+
+/* DARK MODE */
+body.dark .rbc-today {
+  background-color: rgba(2, 85, 93, 0.35) !important;
+}
+
+/* LIGHT MODE */
+body.light .rbc-today {
+  background-color: rgba(2, 85, 93, 0.12) !important;
+}
+
+.rbc-header.rbc-today {
+  background-color: var(--primary) !important;
+  color: #fff !important;
 }

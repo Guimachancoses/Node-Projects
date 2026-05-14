@@ -23,8 +23,8 @@ import {
   Divider,
   useMediaQuery,
   CircularProgress,
+  useTheme
 } from "@mui/material";
-import { useTheme } from "@mui/material/styles";
 import KeyboardArrowDownIcon from "@mui/icons-material/KeyboardArrowDown";
 import KeyboardArrowUpIcon from "@mui/icons-material/KeyboardArrowUp";
 import PropTypes from "prop-types";
@@ -59,6 +59,7 @@ const TableComponent = ({
 }) => {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
+  const isDark = theme.palette.mode === "dark"
 
   const [expandedRowId, setExpandedRowId] = React.useState(null);
   const [order, setOrder] = React.useState("asc");
@@ -104,7 +105,7 @@ const TableComponent = ({
         gap={1.5}
         mb={2}
       >
-        <Typography variant="h5" sx={{ color: "white", fontWeight: 700 }}>
+        <Typography variant="h5" sx={{ color: isDark ? "#fff" : "var(--primary-light)", fontWeight: 700 }}>
           {title}
         </Typography>
 

@@ -73,6 +73,7 @@ const Horarios = () => {
 
   const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
   const isTablet = useMediaQuery(theme.breakpoints.between("sm", "md"));
+  const isDark = theme.palette.mode === "dark"
 
   const { horario, horarios, servicos, colaboradores, components, behavior, alerta } =
     useSelector((state) => state.horario);
@@ -567,7 +568,12 @@ const Horarios = () => {
         gap={1.5}
         mb={2}
       >
-        <Typography variant={isMobile ? "h6" : "h5"} sx={{ color: "white", fontWeight: 700 }}>
+        <Typography
+          variant={isMobile ? "h6" : "h5"}
+          sx={{
+            color: isDark ? "#fff" : "var(--primary-light)",
+            fontWeight: 700,
+          }}>
           Horários de Atendimento
         </Typography>
 

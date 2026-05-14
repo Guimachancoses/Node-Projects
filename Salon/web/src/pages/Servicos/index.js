@@ -81,7 +81,7 @@ const Servicos = () => {
   const { servico, servicos, behavior, form, components } = useSelector(
     (state) => state.servico
   );
-
+  const isDark = theme.palette.mode === "dark"
   const [filterOpen, setFilterOpen] = useState(false);
 
   const [quickSearch, setQuickSearch] = useState("");
@@ -474,17 +474,27 @@ const Servicos = () => {
     !requiredFilled ||
     (behavior === "update" && !hasChanges);
 
+  const chipSx = {
+    bgcolor: "rgba(2,85,93,0.25)",
+    color: "#d9f7ff",
+    border: "1px solid rgba(2,85,93,0.85)",
+    "& .MuiChip-deleteIcon": { color: "#9fe8ff" },
+    "& .MuiChip-deleteIcon:hover": { color: "#fff" },
+  };
+
+
   return (
     <div className="col">
       <Stack direction="row" spacing={1} useFlexGap flexWrap="wrap" sx={{ mb: 1 }}>
         {quickSearch && (
-          <Chip label={`Busca: ${quickSearch}`} onDelete={() => setQuickSearch("")} />
+          <Chip label={`Busca: ${quickSearch}`} onDelete={() => setQuickSearch("")} sx={chipSx}/>
         )}
 
         {filtros.titulo && (
           <Chip
             label={`Título: ${filtros.titulo}`}
             onDelete={() => setFiltros((p) => ({ ...p, titulo: "" }))}
+            sx={chipSx}
           />
         )}
 
@@ -492,6 +502,7 @@ const Servicos = () => {
           <Chip
             label={`Tipo: ${filtros.tipoServico}`}
             onDelete={() => setFiltros((p) => ({ ...p, tipoServico: "" }))}
+            sx={chipSx}
           />
         )}
 
@@ -499,6 +510,7 @@ const Servicos = () => {
           <Chip
             label={`Status: ${filtros.status === "A" ? "Ativo" : "Inativo"}`}
             onDelete={() => setFiltros((p) => ({ ...p, status: "" }))}
+            sx={chipSx}
           />
         )}
 
@@ -506,6 +518,7 @@ const Servicos = () => {
           <Chip
             label={`Preço mín.: R$ ${Number(filtros.precoMin).toFixed(2)}`}
             onDelete={() => setFiltros((p) => ({ ...p, precoMin: "" }))}
+            sx={chipSx}
           />
         )}
 
@@ -513,6 +526,7 @@ const Servicos = () => {
           <Chip
             label={`Preço máx.: R$ ${Number(filtros.precoMax).toFixed(2)}`}
             onDelete={() => setFiltros((p) => ({ ...p, precoMax: "" }))}
+            sx={chipSx}
           />
         )}
       </Stack>
@@ -533,7 +547,7 @@ const Servicos = () => {
           >
             <Tooltip title="Filtros avançados">
               <IconButton onClick={() => setFilterOpen(true)}>
-                <FilterListIcon sx={{ color: "#fff" }} />
+                <FilterListIcon sx={{ color: isDark ? "#fff" : "var(--primary-light)", borderColor: isDark ? "#fff" : "var(--primary-light)" }} />
               </IconButton>
             </Tooltip>
 
@@ -546,16 +560,17 @@ const Servicos = () => {
                 startAdornment: (
                   <SearchIcon
                     fontSize="small"
-                    style={{ marginRight: 8, opacity: 0.85, color: "#fff" }}
+                    style={{ marginRight: 8, opacity: 0.85, color: isDark ? "#fff" : "var(--primary-light)", borderColor: isDark ? "#fff" : "var(--primary-light)" }}
                   />
                 ),
               }}
               sx={{
                 minWidth: { xs: "100%", sm: 320 },
                 "& .MuiOutlinedInput-root": {
-                  color: "#fff",
+                  color: isDark ? "#fff" : "var(--primary-light)",
                   "& fieldset": {
-                    borderColor: "rgba(255, 255, 255, 0.1)", // borda padrão
+                    borderColor: isDark ? "#fff" : "var(--primary-light)", // borda padrão
+                    borderRadius: 2
                   },
                   "&:hover fieldset": {
                     borderColor: "primary.main", // hover
@@ -565,7 +580,7 @@ const Servicos = () => {
                   },
                 },
                 "& .MuiInputBase-input::placeholder": {
-                  color: "rgba(255,255,255,0.9)",
+                  color: isDark ? "#fff" : "var(--primary-light)",
                   opacity: 1,
                 },
               }}
@@ -573,7 +588,7 @@ const Servicos = () => {
 
             <Button
               variant="outlined"
-              startIcon={<ClearIcon sx={{ color: "#fff" }} />}
+              startIcon={<ClearIcon sx={{ color: isDark ? "#fff" : "var(--primary-light)", borderColor: isDark ? "#fff" : "var(--primary-light)" }} />}
               onClick={() => {
                 setQuickSearch("");
                 setFiltros({
@@ -584,20 +599,21 @@ const Servicos = () => {
                   precoMax: "",
                 });
               }}
-              sx={{ color: "#fff" }}
+              sx={{ color: isDark ? "#fff" : "var(--primary-light)", borderColor: isDark ? "#fff" : "var(--primary-light)" }}
             >
               Limpar filtros
             </Button>
-
-            <Button
-              variant="outlined"
-              color="error"
-              disabled={selectedIds.length === 0}
-              onClick={() => handleOpenDialog(selectedIds)}
-              sx={{ ml: { sm: "auto" } }}
-            >
-              Excluir {selectedIds.length > 0 ? `(${selectedIds.length})` : ""}
-            </Button>
+            {selectedIds?.length > 0 && (
+              <Button
+                variant="outlined"
+                color="error"
+                disabled={selectedIds.length === 0}
+                onClick={() => handleOpenDialog(selectedIds)}
+                sx={{ ml: { sm: "auto" } }}
+              >
+                Excluir {selectedIds.length > 0 ? `(${selectedIds.length})` : ""}
+              </Button>
+            )}
           </Stack>
         )}
         onRowClick={(servico) => {

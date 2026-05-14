@@ -271,41 +271,41 @@ export default function Layout({ toggleTheme }) {
           sx={{ width: "100%", maxWidth: 180, height: 56, mx: "auto", mb: 2, borderRadius: 1 }}
         />
       ) : (
+        logoUrl && (
+          <Box
+            component="img"
+            src={logoUrl}
+            alt="Logo"
+            sx={{
+              display: showTextInDesktop || showTextInTemporary ? "block" : "none",
+              mx: "auto",
+              mb: 2,
 
-        <Box
-          component="img"
-          src={logoUrl}
-          alt="Logo"
-          sx={{
-            display: showTextInDesktop || showTextInTemporary ? "block" : "none",
-            mx: "auto",
-            mb: 2,
-
-            ...(isYoda
-              ? {
-                width: {
-                  xs: 88,
-                  sm: 104,
-                  md: collapsed ? 48 : 140,
-                },
-                height: {
-                  xs: 88,
-                  sm: 104,
-                  md: collapsed ? 48 : 140,
-                },
-                borderRadius: "50%",
-                objectFit: "cover",
-                border: "3px solid rgba(255,255,255,0.35)",
-                boxShadow: "0 6px 18px rgba(0,0,0,0.25)",
-              }
-              : {
-                width: "100%",
-                maxWidth: 180,
-                px: 2,
-              }),
-
-          }}
-        />
+              ...(isYoda
+                ? {
+                  width: {
+                    xs: 88,
+                    sm: 104,
+                    md: collapsed ? 48 : 140,
+                  },
+                  height: {
+                    xs: 88,
+                    sm: 104,
+                    md: collapsed ? 48 : 140,
+                  },
+                  borderRadius: "50%",
+                  objectFit: "cover",
+                  border: "3px solid rgba(255,255,255,0.35)",
+                  boxShadow: "0 6px 18px rgba(0,0,0,0.25)",
+                }
+                : {
+                  width: "100%",
+                  maxWidth: 180,
+                  px: 2,
+                }),
+            }}
+          />
+        )
       )}
 
       <Box sx={{ opacity: 1, borderTop: `1px solid ${sidebarColors.border}`, mb: 0.5 }} />
