@@ -9,7 +9,7 @@ import { useDispatch } from "react-redux";
 import { useUser } from "@clerk/clerk-react";
 
 import { checkUser } from "../../store/modules/colaborador/actions";
-import splashVideo from "../../assets/splash/video.mp4";
+import splashVideo from "../../assets/splash/v1.mp4";
 
 export default function SplashScreen() {
   const dispatch = useDispatch();
@@ -181,16 +181,16 @@ export default function SplashScreen() {
           position: "relative",
           width: isMobile
             ? {
-              xs: "86vw",
+              xs: "78vw",
             }
             : {
               sm: "92vw",
               md: "86vw",
               lg: "78vw",
             },
-          height: isMobile ? "76dvh" : "auto",
-          maxWidth: isMobile ? "420px" : "1480px",
-          maxHeight: isMobile ? "760px" : "none",
+          height: isMobile ? "58dvh" : "auto",
+          maxWidth: isMobile ? "320px" : "1480px",
+          maxHeight: isMobile ? "580px" : "none",
           aspectRatio: isMobile ? "9 / 16" : "16 / 9",
           display: "flex",
           alignItems: "center",
@@ -236,7 +236,7 @@ export default function SplashScreen() {
           sx={{
             width: "100%",
             height: "100%",
-            objectFit: isMobile ? "cover" : "contain",
+            objectFit: isMobile ? "contain" : "contain",
             objectPosition: "center",
             display: "block",
             userSelect: "none",

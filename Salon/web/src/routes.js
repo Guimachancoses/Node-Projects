@@ -20,7 +20,7 @@ import Empresa from "./pages/Empresa";
 import Empresas from "./pages/Empresas";
 import "./styles.css";
 
-const SPLASH_DURATION = 8500;
+const SPLASH_DURATION = 9000;
 
 const privatePaths = [
   "/agendamentos",
