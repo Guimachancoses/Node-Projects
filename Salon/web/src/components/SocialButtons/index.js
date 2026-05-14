@@ -1,4 +1,4 @@
-import { useState, useCallback, useMemo } from 'react';
+import { useState, useCallback, useMemo, useEffect } from 'react';
 import { Button, CircularProgress, useMediaQuery } from '@mui/material';
 import GoogleIcon from '@mui/icons-material/Google';
 // import FacebookIcon from '@mui/icons-material/Facebook';
@@ -22,6 +22,10 @@ const SocialButton = ({ strategy, icon: Icon, color }) => {
   const { signIn } = useSignIn();
   const prefersDarkMode = useMediaQuery("(prefers-color-scheme: dark)");
 
+  useEffect(() => {
+    setIsLoading(false);
+  }, []);
+
   const oauthStrategy = useMemo(
     () => STRATEGY_MAP[strategy] || 'oauth_facebook',
     [strategy]
@@ -35,16 +39,32 @@ const SocialButton = ({ strategy, icon: Icon, color }) => {
   const onSocialLoginPress = useCallback(async () => {
     try {
       setIsLoading(true);
+
       await signIn.authenticateWithRedirect({
         strategy: oauthStrategy,
         redirectUrl: '/sign-in',
         redirectUrlComplete: '/',
       });
+
     } catch (err) {
       console.error('Error during social login:', err);
       setIsLoading(false);
     }
   }, [signIn, oauthStrategy]);
+
+  useEffect(() => {
+    const url = new URL(window.location.href);
+
+    const hasOAuthError =
+      url.searchParams.get('__clerk_status') === 'abandoned';
+
+    if (hasOAuthError) {
+      setIsLoading(false);
+
+      // opcional: limpa query params da URL
+      window.history.replaceState({}, document.title, window.location.pathname);
+    }
+  }, []);
 
   return (
     <Button
@@ -52,14 +72,59 @@ const SocialButton = ({ strategy, icon: Icon, color }) => {
       variant="outlined"
       startIcon={
         isLoading ? (
-          <CircularProgress size={20}  color={prefersDarkMode ? "#fff" : "inherit"} />
+          <CircularProgress
+            size={20}
+            sx={{
+              color: prefersDarkMode
+                ? "var(--primary-light)"
+                : "var(--primary)",
+            }}
+          />
         ) : (
-          <Icon sx={{ color }} />
+          <Icon
+            sx={{
+              color: prefersDarkMode
+                ? color
+                : color,
+            }}
+          />
         )
       }
       onClick={onSocialLoginPress}
       disabled={isLoading}
-      sx={{ mb: 1,  color: prefersDarkMode ? "var(--primary-light)" : "var(--primary)" }}
+      sx={{
+        mb: 1,
+
+        color: prefersDarkMode
+          ? "var(--primary-light)"
+          : "var(--primary)",
+
+        borderColor: prefersDarkMode
+          ? "var(--primary-light)"
+          : "var(--primary)",
+
+        "&:hover": {
+          borderColor: prefersDarkMode
+            ? "var(--primary-light)"
+            : "var(--primary)",
+
+          backgroundColor: prefersDarkMode
+            ? "rgba(79,153,148,0.08)"
+            : "rgba(2,85,93,0.08)",
+        },
+
+        "&.Mui-disabled": {
+          color: prefersDarkMode
+            ? "var(--primary-light)"
+            : "var(--primary)",
+
+          borderColor: prefersDarkMode
+            ? "var(--primary-light)"
+            : "var(--primary)",
+
+          opacity: 0.7,
+        },
+      }}
     >
       {getButtonText()}
     </Button>
