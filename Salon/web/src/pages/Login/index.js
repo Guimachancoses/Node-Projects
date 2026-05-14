@@ -11,7 +11,8 @@ import {
   Avatar,
   Snackbar,
   Slide,
-  CircularProgress
+  CircularProgress,
+  useMediaQuery
 } from "@mui/material";
 import MuiAlert from "@mui/material/Alert";
 import { useUser, useClerk, useSignIn } from "@clerk/clerk-react";
@@ -50,6 +51,7 @@ const Login = () => {
   const { isLoaded: userLoaded, isSignedIn } = useUser();
   const { setActive, user } = useClerk();
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const prefersDarkMode = useMediaQuery("(prefers-color-scheme: dark)");
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -200,8 +202,22 @@ const Login = () => {
               gap: 2,
               width: "100%",
               borderRadius: { xs: 2, sm: 3 },
-              backgroundColor: "rgba(255, 255, 255, 0.94)",
-              backdropFilter: "blur(2px)",
+
+              backgroundColor: prefersDarkMode
+                ? "rgba(18, 18, 18, 0.88)"
+                : "rgba(255, 255, 255, 0.94)",
+
+              color: prefersDarkMode ? "#fff" : "#000",
+
+              backdropFilter: "blur(12px)",
+
+              border: prefersDarkMode
+                ? "1px solid rgba(255,255,255,0.08)"
+                : "1px solid rgba(255,255,255,0.35)",
+
+              boxShadow: prefersDarkMode
+                ? "0 8px 32px rgba(0,0,0,0.45)"
+                : "0 8px 32px rgba(0,0,0,0.12)",
             }}
           >
             <Box
@@ -225,7 +241,7 @@ const Login = () => {
               <Typography
                 component="h1"
                 sx={{
-                  color: "var(--primary)",
+                  color: prefersDarkMode ? "var(--primary-light)" : "var(--primary)",
                   fontWeight: 700,
                   fontSize: { xs: "1.25rem", sm: "1.5rem" },
                 }}
@@ -247,20 +263,22 @@ const Login = () => {
                 helperText={emailInvalid ? "Digite um email válido." : ""}
                 sx={{
                   "& .MuiInputBase-input": {
-                    color: "var(--primary)",
+                    color: prefersDarkMode ? "var(--primary-light)" : "var(--primary)",
                   },
                   "& .MuiInputLabel-root": {
-                    color: "var(--primary)",
+                    color: prefersDarkMode
+                      ? "var(--primary-light)"
+                      : "var(--primary)",
                   },
                   "& .MuiOutlinedInput-root": {
                     "& fieldset": {
-                      borderColor: "var(--primary)",
+                      borderColor: prefersDarkMode ? "var(--primary-light)" : "var(--primary)",
                     },
                     "&:hover fieldset": {
-                      borderColor: "var(--primary)",
+                      borderColor: prefersDarkMode ? "var(--primary-light)" : "var(--primary)",
                     },
                     "&.Mui-focused fieldset": {
-                      borderColor: "var(--primary)",
+                      borderColor: prefersDarkMode ? "var(--primary-light)" : "var(--primary)",
                     },
                   },
                 }}
@@ -277,20 +295,22 @@ const Login = () => {
                 onChange={(e) => setPassword(e.target.value)}
                 sx={{
                   "& .MuiInputBase-input": {
-                    color: "var(--primary)",
+                    color: prefersDarkMode ? "var(--primary-light)" : "var(--primary)",
                   },
                   "& .MuiInputLabel-root": {
-                    color: "var(--primary)",
+                    color: prefersDarkMode
+                      ? "var(--primary-light)"
+                      : "var(--primary)",
                   },
                   "& .MuiOutlinedInput-root": {
                     "& fieldset": {
-                      borderColor: "var(--primary)",
+                      borderColor: prefersDarkMode ? "var(--primary-light)" : "var(--primary)",
                     },
                     "&:hover fieldset": {
-                      borderColor: "var(--primary)",
+                      borderColor: prefersDarkMode ? "var(--primary-light)" : "var(--primary)",
                     },
                     "&.Mui-focused fieldset": {
-                      borderColor: "var(--primary)",
+                      borderColor: prefersDarkMode ? "var(--primary-light)" : "var(--primary)",
                     },
                   },
                 }}
@@ -300,7 +320,7 @@ const Login = () => {
                 component="button"
                 type="button"
                 variant="body2"
-                sx={{ display: "block", mt: 1, mb: 2 }}
+                sx={{ display: "block", mt: 1, mb: 2,  color: prefersDarkMode ? "var(--primary-light)" : "var(--primary)" }}
                 onClick={(e) => {
                   e.preventDefault();
                   e.stopPropagation();
@@ -320,21 +340,21 @@ const Login = () => {
                 startIcon={isSubmitting ? <CircularProgress size={18} color="inherit" /> : null}
                 sx={{
                   mt: 1,
-                  backgroundColor: "var(--primary)",
+                  backgroundColor: prefersDarkMode ? "var(--primary-light)" : "var(--primary)",
                   color: "#fff",
                   borderRadius: "12px",
                   padding: "10px 20px",
                   textTransform: "none",
                   fontWeight: 600,
-                  boxShadow: "0 4px 12px rgba(0,0,0,0.15)",
+                  boxShadow: prefersDarkMode ? "0 4px 12px rgba(255, 255, 255, 0.15)" : "0 4px 12px rgba(0,0,0,0.15)",
 
                   "&:hover": {
-                    backgroundColor: "var(--primary)",
+                    backgroundColor: prefersDarkMode ? "var(--primary-light)" : "var(--primary)",
                   },
 
                   "&.Mui-disabled": {
-                    backgroundColor: "rgba(0, 0, 0, 0.12)",
-                    color: "rgba(0, 0, 0, 0.4)",
+                    backgroundColor: prefersDarkMode ? "rgba(255, 255, 255, 0.12)" : "rgba(0, 0, 0, 0.12)",
+                    color: prefersDarkMode ? "rgba(255, 255, 255, 0.4)" : "rgba(0, 0, 0, 0.4)",
                     boxShadow: "none",
                     cursor: "not-allowed",
                   },
@@ -347,9 +367,9 @@ const Login = () => {
             <Divider
               sx={{
                 my: 1.5,
-                color: "var(--primary)",
+                color: prefersDarkMode ? "var(--primary-light)" : "var(--primary)",
                 "&::before, &::after": {
-                  borderColor: "var(--primary)",
+                  borderColor: prefersDarkMode ? "var(--primary-light)" : "var(--primary)",
                 },
               }}
             >

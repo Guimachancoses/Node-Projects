@@ -12,6 +12,7 @@ import {
   Snackbar,
   Slide,
   CircularProgress,
+  useMediaQuery
 } from "@mui/material";
 import MuiAlert from "@mui/material/Alert";
 import { useSignIn, useClerk } from "@clerk/clerk-react";
@@ -42,6 +43,7 @@ const ForgotPassword = () => {
   const navigate = useNavigate();
   const { isLoaded, signIn } = useSignIn();
   const { setActive } = useClerk();
+  const prefersDarkMode = useMediaQuery("(prefers-color-scheme: dark)");
 
   const [step, setStep] = useState("email"); // email | reset
   const [email, setEmail] = useState("");
@@ -212,8 +214,22 @@ const ForgotPassword = () => {
               gap: 2,
               width: "100%",
               borderRadius: { xs: 2, sm: 3 },
-              backgroundColor: "rgba(255, 255, 255, 0.94)",
-              backdropFilter: "blur(2px)",
+
+              backgroundColor: prefersDarkMode
+                ? "rgba(18, 18, 18, 0.88)"
+                : "rgba(255, 255, 255, 0.94)",
+
+              color: prefersDarkMode ? "#fff" : "#000",
+
+              backdropFilter: "blur(12px)",
+
+              border: prefersDarkMode
+                ? "1px solid rgba(255,255,255,0.08)"
+                : "1px solid rgba(255,255,255,0.35)",
+
+              boxShadow: prefersDarkMode
+                ? "0 8px 32px rgba(0,0,0,0.45)"
+                : "0 8px 32px rgba(0,0,0,0.12)",
             }}
           >
             <Box sx={{ display: "flex", alignItems: "center", mb: 0.5 }}>
@@ -254,20 +270,22 @@ const ForgotPassword = () => {
                   helperText={emailInvalid ? "Digite um email válido." : ""}
                   sx={{
                     "& .MuiInputBase-input": {
-                      color: "var(--primary)",
+                      color: prefersDarkMode ? "var(--primary-light)" : "var(--primary)",
                     },
                     "& .MuiInputLabel-root": {
-                      color: "var(--primary)",
+                      color: prefersDarkMode
+                        ? "var(--primary-light)"
+                        : "var(--primary)",
                     },
                     "& .MuiOutlinedInput-root": {
                       "& fieldset": {
-                        borderColor: "var(--primary)",
+                        borderColor: prefersDarkMode ? "var(--primary-light)" : "var(--primary)",
                       },
                       "&:hover fieldset": {
-                        borderColor: "var(--primary)",
+                        borderColor: prefersDarkMode ? "var(--primary-light)" : "var(--primary)",
                       },
                       "&.Mui-focused fieldset": {
-                        borderColor: "var(--primary)",
+                        borderColor: prefersDarkMode ? "var(--primary-light)" : "var(--primary)",
                       },
                     },
                   }}
@@ -282,21 +300,21 @@ const ForgotPassword = () => {
                   startIcon={loading ? <CircularProgress size={18} color="inherit" /> : null}
                   sx={{
                     mt: 1,
-                    backgroundColor: "var(--primary)",
+                    backgroundColor: prefersDarkMode ? "var(--primary-light)" : "var(--primary)",
                     color: "#fff",
                     borderRadius: "12px",
                     padding: "10px 20px",
                     textTransform: "none",
                     fontWeight: 600,
-                    boxShadow: "0 4px 12px rgba(0,0,0,0.15)",
+                    boxShadow: prefersDarkMode ? "0 4px 12px rgba(255, 255, 255, 0.15)" : "0 4px 12px rgba(0,0,0,0.15)",
 
                     "&:hover": {
-                      backgroundColor: "var(--primary)",
+                      backgroundColor: prefersDarkMode ? "var(--primary-light)" : "var(--primary)",
                     },
 
                     "&.Mui-disabled": {
-                      backgroundColor: "rgba(0, 0, 0, 0.12)",
-                      color: "rgba(0, 0, 0, 0.4)",
+                      backgroundColor: prefersDarkMode ? "rgba(255, 255, 255, 0.12)" : "rgba(0, 0, 0, 0.12)",
+                      color: prefersDarkMode ? "rgba(255, 255, 255, 0.4)" : "rgba(0, 0, 0, 0.4)",
                       boxShadow: "none",
                       cursor: "not-allowed",
                     },
@@ -313,13 +331,13 @@ const ForgotPassword = () => {
                     p: 1.5,
                     borderRadius: "12px",
 
-                    border: "1px solid rgba(99, 102, 241, 0.15)",
+                    border: `1px solid ${ prefersDarkMode ? "var(--primary-light)" : "var(--primary)"}`
                   }}
                 >
                   <Typography
                     sx={{
                       fontSize: "0.92rem",
-                      color: "var(--primary)",
+                      color: prefersDarkMode ? "var(--primary-light)" : "var(--primary)",
                       fontWeight: 500,
                       lineHeight: 1.5,
                     }}
@@ -340,20 +358,22 @@ const ForgotPassword = () => {
                   onChange={(e) => setCode(e.target.value)}
                   sx={{
                     "& .MuiInputBase-input": {
-                      color: "var(--primary)",
+                      color: prefersDarkMode ? "var(--primary-light)" : "var(--primary)",
                     },
                     "& .MuiInputLabel-root": {
-                      color: "var(--primary)",
+                      color: prefersDarkMode
+                        ? "var(--primary-light)"
+                        : "var(--primary)",
                     },
                     "& .MuiOutlinedInput-root": {
                       "& fieldset": {
-                        borderColor: "var(--primary)",
+                        borderColor: prefersDarkMode ? "var(--primary-light)" : "var(--primary)",
                       },
                       "&:hover fieldset": {
-                        borderColor: "var(--primary)",
+                        borderColor: prefersDarkMode ? "var(--primary-light)" : "var(--primary)",
                       },
                       "&.Mui-focused fieldset": {
-                        borderColor: "var(--primary)",
+                        borderColor: prefersDarkMode ? "var(--primary-light)" : "var(--primary)",
                       },
                     },
                   }}
@@ -371,20 +391,22 @@ const ForgotPassword = () => {
                   helperText="Mínimo de 8 caracteres."
                   sx={{
                     "& .MuiInputBase-input": {
-                      color: "var(--primary)",
+                      color: prefersDarkMode ? "var(--primary-light)" : "var(--primary)",
                     },
                     "& .MuiInputLabel-root": {
-                      color: "var(--primary)",
+                      color: prefersDarkMode
+                        ? "var(--primary-light)"
+                        : "var(--primary)",
                     },
                     "& .MuiOutlinedInput-root": {
                       "& fieldset": {
-                        borderColor: "var(--primary)",
+                        borderColor: prefersDarkMode ? "var(--primary-light)" : "var(--primary)",
                       },
                       "&:hover fieldset": {
-                        borderColor: "var(--primary)",
+                        borderColor: prefersDarkMode ? "var(--primary-light)" : "var(--primary)",
                       },
                       "&.Mui-focused fieldset": {
-                        borderColor: "var(--primary)",
+                        borderColor: prefersDarkMode ? "var(--primary-light)" : "var(--primary)",
                       },
                     },
                   }}
@@ -399,21 +421,21 @@ const ForgotPassword = () => {
                   startIcon={loading ? <CircularProgress size={18} color="inherit" /> : null}
                   sx={{
                     mt: 1,
-                    backgroundColor: "var(--primary)",
+                    backgroundColor: prefersDarkMode ? "var(--primary-light)" : "var(--primary)",
                     color: "#fff",
                     borderRadius: "12px",
                     padding: "10px 20px",
                     textTransform: "none",
                     fontWeight: 600,
-                    boxShadow: "0 4px 12px rgba(0,0,0,0.15)",
+                    boxShadow: prefersDarkMode ? "0 4px 12px rgba(255, 255, 255, 0.15)" : "0 4px 12px rgba(0,0,0,0.15)",
 
                     "&:hover": {
-                      backgroundColor: "var(--primary)",
+                      backgroundColor: prefersDarkMode ? "var(--primary-light)" : "var(--primary)",
                     },
 
                     "&.Mui-disabled": {
-                      backgroundColor: "rgba(0, 0, 0, 0.12)",
-                      color: "rgba(0, 0, 0, 0.4)",
+                      backgroundColor: prefersDarkMode ? "rgba(255, 255, 255, 0.12)" : "rgba(0, 0, 0, 0.12)",
+                      color: prefersDarkMode ? "rgba(255, 255, 255, 0.4)" : "rgba(0, 0, 0, 0.4)",
                       boxShadow: "none",
                       cursor: "not-allowed",
                     },
@@ -428,21 +450,21 @@ const ForgotPassword = () => {
                   onClick={() => setStep("email")}
                   sx={{
                     mt: 1,
-                    backgroundColor: "var(--primary)",
+                    backgroundColor: prefersDarkMode ? "var(--primary-light)" : "var(--primary)",
                     color: "#fff",
                     borderRadius: "12px",
                     padding: "10px 20px",
                     textTransform: "none",
                     fontWeight: 600,
-                    boxShadow: "0 4px 12px rgba(0,0,0,0.15)",
+                    boxShadow: prefersDarkMode ? "0 4px 12px rgba(255, 255, 255, 0.15)" : "0 4px 12px rgba(0,0,0,0.15)",
 
                     "&:hover": {
-                      backgroundColor: "var(--primary)",
+                      backgroundColor: prefersDarkMode ? "var(--primary-light)" : "var(--primary)",
                     },
 
                     "&.Mui-disabled": {
-                      backgroundColor: "rgba(0, 0, 0, 0.12)",
-                      color: "rgba(0, 0, 0, 0.4)",
+                      backgroundColor: prefersDarkMode ? "rgba(255, 255, 255, 0.12)" : "rgba(0, 0, 0, 0.12)",
+                      color: prefersDarkMode ? "rgba(255, 255, 255, 0.4)" : "rgba(0, 0, 0, 0.4)",
                       boxShadow: "none",
                       cursor: "not-allowed",
                     },
@@ -459,7 +481,7 @@ const ForgotPassword = () => {
               component="button"
               variant="body2"
               onClick={() => navigate("/login")}
-              sx={{ alignSelf: "center" }}
+              sx={{ alignSelf: "center", color: prefersDarkMode ? "var(--primary-light)" : "var(--primary)" }}
             >
               Lembrou a senha? Entrar
             </Link>
