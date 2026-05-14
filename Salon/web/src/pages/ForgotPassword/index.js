@@ -138,7 +138,7 @@ const ForgotPassword = () => {
         setAlerta({
           open: true,
           tipo: "error",
-          mensagem: err?.errors?.[0]?.longMessage  || "Código inválido ou expirado.",
+          mensagem: err?.errors?.[0]?.longMessage || "Código inválido ou expirado.",
         })
       );
     } finally {
@@ -243,6 +243,7 @@ const ForgotPassword = () => {
             {step === "email" ? (
               <form onSubmit={handleSendCode}>
                 <TextField
+                  autoComplete="new-email"
                   fullWidth
                   label="Email"
                   variant="outlined"
@@ -251,6 +252,25 @@ const ForgotPassword = () => {
                   onChange={(e) => setEmail(e.target.value)}
                   error={emailInvalid}
                   helperText={emailInvalid ? "Digite um email válido." : ""}
+                  sx={{
+                    "& .MuiInputBase-input": {
+                      color: "var(--primary)",
+                    },
+                    "& .MuiInputLabel-root": {
+                      color: "var(--primary)",
+                    },
+                    "& .MuiOutlinedInput-root": {
+                      "& fieldset": {
+                        borderColor: "var(--primary)",
+                      },
+                      "&:hover fieldset": {
+                        borderColor: "var(--primary)",
+                      },
+                      "&.Mui-focused fieldset": {
+                        borderColor: "var(--primary)",
+                      },
+                    },
+                  }}
                 />
 
                 <Button
@@ -259,26 +279,89 @@ const ForgotPassword = () => {
                   variant="contained"
                   size="large"
                   disabled={loading || !emailTrim || emailInvalid}
-                  sx={{ mt: 1 }}
                   startIcon={loading ? <CircularProgress size={18} color="inherit" /> : null}
+                  sx={{
+                    mt: 1,
+                    backgroundColor: "var(--primary)",
+                    color: "#fff",
+                    borderRadius: "12px",
+                    padding: "10px 20px",
+                    textTransform: "none",
+                    fontWeight: 600,
+                    boxShadow: "0 4px 12px rgba(0,0,0,0.15)",
+
+                    "&:hover": {
+                      backgroundColor: "var(--primary)",
+                    },
+
+                    "&.Mui-disabled": {
+                      backgroundColor: "rgba(0, 0, 0, 0.12)",
+                      color: "rgba(0, 0, 0, 0.4)",
+                      boxShadow: "none",
+                      cursor: "not-allowed",
+                    },
+                  }}
                 >
                   {loading ? "Enviando..." : "Enviar código"}
                 </Button>
-                <p className="text-muted-foreground text-sm justify-center">Nós enviaremos um link em seu e-mail.</p>
+                <Box
+                  sx={{
+                    mt: 2,
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 1,
+                    p: 1.5,
+                    borderRadius: "12px",
+
+                    border: "1px solid rgba(99, 102, 241, 0.15)",
+                  }}
+                >
+                  <Typography
+                    sx={{
+                      fontSize: "0.92rem",
+                      color: "var(--primary)",
+                      fontWeight: 500,
+                      lineHeight: 1.5,
+                    }}
+                  >
+                    Nós enviaremos um link de recuperação para seu e-mail.
+                  </Typography>
+                </Box>
               </form>
             ) : (
               <form onSubmit={handleResetPassword}>
                 <TextField
                   fullWidth
+                  autoComplete="off"
                   label="Código recebido por e-mail"
                   variant="outlined"
                   margin="normal"
                   value={code}
                   onChange={(e) => setCode(e.target.value)}
+                  sx={{
+                    "& .MuiInputBase-input": {
+                      color: "var(--primary)",
+                    },
+                    "& .MuiInputLabel-root": {
+                      color: "var(--primary)",
+                    },
+                    "& .MuiOutlinedInput-root": {
+                      "& fieldset": {
+                        borderColor: "var(--primary)",
+                      },
+                      "&:hover fieldset": {
+                        borderColor: "var(--primary)",
+                      },
+                      "&.Mui-focused fieldset": {
+                        borderColor: "var(--primary)",
+                      },
+                    },
+                  }}
                 />
 
                 <TextField
                   fullWidth
+                  autoComplete="new-password"
                   label="Nova senha"
                   type="password"
                   variant="outlined"
@@ -286,6 +369,25 @@ const ForgotPassword = () => {
                   value={newPassword}
                   onChange={(e) => setNewPassword(e.target.value)}
                   helperText="Mínimo de 8 caracteres."
+                  sx={{
+                    "& .MuiInputBase-input": {
+                      color: "var(--primary)",
+                    },
+                    "& .MuiInputLabel-root": {
+                      color: "var(--primary)",
+                    },
+                    "& .MuiOutlinedInput-root": {
+                      "& fieldset": {
+                        borderColor: "var(--primary)",
+                      },
+                      "&:hover fieldset": {
+                        borderColor: "var(--primary)",
+                      },
+                      "&.Mui-focused fieldset": {
+                        borderColor: "var(--primary)",
+                      },
+                    },
+                  }}
                 />
 
                 <Button
@@ -294,17 +396,57 @@ const ForgotPassword = () => {
                   variant="contained"
                   size="large"
                   disabled={loading || !code.trim() || newPassword.trim().length < 8}
-                  sx={{ mt: 1 }}
                   startIcon={loading ? <CircularProgress size={18} color="inherit" /> : null}
-                 >
+                  sx={{
+                    mt: 1,
+                    backgroundColor: "var(--primary)",
+                    color: "#fff",
+                    borderRadius: "12px",
+                    padding: "10px 20px",
+                    textTransform: "none",
+                    fontWeight: 600,
+                    boxShadow: "0 4px 12px rgba(0,0,0,0.15)",
+
+                    "&:hover": {
+                      backgroundColor: "var(--primary)",
+                    },
+
+                    "&.Mui-disabled": {
+                      backgroundColor: "rgba(0, 0, 0, 0.12)",
+                      color: "rgba(0, 0, 0, 0.4)",
+                      boxShadow: "none",
+                      cursor: "not-allowed",
+                    },
+                  }}
+                >
                   {loading ? "Alterando..." : "Alterar senha"}
                 </Button>
 
                 <Button
                   fullWidth
                   variant="text"
-                  sx={{ mt: 1 }}
                   onClick={() => setStep("email")}
+                  sx={{
+                    mt: 1,
+                    backgroundColor: "var(--primary)",
+                    color: "#fff",
+                    borderRadius: "12px",
+                    padding: "10px 20px",
+                    textTransform: "none",
+                    fontWeight: 600,
+                    boxShadow: "0 4px 12px rgba(0,0,0,0.15)",
+
+                    "&:hover": {
+                      backgroundColor: "var(--primary)",
+                    },
+
+                    "&.Mui-disabled": {
+                      backgroundColor: "rgba(0, 0, 0, 0.12)",
+                      color: "rgba(0, 0, 0, 0.4)",
+                      boxShadow: "none",
+                      cursor: "not-allowed",
+                    },
+                  }}
                 >
                   Reenviar código
                 </Button>

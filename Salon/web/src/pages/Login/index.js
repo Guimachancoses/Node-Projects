@@ -236,6 +236,7 @@ const Login = () => {
 
             <form onSubmit={handleSubmit}>
               <TextField
+                autoComplete="new-email"
                 fullWidth
                 label="Email"
                 variant="outlined"
@@ -244,9 +245,29 @@ const Login = () => {
                 onChange={(e) => setEmail(e.target.value)}
                 error={emailInvalid}
                 helperText={emailInvalid ? "Digite um email válido." : ""}
+                sx={{
+                  "& .MuiInputBase-input": {
+                    color: "var(--primary)",
+                  },
+                  "& .MuiInputLabel-root": {
+                    color: "var(--primary)",
+                  },
+                  "& .MuiOutlinedInput-root": {
+                    "& fieldset": {
+                      borderColor: "var(--primary)",
+                    },
+                    "&:hover fieldset": {
+                      borderColor: "var(--primary)",
+                    },
+                    "&.Mui-focused fieldset": {
+                      borderColor: "var(--primary)",
+                    },
+                  },
+                }}
               />
 
               <TextField
+                autoComplete="new-password"
                 fullWidth
                 label="Senha"
                 type="password"
@@ -254,6 +275,25 @@ const Login = () => {
                 margin="normal"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
+                sx={{
+                  "& .MuiInputBase-input": {
+                    color: "var(--primary)",
+                  },
+                  "& .MuiInputLabel-root": {
+                    color: "var(--primary)",
+                  },
+                  "& .MuiOutlinedInput-root": {
+                    "& fieldset": {
+                      borderColor: "var(--primary)",
+                    },
+                    "&:hover fieldset": {
+                      borderColor: "var(--primary)",
+                    },
+                    "&.Mui-focused fieldset": {
+                      borderColor: "var(--primary)",
+                    },
+                  },
+                }}
               />
 
               <Link
@@ -277,14 +317,44 @@ const Login = () => {
                 variant="contained"
                 size="large"
                 disabled={isSubmitDisabled || isSubmitting}
-                sx={{ mt: 1 }}
                 startIcon={isSubmitting ? <CircularProgress size={18} color="inherit" /> : null}
+                sx={{
+                  mt: 1,
+                  backgroundColor: "var(--primary)",
+                  color: "#fff",
+                  borderRadius: "12px",
+                  padding: "10px 20px",
+                  textTransform: "none",
+                  fontWeight: 600,
+                  boxShadow: "0 4px 12px rgba(0,0,0,0.15)",
+
+                  "&:hover": {
+                    backgroundColor: "var(--primary)",
+                  },
+
+                  "&.Mui-disabled": {
+                    backgroundColor: "rgba(0, 0, 0, 0.12)",
+                    color: "rgba(0, 0, 0, 0.4)",
+                    boxShadow: "none",
+                    cursor: "not-allowed",
+                  },
+                }}
               >
                 {isSubmitting ? "Entrando..." : "Entrar"}
               </Button>
             </form>
 
-            <Divider sx={{ my: 1.5 }}>ou</Divider>
+            <Divider
+              sx={{
+                my: 1.5,
+                color: "var(--primary)",
+                "&::before, &::after": {
+                  borderColor: "var(--primary)",
+                },
+              }}
+            >
+              Ou
+            </Divider>
             <SocialButtons />
           </Paper>
         </Container>
