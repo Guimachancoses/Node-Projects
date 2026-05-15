@@ -6,6 +6,8 @@ const mercadopg = require("../services/mercadopg");
 const Colaborador = require("../models/colaborador");
 const SalaoColaborador = require("../models/relationship/salaoColaborador");
 const ColaboradorServico = require("../models/relationship/colaboradorServico");
+const aws = require("../services/aws");
+const Arquivo = require("../models/arquivo");
 
 // Rota de atualização do colaborador no banco de dados MongoDB e no MercadoPago
 router.put("/:colaboradorId", async (req, res) => {
@@ -58,6 +60,35 @@ router.put("/:colaboradorId", async (req, res) => {
     // =============================
     // 4. (Opcional) atualizar foto
     // =============================
+
+    const fotoFile = req.files?.foto;
+
+    if (fotoFile) {
+      const nameParts = fotoFile.name.split(".");
+      const ext = nameParts[nameParts.length - 1];
+      const fileName = `${Date.now()}.${ext}`;
+      const path = `colaboradores/${colaboradorId}/foto-${fileName}`;
+
+      const response = await aws.uploadToS3(fotoFile, path);
+
+      if (response.error) {
+        return res.json({ error: true, message: response.message });
+      }
+
+      uploadedPath = path;
+
+      const bucketUrl = (process.env.AWS_BUCKET_URL || process.env.BUCKET_URL || "").replace(/\/$/, "");
+      const fotoUrl = bucketUrl ? `${bucketUrl}/${path}` : path;
+
+      updatePerfil.foto = fotoUrl;
+
+      await Arquivo.create({
+        referenciaId: colaboradorId,
+        model: "Colaborador",
+        caminho: path,
+      });
+    }
+
     if (req.file) {
       await Colaborador.findByIdAndUpdate(colaboradorId, {
         foto: req.file.filename,

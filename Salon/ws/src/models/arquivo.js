@@ -9,7 +9,7 @@ const arquivo = new Schema({
   model: {
     type: String,
     required: true,
-    enum: ["Servico", "Salao"],
+    enum: ["Servico", "Salao", "Colaborador"],
   },
   caminho: {
     type: String,

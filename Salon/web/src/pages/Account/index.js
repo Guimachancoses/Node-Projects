@@ -35,7 +35,8 @@ import RecentActorsIcon from "@mui/icons-material/RecentActors";
 import SignpostIcon from "@mui/icons-material/Signpost";
 import PersonOutlineIcon from "@mui/icons-material/PersonOutline";
 import ContentCutIcon from '@mui/icons-material/ContentCut';
-
+import LocationCityIcon from "@mui/icons-material/LocationCity";
+import WcIcon from '@mui/icons-material/Wc';
 
 import { updateMyAccountRequest, allServicos } from "../../store/modules/colaborador/actions";
 
@@ -485,9 +486,9 @@ export default function Account() {
   };
 
   const handleSalvarConta = () => {
-    const fileToSend = fotoFile || fotoExibicao;
+    //const fileToSend = fotoFile || fotoExibicao;
 
-    dispatch(updateMyAccountRequest(accountForm, fileToSend));
+    dispatch(updateMyAccountRequest(accountForm, fotoFile));
   };
 
   useEffect(() => {
@@ -551,7 +552,7 @@ export default function Account() {
     return JSON.stringify(normalize(accountForm)) !== JSON.stringify(normalize(originalRef.current));
   }, [accountForm]);
 
-  const disableSave = form?.saving || hasErrors || !requiredFilled || !hasChanges;
+  const disableSave = form?.saving || hasErrors || !requiredFilled || (!hasChanges && !fotoFile);
 
   return (
     <Container component="main" maxWidth="lg" sx={{ py: 4 }}>
@@ -742,7 +743,13 @@ export default function Account() {
                 />
               </Grid>
 
-              <Grid item xs={12} md={6}>
+              <Grid item xs={12} md={8} sx={{
+                width: "100%",
+                "@media (min-width:60px)": {
+                  width: "calc(10% + 6px)", // aumenta só esse campo
+
+                },
+              }}>
                 <FormControl fullWidth size="small">
                   <InputLabel>Sexo</InputLabel>
                   <Select
@@ -750,6 +757,11 @@ export default function Account() {
                     label="Sexo"
                     onChange={(e) => setCampo("sexo", e.target.value)}
                     sx={{ fontSize: "0.8rem" }} // Aplica no valor selecionado
+                    startAdornment={
+                      <InputAdornment position="start">
+                        <WcIcon />
+                      </InputAdornment>
+                    }
                   >
                     <MenuItem value="M">Masculino</MenuItem>
                     <MenuItem value="F">Feminino</MenuItem>
@@ -845,6 +857,13 @@ export default function Account() {
                   fullWidth
                   size="small"
                   label="Rua"
+                  InputProps={{
+                    startAdornment: (
+                      <InputAdornment position="start">
+                        <SignpostIcon />
+                      </InputAdornment>
+                    ),
+                  }}
                   value={accountForm.endereco.logradouro}
                   onChange={(e) => setEndereco("logradouro", e.target.value)}
                   inputProps={{
@@ -860,6 +879,13 @@ export default function Account() {
                   fullWidth
                   size="small"
                   label="Número"
+                  InputProps={{
+                    startAdornment: (
+                      <InputAdornment position="start">
+                        <SignpostIcon />
+                      </InputAdornment>
+                    ),
+                  }}
                   value={accountForm.endereco.numero}
                   onChange={(e) => setEndereco("numero", e.target.value)}
                   inputProps={{
@@ -875,6 +901,13 @@ export default function Account() {
                   fullWidth
                   label="Bairro"
                   size="small"
+                  InputProps={{
+                    startAdornment: (
+                      <InputAdornment position="start">
+                        <SignpostIcon />
+                      </InputAdornment>
+                    ),
+                  }}
                   value={accountForm.endereco.bairro}
                   onChange={(e) => setEndereco("bairro", e.target.value)}
                   inputProps={{
@@ -890,6 +923,13 @@ export default function Account() {
                   fullWidth
                   size="small"
                   label="Cidade"
+                  InputProps={{
+                    startAdornment: (
+                      <InputAdornment position="start">
+                        <LocationCityIcon />
+                      </InputAdornment>
+                    ),
+                  }}
                   value={accountForm.endereco.cidade.nome}
                   onChange={(e) => setCidade(e.target.value)}
                   inputProps={{

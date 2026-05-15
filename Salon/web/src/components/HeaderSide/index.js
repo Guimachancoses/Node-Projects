@@ -230,6 +230,18 @@ export default function Layout({ toggleTheme }) {
     [isDark, theme]
   );
 
+  const isVectorLogo = useMemo(() => {
+    if (!logoUrl) return false;
+
+    return (
+      logoUrl.endsWith(".svg") ||
+      logoUrl.includes(".svg?") ||
+      logoUrl.includes(".png") ||
+      logoUrl.includes(".png?") ||
+      logoUrl.includes("logo-vetor")
+    );
+  }, [logoUrl]);
+
   const drawerContent = (
     <Box
       sx={{
@@ -302,6 +314,13 @@ export default function Layout({ toggleTheme }) {
                   width: "100%",
                   maxWidth: 180,
                   px: 2,
+
+                  // aplica cor apenas se for vetor/logo monocromática
+                  filter: isVectorLogo
+                    ? isDark
+                      ? "brightness(0) saturate(100%) invert(73%) sepia(13%) saturate(1258%) hue-rotate(131deg) brightness(103%) contrast(101%)"
+                      : "brightness(0) saturate(100%) invert(40%) sepia(27%) saturate(932%) hue-rotate(131deg) brightness(96%) contrast(94%)"
+                    : "none",
                 }),
             }}
           />

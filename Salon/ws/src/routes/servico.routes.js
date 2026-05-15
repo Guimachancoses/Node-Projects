@@ -173,7 +173,6 @@ router.get("/all", async (req, res) => {
   }
 });
 
-
 // Rota para exibir todos os serviços e arquivos de um determinado salão
 router.get("/salao/:salaoId", async (req, res) => {
   try {

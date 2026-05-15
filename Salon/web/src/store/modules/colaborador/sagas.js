@@ -436,7 +436,7 @@ export function* allServicos() {
 
     const endpoint = isYoda
       ? "/servico/all"
-      : `/salao/servoco/${encodeURIComponent(salaoId)}`;
+      : `/salao/servicos/${encodeURIComponent(salaoId)}`;
 
     const { data: res } = yield call(api.get, endpoint);
 
@@ -599,11 +599,12 @@ export function* updateMyAccount({ payload, fotoFile }) {
     };
 
     let res;
-    if (fotoFile) {
+    if (fotoFile instanceof File) {
       const formData = new FormData();
+
       formData.append("salaoId", salaoId);
       formData.append("colaborador", JSON.stringify({ ...baseUpdate, ...perfil }));
-
+      formData.append("foto", fotoFile);
       // for (let [key, value] of formData.entries()) {
       //   console.log(key, value);
       // }
