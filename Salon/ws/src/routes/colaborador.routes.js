@@ -10,68 +10,60 @@ const aws = require("../services/aws");
 const Arquivo = require("../models/arquivo");
 
 // Rota de atualização do colaborador no banco de dados MongoDB e no MercadoPago
+// Rota de atualização do colaborador no banco de dados MongoDB e no MercadoPago
 router.put("/:colaboradorId", async (req, res) => {
+  let uploadedPath = "";
+
   try {
     const { colaboradorId } = req.params;
 
-    // 🔥 suporta JSON e FormData
+    console.log("[COLABORADOR PUT] Iniciando atualização");
+    console.log("[COLABORADOR PUT] colaboradorId:", colaboradorId);
+    console.log("[COLABORADOR PUT] req.body keys:", Object.keys(req.body || {}));
+    console.log("[COLABORADOR PUT] req.files keys:", req.files ? Object.keys(req.files) : []);
+
     const body =
       typeof req.body.colaborador === "string"
         ? JSON.parse(req.body.colaborador)
         : req.body;
 
+    console.log("[COLABORADOR PUT] body parseado:", body);
+
     const { vinculo, vinculoId, salaoId, especialidades = [], ...perfil } = body;
 
-    // =============================
-    // 1. Atualiza dados do colaborador
-    // =============================
-    await Colaborador.findByIdAndUpdate(
-      colaboradorId,
-      {
-        ...perfil,
-      },
-      { new: true }
-    );
+    const updatePerfil = { ...perfil };
+
+    console.log("[COLABORADOR PUT] perfil inicial:", updatePerfil);
+    console.log("[COLABORADOR PUT] vinculo:", vinculo);
+    console.log("[COLABORADOR PUT] vinculoId:", vinculoId);
+    console.log("[COLABORADOR PUT] salaoId:", salaoId);
+    console.log("[COLABORADOR PUT] especialidades:", especialidades);
 
     // =============================
-    // 2. Atualiza vínculo
+    // 1. Upload da foto, se enviada
     // =============================
-    if (vinculoId) {
-      await SalaoColaborador.findByIdAndUpdate(vinculoId, {
-        status: vinculo,
-        ...(salaoId ? { salaoId } : {}), // <-- agora troca empresa também
-      });
-    }
-
-    // =============================
-    // 3. Atualiza especialidades
-    // =============================
-    await ColaboradorServico.deleteMany({ colaboradorId });
-
-    if (especialidades.length) {
-      await ColaboradorServico.insertMany(
-        especialidades.map((servicoId) => ({
-          servicoId,
-          colaboradorId,
-        }))
-      );
-    }
-
-    // =============================
-    // 4. (Opcional) atualizar foto
-    // =============================
-
     const fotoFile = req.files?.foto;
 
+    console.log("[COLABORADOR PUT] fotoFile existe:", Boolean(fotoFile));
+
     if (fotoFile) {
+      console.log("[COLABORADOR PUT] fotoFile name:", fotoFile.name);
+      console.log("[COLABORADOR PUT] fotoFile mimetype:", fotoFile.mimetype);
+      console.log("[COLABORADOR PUT] fotoFile size:", fotoFile.size);
+
       const nameParts = fotoFile.name.split(".");
       const ext = nameParts[nameParts.length - 1];
       const fileName = `${Date.now()}.${ext}`;
       const path = `colaboradores/${colaboradorId}/foto-${fileName}`;
 
+      console.log("[COLABORADOR PUT] Enviando para S3 path:", path);
+
       const response = await aws.uploadToS3(fotoFile, path);
 
+      console.log("[COLABORADOR PUT] response S3:", response);
+
       if (response.error) {
+        console.log("[COLABORADOR PUT] Erro no upload S3:", response.message);
         return res.json({ error: true, message: response.message });
       }
 
@@ -80,19 +72,79 @@ router.put("/:colaboradorId", async (req, res) => {
       const bucketUrl = (process.env.AWS_BUCKET_URL || process.env.BUCKET_URL || "").replace(/\/$/, "");
       const fotoUrl = bucketUrl ? `${bucketUrl}/${path}` : path;
 
+      console.log("[COLABORADOR PUT] bucketUrl:", bucketUrl);
+      console.log("[COLABORADOR PUT] fotoUrl final:", fotoUrl);
+
       updatePerfil.foto = fotoUrl;
 
-      await Arquivo.create({
+      const arquivoCriado = await Arquivo.create({
         referenciaId: colaboradorId,
         model: "Colaborador",
         caminho: path,
       });
+
+      console.log("[COLABORADOR PUT] Arquivo criado:", arquivoCriado);
     }
 
-    if (req.file) {
-      await Colaborador.findByIdAndUpdate(colaboradorId, {
-        foto: req.file.filename,
-      });
+    // =============================
+    // 2. Atualiza dados do colaborador
+    // =============================
+    console.log("[COLABORADOR PUT] updatePerfil final:", updatePerfil);
+
+    const colaboradorUpdate = await Colaborador.findByIdAndUpdate(
+      colaboradorId,
+      updatePerfil,
+      { new: true }
+    );
+
+    console.log("[COLABORADOR PUT] colaborador atualizado:", colaboradorUpdate);
+
+    if (!colaboradorUpdate) {
+      throw new Error("Colaborador não encontrado.");
+    }
+
+    // =============================
+    // 3. Atualiza vínculo
+    // =============================
+    if (vinculoId) {
+      console.log("[COLABORADOR PUT] Atualizando vínculo:", vinculoId);
+
+      const vinculoUpdate = await SalaoColaborador.findByIdAndUpdate(
+        vinculoId,
+        {
+          status: vinculo,
+          ...(salaoId ? { salaoId } : {}),
+        },
+        { new: true }
+      );
+
+      console.log("[COLABORADOR PUT] vínculo atualizado:", vinculoUpdate);
+    } else {
+      console.log("[COLABORADOR PUT] Sem vinculoId, vínculo não atualizado.");
+    }
+
+    // =============================
+    // 4. Atualiza especialidades
+    // =============================
+    console.log("[COLABORADOR PUT] Removendo especialidades antigas");
+
+    const deleteEspecialidades = await ColaboradorServico.deleteMany({ colaboradorId });
+
+    console.log("[COLABORADOR PUT] especialidades removidas:", deleteEspecialidades);
+
+    if (especialidades.length) {
+      console.log("[COLABORADOR PUT] Inserindo especialidades:", especialidades);
+
+      const especialidadesCriadas = await ColaboradorServico.insertMany(
+        especialidades.map((servicoId) => ({
+          servicoId,
+          colaboradorId,
+        }))
+      );
+
+      console.log("[COLABORADOR PUT] especialidades criadas:", especialidadesCriadas);
+    } else {
+      console.log("[COLABORADOR PUT] Nenhuma especialidade para inserir.");
     }
 
     // =============================
@@ -100,15 +152,32 @@ router.put("/:colaboradorId", async (req, res) => {
     // =============================
     const colaboradorAtualizado = await Colaborador.findById(colaboradorId);
 
+    console.log("[COLABORADOR PUT] colaborador final:", colaboradorAtualizado);
+    console.log("[COLABORADOR PUT] Finalizado com sucesso");
+
     return res.json({
       error: false,
       colaborador: colaboradorAtualizado,
     });
-
   } catch (err) {
+    console.log("[COLABORADOR PUT] Erro:", err.message);
+    console.log("[COLABORADOR PUT] Stack:", err.stack);
+
+    if (uploadedPath) {
+      console.log("[COLABORADOR PUT] Limpando upload S3:", uploadedPath);
+
+      try {
+        await aws.deleteFileS3(uploadedPath);
+        await Arquivo.findOneAndDelete({ caminho: uploadedPath });
+      } catch (cleanupErr) {
+        console.log("[COLABORADOR PUT] Erro no cleanup:", cleanupErr.message);
+      }
+    }
+
     return res.json({ error: true, message: err.message });
   }
 });
+
 
 // Rota para deletar o vinculo do colaborador com o salão
 router.delete("/vinculo/:id", async (req, res) => {
