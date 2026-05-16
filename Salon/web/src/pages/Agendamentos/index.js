@@ -70,13 +70,18 @@ const Agendamentos = () => {
   const [currentDate, setCurrentDate] = useState(new Date());
   const [currentView, setCurrentView] = useState(fallbackView);
 
+  const allowedViews = useMemo(() => Object.keys(views), [views]);
+
+  const safeCurrentView = useMemo(() => {
+    return allowedViews.includes(currentView) ? currentView : fallbackView;
+  }, [allowedViews, currentView, fallbackView]);
+
   // Garante que a view atual sempre existe no conjunto de views permitido
   useEffect(() => {
-    const allowed = Object.keys(views);
-    if (!allowed.includes(currentView)) {
+    if (!allowedViews.includes(currentView)) {
       setCurrentView(fallbackView);
     }
-  }, [views, currentView, fallbackView]);
+  }, [allowedViews, currentView, fallbackView]);
 
   const {
     agendamentos,
@@ -263,8 +268,8 @@ const Agendamentos = () => {
     padding: isMobile ? 4 : 8,
 
     border: `1px solid ${theme.palette.mode === "dark"
-        ? "rgba(255,255,255,0.14)"
-        : "rgba(0,0,0,0.08)"
+      ? "rgba(255,255,255,0.14)"
+      : "rgba(0,0,0,0.08)"
       }`,
 
     transition: "all 0.2s ease",
@@ -427,8 +432,12 @@ const Agendamentos = () => {
         date={currentDate}
         events={(formatEventos || []).filter((e) => e?.start && e?.end)}
         titleAccessor={(event) => event?.title || "Agendamento"}
-        view={currentView}
-        onView={(nextView) => setCurrentView(nextView)}
+        view={safeCurrentView}
+        onView={(nextView) => {
+          if (allowedViews.includes(nextView)) {
+            setCurrentView(nextView);
+          }
+        }}
         onNavigate={(newDate) => setCurrentDate(newDate)}
         components={isMobile ? { toolbar: MobileCalendarToolbar } : undefined}
         views={views}

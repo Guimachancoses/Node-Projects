@@ -45,6 +45,7 @@ import { useAuth, useUser, useClerk } from "@clerk/clerk-react";
 
 const DRAWER_EXPANDED = 240;
 const DRAWER_COLLAPSED = 72;
+const SIDEBAR_COLLAPSED_KEY = "app.sidebar.collapsed";
 
 export default function Layout({ toggleTheme }) {
   const dispatch = useDispatch();
@@ -134,7 +135,33 @@ export default function Layout({ toggleTheme }) {
   const isDesktop = useMediaQuery(theme.breakpoints.up("md")); // troque para "lg" se quiser desktop só em telas maiores
 
   const [mobileOpen, setMobileOpen] = useState(false);
-  const [collapsed, setCollapsed] = useState(false);
+  const [collapsed, setCollapsed] = useState(() => {
+    try {
+      return localStorage.getItem(SIDEBAR_COLLAPSED_KEY) === "true";
+    } catch {
+      return false;
+    }
+  });
+
+  useEffect(() => {
+    if (!isDesktop) return;
+
+    try {
+      localStorage.setItem(SIDEBAR_COLLAPSED_KEY, String(collapsed));
+    } catch {
+      // ignora quando storage estiver indisponível
+    }
+  }, [collapsed, isDesktop]);
+
+  const handleSidebarToggle = () => {
+    if (isDesktop) {
+      setCollapsed((prev) => !prev);
+      return;
+    }
+
+    setMobileOpen(false);
+  };
+
   const [anchorElUser, setAnchorElUser] = useState(null);
 
   const currentDrawerWidth = useMemo(() => {
@@ -292,20 +319,19 @@ export default function Layout({ toggleTheme }) {
           py: 1,
         }}
       >
-        <IconButton
-          onClick={() => {
-            if (isDesktop) setCollapsed((prev) => !prev);
-            else setMobileOpen(false);
-          }}
-          sx={{
-            color: isDark ? theme.palette.common.white : sidebarColors.icon,
-            borderRadius: 2,
-            px: 2,
-            "&:hover": { backgroundColor: sidebarColors.hover },
-          }}
-        >
-          {isDesktop ? (collapsed ? <MenuIcon /> : <MenuOpenIcon />) : <MenuOpenIcon />}
-        </IconButton>
+        <Tooltip title={collapsed ? "Expandir menu" : "Recolher menu"} placement="right" arrow>
+          <IconButton
+            onClick={handleSidebarToggle}
+            sx={{
+              color: isDark ? theme.palette.common.white : sidebarColors.icon,
+              borderRadius: 2,
+              px: 2,
+              "&:hover": { backgroundColor: sidebarColors.hover },
+            }}
+          >
+            {isDesktop ? (collapsed ? <MenuIcon /> : <MenuOpenIcon />) : <MenuOpenIcon />}
+          </IconButton>
+        </Tooltip>
       </Box>
 
       {!assetsReady ? (
@@ -395,44 +421,57 @@ export default function Layout({ toggleTheme }) {
 
         <Fade in={!isUiLoading && fadeInReady} timeout={320} unmountOnExit>
           <Box>
-            {navItems.map((item) => (
-              <ListItemButton
-                key={item.path}
-                component={Link}
-                to={item.path}
-                selected={location.pathname === item.path}
-                sx={{
-                  color: sidebarColors.textMuted,
-                  borderRadius: "10px",
-                  mb: 0.4,
-                  minHeight: 44,
-                  justifyContent: showTextInDesktop || showTextInTemporary ? "initial" : "center",
-                  px: 1.2,
-                  transition: "all .2s ease",
-                  "&:hover": { backgroundColor: sidebarColors.hover, color: sidebarColors.text },
-                  "&.Mui-selected": {
-                    backgroundColor: sidebarColors.selected,
-                    color: sidebarColors.text,
-                    fontWeight: 600,
-                  },
-                  "&.Mui-selected:hover": { backgroundColor: sidebarColors.selected },
-                  "&:hover .MuiListItemIcon-root": { color: sidebarColors.primary },
-                  "&.Mui-selected .MuiListItemIcon-root": { color: sidebarColors.primary },
-                }}
-              >
-                <ListItemIcon
-                  sx={{
-                    color: isDark ? theme.palette.common.white : sidebarColors.icon,
-                    minWidth: 0,
-                    mr: showTextInDesktop || showTextInTemporary ? 1.5 : 0,
-                    justifyContent: "center",
-                  }}
+            {navItems.map((item) => {
+              const showTooltip = isDesktop && collapsed;
+
+              return (
+                <Tooltip
+                  key={item.path}
+                  title={showTooltip ? item.text : ""}
+                  placement="right"
+                  arrow
                 >
-                  {item.icon}
-                </ListItemIcon>
-                {(showTextInDesktop || showTextInTemporary) && <ListItemText primary={item.text} />}
-              </ListItemButton>
-            ))}
+                  <ListItemButton
+                    component={Link}
+                    to={item.path}
+                    selected={location.pathname === item.path}
+                    sx={{
+                      color: sidebarColors.textMuted,
+                      borderRadius: "10px",
+                      mb: 0.4,
+                      minHeight: 44,
+                      justifyContent: showTextInDesktop || showTextInTemporary ? "initial" : "center",
+                      px: 1.2,
+                      transition: "all .2s ease",
+                      "&:hover": { backgroundColor: sidebarColors.hover, color: sidebarColors.text },
+                      "&.Mui-selected": {
+                        backgroundColor: sidebarColors.selected,
+                        color: sidebarColors.text,
+                        fontWeight: 600,
+                      },
+                      "&.Mui-selected:hover": { backgroundColor: sidebarColors.selected },
+                      "&:hover .MuiListItemIcon-root": { color: sidebarColors.primary },
+                      "&.Mui-selected .MuiListItemIcon-root": { color: sidebarColors.primary },
+                    }}
+                  >
+                    <ListItemIcon
+                      sx={{
+                        color: isDark ? theme.palette.common.white : sidebarColors.icon,
+                        minWidth: 0,
+                        mr: showTextInDesktop || showTextInTemporary ? 1.5 : 0,
+                        justifyContent: "center",
+                      }}
+                    >
+                      {item.icon}
+                    </ListItemIcon>
+
+                    {(showTextInDesktop || showTextInTemporary) && (
+                      <ListItemText primary={item.text} />
+                    )}
+                  </ListItemButton>
+                </Tooltip>
+              );
+            })}
           </Box>
         </Fade>
       </List>
@@ -464,7 +503,7 @@ export default function Layout({ toggleTheme }) {
             </IconButton>
           )}
 
-          <Box sx={{ display: "flex", flexDirection: "column", alignItems: "flex-end", flexGrow: 1 }}>
+          <Box sx={{ display: "flex", flexDirection: "column", alignItems: "flex-end", flexGrow: 1, marginTop: 1 }}>
             <Fade in={!assetsReady} timeout={150} unmountOnExit>
               <Skeleton variant="text" width={180} height={28} sx={{ bgcolor: "rgba(255,255,255,.25)" }} />
             </Fade>
@@ -491,6 +530,7 @@ export default function Layout({ toggleTheme }) {
                     ? "0 0 6px rgba(57,255,20,.85), 0 0 14px rgba(57,255,20,.55)"
                     : "none",
                   transition: "all .25s ease",
+                  marginBottom: 1
                 }}
               >
                 {isYoda ? "Modo Jedi" : "Plano Gold"}
