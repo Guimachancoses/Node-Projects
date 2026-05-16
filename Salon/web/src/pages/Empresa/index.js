@@ -401,252 +401,259 @@ export default function Empresa() {
           </Typography>
           <Chip label="Cadastro do Salão" color="primary" variant="outlined" />
         </Stack>
-
-        <Grid container spacing={2}>
-          {/* nome */}
-          <Grid item xs={12} md={8}>
-            <TextField
-              fullWidth
-              size="small"
-              variant="outlined"
-              label="Nome da empresa"
-              value={companyForm.nome}
-              onChange={(e) => setField("nome", e.target.value)}
-              onBlur={() => validateField("nome")}
-              error={!!errors.nome}
-              helperText={errors.nome}
-              InputProps={{
-                startAdornment: (
-                  <InputAdornment position="start">
-                    <BusinessIcon />
-                  </InputAdornment>
-                ),
-              }}
-              inputProps={{
-                style: {
-                  fontSize: "0.8rem", // Altere esse valor conforme quiser
-                },
-              }}
-            />
-          </Grid>
-
-          {/* email */}
-          <Grid item xs={12} md={4}>
-            <TextField
-              fullWidth
-              label="E-mail"
-              size="small"
-              variant="outlined"
-              value={companyForm.email}
-              onChange={(e) => setField("email", e.target.value)}
-              onBlur={() => validateField("email")}
-              error={!!errors.email}
-              helperText={errors.email}
-              InputProps={{
-                startAdornment: (
-                  <InputAdornment position="start">
-                    <EmailIcon />
-                  </InputAdornment>
-                ),
-              }}
-              inputProps={{
-                style: {
-                  fontSize: "0.8rem", // Altere esse valor conforme quiser
-                },
-              }}
-            />
-          </Grid>
-
-          {/* ddd */}
-          <Grid item xs={12} md={2}>
-            <TextField
-              fullWidth
-              size="small"
-              variant="outlined"
-              label="DDD"
-              value={maskArea(phoneArea)}
-              onChange={(e) => setPhoneArea(onlyDigits(e.target.value).slice(0, 2))}
-              onBlur={() => validateField("area")}
-              error={!!errors.area}
-              helperText={errors.area}
-              InputProps={{
-                startAdornment: (
-                  <InputAdornment position="start">
-                    <LocalPhoneIcon />
-                  </InputAdornment>
-                ),
-              }}
-              inputProps={{
-                style: {
-                  fontSize: "0.8rem", // Altere esse valor conforme quiser
-                },
-              }}
-            />
-          </Grid>
-
-          {/* telefone */}
-          <Grid item xs={12} md={4}>
-            <TextField
-              fullWidth
-              label="Telefone"
-              size="small"
-              variant="outlined"
-              value={maskPhone9(phoneNumber)}
-              onChange={(e) => setPhoneNumber(onlyDigits(e.target.value).slice(0, 9))}
-              onBlur={() => validateField("telefone")}
-              error={!!errors.telefone}
-              helperText={errors.telefone}
-              inputProps={{
-                style: {
-                  fontSize: "0.8rem", // Altere esse valor conforme quiser
-                },
-              }}
-            />
-          </Grid>
-
-          {/* cep */}
-          <Grid item xs={12} md={3}>
-            <TextField
-              fullWidth
-              size="small"
-              variant="outlined"
-              label="CEP"
-              value={maskCep(companyForm.endereco.cep)}
-              onChange={(e) => setEndereco("cep", e.target.value)}
-              onBlur={handleCepBlur}
-              error={!!errors.cep}
-              helperText={errors.cep || (cepLoading ? "Buscando endereço..." : "")}
-              InputProps={{
-                endAdornment: cepLoading ? (
-                  <InputAdornment position="end">
-                    <CircularProgress size={18} />
-                  </InputAdornment>
-                ) : null,
-              }}
-              inputProps={{
-                style: {
-                  fontSize: "0.8rem", // Altere esse valor conforme quiser
-                },
-              }}
-            />
-          </Grid>
-
-          {/* uf */}
-          <Grid item xs={12} md={3}>
-            <TextField
-              fullWidth
-              label="UF"
-              size="small"
-              variant="outlined"
-              value={(companyForm.endereco.uf || "").toUpperCase()}
-              onChange={(e) => setEndereco("uf", e.target.value.toUpperCase().slice(0, 2))}
-              onBlur={() => validateField("uf")}
-              error={!!errors.uf}
-              helperText={errors.uf}
-              inputProps={{
-                style: {
-                  fontSize: "0.8rem", // Altere esse valor conforme quiser
-                },
-              }}
-            />
-          </Grid>
-
-          {/* logradouro */}
-          <Grid item xs={12} md={8}>
-            <TextField
-              fullWidth
-              label="Logradouro"
-              size="small"
-              variant="outlined"
-              value={companyForm.endereco.logradouro}
-              onChange={(e) => setEndereco("logradouro", e.target.value)}
-              InputProps={{
-                startAdornment: (
-                  <InputAdornment position="start">
-                    <LocationOnIcon />
-                  </InputAdornment>
-                ),
-              }}
-              inputProps={{
-                style: {
-                  fontSize: "0.8rem", // Altere esse valor conforme quiser
-                },
-              }}
-            />
-          </Grid>
-
-          {/* numero */}
-          <Grid item xs={12} md={4}>
-            <TextField
-              fullWidth
-              size="small"
-              variant="outlined"
-              label="Número"
-              value={companyForm.endereco.numero}
-              onChange={(e) => setEndereco("numero", e.target.value)}
-              inputProps={{
-                style: {
-                  fontSize: "0.8rem", // Altere esse valor conforme quiser
-                },
-              }}
-            />
-          </Grid>
-
-          {/* bairro */}
-          <Grid item xs={12} md={4}>
-            <TextField
-              fullWidth
-              label="Bairro"
-              size="small"
-              variant="outlined"
-              value={companyForm.endereco.bairro}
-              onChange={(e) => setEndereco("bairro", e.target.value)}
-              inputProps={{
-                style: {
-                  fontSize: "0.8rem", // Altere esse valor conforme quiser
-                },
-              }}
-            />
-          </Grid>
-
-          {/* cidade */}
-          <Grid item xs={12} md={4}>
-            <TextField
-              fullWidth
-              size="small"
-              variant="outlined"
-              label="Cidade"
-              value={companyForm.endereco.cidade}
-              onChange={(e) => setEndereco("cidade", e.target.value)}
-              inputProps={{
-                style: {
-                  fontSize: "0.8rem", // Altere esse valor conforme quiser
-                },
-              }}
-            />
-          </Grid>
-
-          {/* pais */}
-          <Grid item xs={12} md={4}>
-            <FormControl fullWidth size="small">
-              <InputLabel>Pais</InputLabel>
-              <Select
-                label="País"
-                value={companyForm.endereco.pais}
-                onChange={(e) => setEndereco("pais", e.target.value)}
+        <Box sx={{ pr: { xs: 4, md: 32 } }}>
+          <Grid container spacing={2}>
+            {/* nome */}
+            <Grid item xs={12} md={8}>
+              <TextField
+                fullWidth
+                size="small"
+                variant="outlined"
+                label="Nome da empresa"
+                value={companyForm.nome}
+                onChange={(e) => setField("nome", e.target.value)}
+                onBlur={() => validateField("nome")}
+                error={!!errors.nome}
+                helperText={errors.nome}
+                InputProps={{
+                  startAdornment: (
+                    <InputAdornment position="start">
+                      <BusinessIcon />
+                    </InputAdornment>
+                  ),
+                }}
                 inputProps={{
                   style: {
                     fontSize: "0.8rem", // Altere esse valor conforme quiser
                   },
                 }}
-                sx={{ fontSize: "0.8rem" }} // Aplica no valor selecionado
-              >
-                <MenuItem value="Brasil">Brasil</MenuItem>
-                <MenuItem value="Outro">Outro</MenuItem>
-              </Select>
-            </FormControl>
+              />
+            </Grid>
+
+            {/* email */}
+            <Grid item xs={12} md={4}>
+              <TextField
+                fullWidth
+                label="E-mail"
+                size="small"
+                variant="outlined"
+                value={companyForm.email}
+                onChange={(e) => setField("email", e.target.value)}
+                onBlur={() => validateField("email")}
+                error={!!errors.email}
+                helperText={errors.email}
+                InputProps={{
+                  startAdornment: (
+                    <InputAdornment position="start">
+                      <EmailIcon />
+                    </InputAdornment>
+                  ),
+                }}
+                inputProps={{
+                  style: {
+                    fontSize: "0.8rem", // Altere esse valor conforme quiser
+                  },
+                }}
+              />
+            </Grid>
+
+            {/* ddd */}
+            <Grid item xs={4} sm={3} md={2}   >
+              <TextField
+                fullWidth
+                size="small"
+                variant="outlined"
+                label="DDD"
+                value={maskArea(phoneArea)}
+                onChange={(e) => setPhoneArea(onlyDigits(e.target.value).slice(0, 2))}
+                onBlur={() => validateField("area")}
+                error={!!errors.area}
+                helperText={errors.area}
+                InputProps={{
+                  startAdornment: (
+                    <InputAdornment position="start">
+                      <LocalPhoneIcon />
+                    </InputAdornment>
+                  ),
+                }}
+                inputProps={{
+                  style: {
+                    fontSize: "0.8rem", // Altere esse valor conforme quiser
+                  },
+                }}
+              />
+            </Grid>
+
+            {/* telefone */}
+            <Grid item xs={12} md={4}>
+              <TextField
+                fullWidth
+                label="Telefone"
+                size="small"
+                variant="outlined"
+                value={maskPhone9(phoneNumber)}
+                onChange={(e) => setPhoneNumber(onlyDigits(e.target.value).slice(0, 9))}
+                onBlur={() => validateField("telefone")}
+                error={!!errors.telefone}
+                helperText={errors.telefone}
+                inputProps={{
+                  style: {
+                    fontSize: "0.8rem", // Altere esse valor conforme quiser
+                  },
+                }}
+              />
+            </Grid>
+
+            {/* cep */}
+            <Grid item xs={12} md={3}>
+              <TextField
+                fullWidth
+                size="small"
+                variant="outlined"
+                label="CEP"
+                value={maskCep(companyForm.endereco.cep)}
+                onChange={(e) => setEndereco("cep", e.target.value)}
+                onBlur={handleCepBlur}
+                error={!!errors.cep}
+                helperText={errors.cep || (cepLoading ? "Buscando endereço..." : "")}
+                InputProps={{
+                  endAdornment: cepLoading ? (
+                    <InputAdornment position="end">
+                      <CircularProgress size={18} />
+                    </InputAdornment>
+                  ) : null,
+                }}
+                inputProps={{
+                  style: {
+                    fontSize: "0.8rem", // Altere esse valor conforme quiser
+                  },
+                }}
+              />
+            </Grid>
+
+            {/* uf */}
+            <Grid item xs={12} md={3}>
+              <TextField
+                fullWidth
+                label="UF"
+                size="small"
+                variant="outlined"
+                value={(companyForm.endereco.uf || "").toUpperCase()}
+                onChange={(e) => setEndereco("uf", e.target.value.toUpperCase().slice(0, 2))}
+                onBlur={() => validateField("uf")}
+                error={!!errors.uf}
+                helperText={errors.uf}
+                inputProps={{
+                  style: {
+                    fontSize: "0.8rem", // Altere esse valor conforme quiser
+                  },
+                }}
+              />
+            </Grid>
+
+            {/* logradouro */}
+            <Grid item xs={12} md={8}>
+              <TextField
+                fullWidth
+                label="Logradouro"
+                size="small"
+                variant="outlined"
+                value={companyForm.endereco.logradouro}
+                onChange={(e) => setEndereco("logradouro", e.target.value)}
+                InputProps={{
+                  startAdornment: (
+                    <InputAdornment position="start">
+                      <LocationOnIcon />
+                    </InputAdornment>
+                  ),
+                }}
+                inputProps={{
+                  style: {
+                    fontSize: "0.8rem", // Altere esse valor conforme quiser
+                  },
+                }}
+              />
+            </Grid>
+
+            {/* numero */}
+            <Grid item xs={12} md={4} sx={{
+                width: "100%",
+                "@media (min-width:60px)": {
+                  width: "calc(14% + 15px)", // aumenta só esse campo
+
+                },
+              }}>
+              <TextField
+                fullWidth
+                size="small"
+                variant="outlined"
+                label="Número"
+                value={companyForm.endereco.numero}
+                onChange={(e) => setEndereco("numero", e.target.value)}
+                inputProps={{
+                  style: {
+                    fontSize: "0.8rem", // Altere esse valor conforme quiser
+                  },
+                }}
+              />
+            </Grid>
+
+            {/* bairro */}
+            <Grid item xs={12} md={4}>
+              <TextField
+                fullWidth
+                label="Bairro"
+                size="small"
+                variant="outlined"
+                value={companyForm.endereco.bairro}
+                onChange={(e) => setEndereco("bairro", e.target.value)}
+                inputProps={{
+                  style: {
+                    fontSize: "0.8rem", // Altere esse valor conforme quiser
+                  },
+                }}
+              />
+            </Grid>
+
+            {/* cidade */}
+            <Grid item xs={12} md={4}>
+              <TextField
+                fullWidth
+                size="small"
+                variant="outlined"
+                label="Cidade"
+                value={companyForm.endereco.cidade}
+                onChange={(e) => setEndereco("cidade", e.target.value)}
+                inputProps={{
+                  style: {
+                    fontSize: "0.8rem", // Altere esse valor conforme quiser
+                  },
+                }}
+              />
+            </Grid>
+
+            {/* pais */}
+            <Grid item xs={12} md={4}>
+              <FormControl fullWidth size="small">
+                <InputLabel>Pais</InputLabel>
+                <Select
+                  label="País"
+                  value={companyForm.endereco.pais}
+                  onChange={(e) => setEndereco("pais", e.target.value)}
+                  inputProps={{
+                    style: {
+                      fontSize: "0.8rem", // Altere esse valor conforme quiser
+                    },
+                  }}
+                  sx={{ fontSize: "0.8rem" }} // Aplica no valor selecionado
+                >
+                  <MenuItem value="Brasil">Brasil</MenuItem>
+                  <MenuItem value="Outro">Outro</MenuItem>
+                </Select>
+              </FormControl>
+            </Grid>
           </Grid>
-        </Grid>
+        </Box>
       </Paper>
 
       {/* CARD 2: IMAGENS DO NEGÓCIO */}

@@ -22,7 +22,8 @@ import {
   Box,
   Chip,
   Drawer,
-  TablePagination
+  TablePagination,
+  Autocomplete
 } from "@mui/material";
 import MuiAlert from "@mui/material/Alert";
 import Snackbar from "@mui/material/Snackbar";
@@ -310,6 +311,33 @@ const Servicos = () => {
     { field: "statusFormat", headerName: "Status", width: 150 },
   ];
 
+  const tiposServico = [
+    "Todos",
+    "Barbearia",
+    "Salão de Beleza",
+    "Estética",
+    "Spa",
+    "Manicure e Pedicure",
+    "Sobrancelhas e Cílios",
+    "Massoterapia",
+    "Fisioterapia",
+    "Quiropraxia",
+    "Acupuntura",
+    "Odontologia",
+    "Saúde e Bem-estar",
+    "Nutrição",
+    "Psicologia",
+    "Personal Trainer",
+    "Pet Care",
+    "Manutenção",
+    "Assistência Técnica",
+    "Limpeza e Higienização",
+    "Consultoria",
+    "Educação e Aulas",
+    "Eventos",
+    "Automotivo",
+  ];
+
   // Responsável pelos detalhes das linhas
   const renderDetalhesServico = (row) => (
     <>
@@ -487,7 +515,7 @@ const Servicos = () => {
     <div className="col">
       <Stack direction="row" spacing={1} useFlexGap flexWrap="wrap" sx={{ mb: 1 }}>
         {quickSearch && (
-          <Chip label={`Busca: ${quickSearch}`} onDelete={() => setQuickSearch("")} sx={chipSx}/>
+          <Chip label={`Busca: ${quickSearch}`} onDelete={() => setQuickSearch("")} sx={chipSx} />
         )}
 
         {filtros.titulo && (
@@ -700,19 +728,32 @@ const Servicos = () => {
             onChange={(e) => setFiltros((p) => ({ ...p, titulo: e.target.value }))}
           />
 
-          <FormControl fullWidth margin="normal">
-            <InputLabel>Tipo de Serviço</InputLabel>
-            <Select
-              label="Tipo de Serviço"
-              value={filtros.tipoServico}
-              onChange={(e) => setFiltros((p) => ({ ...p, tipoServico: e.target.value }))}
-            >
-              <MenuItem value="">Todos</MenuItem>
-              <MenuItem value="Barbearia">Barbearia</MenuItem>
-              <MenuItem value="Cuidados">Cuidados</MenuItem>
-              <MenuItem value="Crianças">Crianças</MenuItem>
-            </Select>
-          </FormControl>
+          <Autocomplete
+            freeSolo
+            fullWidth
+            options={tiposServico}
+            value={filtros.tipoServico || "Todos"}
+            onChange={(_, value) => {
+              setFiltros((p) => ({
+                ...p,
+                tipoServico: value === "Todos" ? "" : value || "",
+              }));
+            }}
+            onInputChange={(_, value) => {
+              setFiltros((p) => ({
+                ...p,
+                tipoServico: value === "Todos" ? "" : value || "",
+              }));
+            }}
+            renderInput={(params) => (
+              <TextField
+                {...params}
+                margin="normal"
+                label="Tipo de Serviço"
+                placeholder="Busque ou digite uma categoria"
+              />
+            )}
+          />
 
           <FormControl fullWidth margin="normal">
             <InputLabel>Status</InputLabel>
@@ -905,35 +946,46 @@ const Servicos = () => {
                 </FormControl>
               </div>
               <div className="form-group col-6 mb-2">
-                <FormControl fullWidth variant="outlined">
-                  <InputLabel>Tipo de Serviço</InputLabel>
-                  <Select
-                    value={servico?.tipoServico || ""}
-                    onChange={(e) => setServico("tipoServico", e.target.value)}
-                    label="Tipo de Serviço"
-                    startAdornment={
-                      <InputAdornment position="start">
-                        <ManageSearchIcon />
-                      </InputAdornment>
-                    }
-                    sx={{ fontSize: "0.8rem" }} // Aplica no valor selecionado
-                    MenuProps={{
-                      PaperProps: {
+                <Autocomplete
+                  freeSolo
+                  fullWidth
+                  options={tiposServico.filter((tipo) => tipo !== "Todos")}
+                  value={servico?.tipoServico || null}
+                  inputValue={servico?.tipoServico || ""}
+                  onChange={(_, value) => {
+                    setServico("tipoServico", value || "");
+                  }}
+                  onInputChange={(_, value) => {
+                    setServico("tipoServico", value || "");
+                  }}
+                  renderInput={(params) => (
+                    <TextField
+                      {...params}
+                      label="Tipo de Serviço"
+                      placeholder="Busque ou digite uma categoria"
+                      InputProps={{
+                        ...params.InputProps,
+                        startAdornment: (
+                          <>
+                            <InputAdornment position="start">
+                              <ManageSearchIcon />
+                            </InputAdornment>
+                            {params.InputProps.startAdornment}
+                          </>
+                        ),
                         sx: {
-                          fontSize: "0.8rem", // Aplica no dropdown
+                          fontSize: "0.8rem",
                         },
-                      },
-                    }}
-                  >
-                    <MenuItem value="Barbearia">Barbearia</MenuItem>
-                    {/* <MenuItem value="Cabeleireiro">Cabeleireiro</MenuItem>
-                    <MenuItem value="Manicure">Manicure</MenuItem>
-                    <MenuItem value="Pedicure">Pedicure</MenuItem> */}
-                    <MenuItem value="Cuidados">Cuidados</MenuItem>
-                    <MenuItem value="Crianças">Crianças</MenuItem>
-                    {/* <MenuItem value="Outros">Outros</MenuItem> */}
-                  </Select>
-                </FormControl>
+                      }}
+                      inputProps={{
+                        ...params.inputProps,
+                        style: {
+                          fontSize: "0.8rem",
+                        },
+                      }}
+                    />
+                  )}
+                />
               </div>
               <div className="form-group col-12 mb-3">
                 <LocalizationProvider dateAdapter={AdapterDayjs}>

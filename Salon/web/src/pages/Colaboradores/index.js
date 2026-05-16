@@ -55,11 +55,11 @@ import FilterListIcon from "@mui/icons-material/FilterList";
 import SaveIcon from "@mui/icons-material/Save";
 import SignpostIcon from "@mui/icons-material/Signpost";
 import AutorenewIcon from "@mui/icons-material/Autorenew";
-import ContentCutIcon from '@mui/icons-material/ContentCut';
 import SearchIcon from "@mui/icons-material/Search";
 import ClearIcon from "@mui/icons-material/Clear";
 import LocationCityIcon from "@mui/icons-material/LocationCity";
 import BusinessIcon from '@mui/icons-material/Business';
+import MiscellaneousServicesIcon from "@mui/icons-material/MiscellaneousServices";
 
 import { buscarEndereco } from "../../services/apiCep";
 
@@ -1358,7 +1358,7 @@ const Colaboradores = () => {
                     disabled={form.disabled}
                     startAdornment={
                       <InputAdornment position="start">
-                        <ContentCutIcon />
+                        <MiscellaneousServicesIcon />
                       </InputAdornment>
                     }
                     value={especialidadesValue}

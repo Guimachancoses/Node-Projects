@@ -34,7 +34,7 @@ import PhoneAndroidIcon from "@mui/icons-material/PhoneAndroid";
 import RecentActorsIcon from "@mui/icons-material/RecentActors";
 import SignpostIcon from "@mui/icons-material/Signpost";
 import PersonOutlineIcon from "@mui/icons-material/PersonOutline";
-import ContentCutIcon from '@mui/icons-material/ContentCut';
+import MiscellaneousServicesIcon from "@mui/icons-material/MiscellaneousServices";
 import LocationCityIcon from "@mui/icons-material/LocationCity";
 import WcIcon from '@mui/icons-material/Wc';
 
@@ -776,7 +776,7 @@ export default function Account() {
               <Grid item xs={12} md={8} sx={{
                 width: "100%",
                 "@media (min-width:60px)": {
-                  width: "calc(10% + 6px)", // aumenta só esse campo
+                  width: "calc(14% + 15px)", // aumenta só esse campo
 
                 },
               }}>
@@ -972,7 +972,7 @@ export default function Account() {
               <Grid item xs={12} md={4} sx={{
                 width: "100%",
                 "@media (min-width:600px)": {
-                  width: "calc(80% + 60px)", // aumenta só esse campo
+                  width: "calc(80% + 40px)", // aumenta só esse campo
                   mr: "-60px",
                 },
               }}>
@@ -984,7 +984,7 @@ export default function Account() {
                     label="Especialidades"
                     startAdornment={
                       <InputAdornment position="start">
-                        <ContentCutIcon />
+                        <MiscellaneousServicesIcon />
                       </InputAdornment>
                     }
                     value={especialidadesValue}
