@@ -33,7 +33,7 @@ const FaleConosco = () => {
     <Box
       sx={{
         minHeight: "100dvh",
-        backgroundImage: `linear-gradient(rgba(0,0,0,.42), rgba(0,0,0,.58)), url(${capaFundo})`,
+        backgroundImage: `url(${capaFundo})`,
         backgroundSize: "cover",
         backgroundPosition: "center",
         backgroundRepeat: "no-repeat",
@@ -51,9 +51,13 @@ const FaleConosco = () => {
               top: 8,
               left: 8,
               zIndex: 9999,
-              bgcolor: "linear-gradient(135deg,hsl(185, 80.50%, 22.20%) 0%, #0a3f44 100%)",
-              "&:hover": { bgcolor: "#000" },
+              bgcolor: "#fff",
+              color: "#000",
               boxShadow: 2,
+              "&:hover": {
+                bgcolor: "#fff",
+                color: "var(--primary)",
+              },
             }}
           >
             <ArrowBackIcon />
@@ -85,12 +89,12 @@ const FaleConosco = () => {
             </Typography>
           </Box>
 
-          <CardContent sx={{ p: 3, background: "#000"}}>
+          <CardContent sx={{ p: 3, background: "#000" }}>
             <Grid container spacing={2}>
               <Grid item xs={12}>
                 <Stack direction="row" spacing={1} alignItems="center">
                   <BusinessIcon color="primary" />
-                  <Typography variant="h6" fontWeight={600}>
+                  <Typography variant="h6" fontWeight={600} sx={{ color: "#fff" }} >
                     GuiMac Tech Solution Ltda
                   </Typography>
                 </Stack>
@@ -175,7 +179,7 @@ const FaleConosco = () => {
 
             <Divider sx={{ my: 3 }} />
 
-            <Typography variant="caption" color="text.secondary">
+            <Typography variant="caption" color="text.secondary" sx={{ color: "#CBD5E1" }}>
               © {new Date().getFullYear()} GuiMac Tech Solution Ltda — Todos os direitos reservados.
             </Typography>
           </CardContent>

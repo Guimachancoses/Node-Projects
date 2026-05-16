@@ -91,7 +91,7 @@ const TermosDeServico = () => {
     <Box
       sx={{
         minHeight: "100dvh",
-        backgroundImage: `linear-gradient(rgba(0,0,0,.42), rgba(0,0,0,.58)), url(${capaFundo})`,
+        backgroundImage: `url(${capaFundo})`,
         backgroundSize: "cover",
         backgroundPosition: "center",
         backgroundRepeat: "no-repeat",
@@ -108,9 +108,13 @@ const TermosDeServico = () => {
             top: 8,
             left: 8,
             zIndex: 9999,
-            bgcolor: "linear-gradient(135deg,hsl(185, 80.50%, 22.20%) 0%, #0a3f44 100%)",
-            "&:hover": { bgcolor: "#000" },
+            bgcolor: "#fff",
+            color: "#000",
             boxShadow: 2,
+            "&:hover": {
+              bgcolor: "#fff",
+              color: "var(--primary)",
+            },
           }}
         >
           <ArrowBackIcon />
@@ -143,7 +147,7 @@ const TermosDeServico = () => {
             </Stack>
           </Box>
 
-          <CardContent sx={{ p: 3, background: "#000" }}>
+          <CardContent sx={{ p: 3, background: "#000", color: "#fff" }}>
             <Alert severity="info" sx={{ mb: 3 }}>
               Este documento é um modelo robusto para publicação. Para máxima conformidade,
               recomenda-se revisão jurídica especializada conforme seu negócio.
@@ -154,7 +158,7 @@ const TermosDeServico = () => {
                 <Typography variant="h6" fontWeight={700} gutterBottom>
                   {secao.titulo}
                 </Typography>
-                <Typography variant="body2" color="text.secondary" sx={{ lineHeight: 1.75 }}>
+                <Typography variant="body2" color="text.secondary" sx={{ lineHeight: 1.75, color: "#CBD5E1" }}>
                   {secao.texto}
                 </Typography>
                 {idx !== secoes.length - 1 && <Divider sx={{ mt: 2.5 }} />}

@@ -101,7 +101,7 @@ const PoliticaDePrivacidade = () => {
     <Box
       sx={{
         minHeight: "100dvh",
-        backgroundImage: `linear-gradient(rgba(0,0,0,.42), rgba(0,0,0,.58)), url(${capaFundo})`,
+        backgroundImage: `url(${capaFundo})`,
         backgroundSize: "cover",
         backgroundPosition: "center",
         backgroundRepeat: "no-repeat",
@@ -119,9 +119,13 @@ const PoliticaDePrivacidade = () => {
             top: 8,
             left: 8,
             zIndex: 9999,
-            bgcolor: "linear-gradient(135deg,hsl(185, 80.50%, 22.20%) 0%, #0a3f44 100%)",
-            "&:hover": { bgcolor: "#000" },
+            bgcolor: "#fff",
+            color: "#000",
             boxShadow: 2,
+            "&:hover": {
+              bgcolor: "#fff",
+              color: "var(--primary)",
+            },
           }}
         >
           <ArrowBackIcon />
@@ -153,7 +157,7 @@ const PoliticaDePrivacidade = () => {
             </Stack>
           </Box>
 
-          <CardContent sx={{ p: 3, background: "#000" }}>
+          <CardContent sx={{ p: 3, background: "#000", color: "#fff" }}>
             <Alert severity="info" sx={{ mb: 3 }}>
               Esta política foi estruturada para boas práticas de conformidade. Recomendamos revisão jurídica antes da publicação final.
             </Alert>
@@ -163,7 +167,7 @@ const PoliticaDePrivacidade = () => {
                 <Typography variant="h6" fontWeight={700} gutterBottom>
                   {s.titulo}
                 </Typography>
-                <Typography variant="body2" color="text.secondary" sx={{ lineHeight: 1.75 }}>
+                <Typography variant="body2" color="text.secondary" sx={{ lineHeight: 1.75, color: "#CBD5E1" }}>
                   {s.texto}
                 </Typography>
                 {i !== secoes.length - 1 && <Divider sx={{ mt: 2.5 }} />}
@@ -172,16 +176,16 @@ const PoliticaDePrivacidade = () => {
 
             <Divider sx={{ my: 3 }} />
 
-            <Typography variant="caption" color="text.secondary" display="block">
+            <Typography variant="caption" color="text.secondary" display="block" sx={{ color: "#CBD5E1" }}>
               <strong>{empresa.razaoSocial}</strong> — CNPJ {empresa.cnpj}
             </Typography>
-            <Typography variant="caption" color="text.secondary" display="block">
+            <Typography variant="caption" color="text.secondary" display="block" sx={{ color: "#CBD5E1" }}>
               Endereço: {empresa.endereco}
             </Typography>
-            <Typography variant="caption" color="text.secondary" display="block">
+            <Typography variant="caption" color="text.secondary" display="block" sx={{ color: "#CBD5E1" }}>
               Contato: {empresa.emailContato} | {empresa.telefone}
             </Typography>
-            <Typography variant="caption" color="text.secondary" display="block">
+            <Typography variant="caption" color="text.secondary" display="block" sx={{ color: "#CBD5E1" }}>
               Situação cadastral: {empresa.situacao}
             </Typography>
           </CardContent>
