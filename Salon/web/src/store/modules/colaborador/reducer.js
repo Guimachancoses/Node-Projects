@@ -51,6 +51,7 @@ const INITIAL_STATE = {
     especialidades: [],
     funcao: "",
     salaoId: "",
+    foto: ""
   }
 };
 

@@ -55,8 +55,9 @@ import {
   onlyDigits,
 } from "../../utils/formValidators";
 import { buscarEndereco } from "../../services/apiCep";
+import consts from "../../consts";
 
-const API_BASE = "https://salon.fabrisportalhub.com.br";
+const API_BASE = process.env.REACT_APP_API_URL;
 
 export default function Account() {
   const dispatch = useDispatch();
@@ -72,6 +73,19 @@ export default function Account() {
   useEffect(() => {
     dispatch(allServicos());
   }, [dispatch]);
+
+  const isHttpUrl = (value = "") =>
+    /^https?:\/\//i.test(String(value));
+
+  const buildBucketUrl = (value = "") => {
+    if (!value) return "";
+    if (isHttpUrl(value)) return value;
+
+    const base = (consts.bucketUrl || "").replace(/\/$/, "");
+    const path = String(value).replace(/^\//, "");
+
+    return `${base}/${path}`;
+  };
 
   const [fotoFile, setFotoFile] = useState(null);
   const [fotoPreview, setFotoPreview] = useState("");
@@ -100,19 +114,32 @@ export default function Account() {
   const query = useMemo(() => new URLSearchParams(location.search), [location.search]);
   const googleStatus = query.get("google");
 
-  const fotoDefault = user?.imageUrl || userStore?.foto || userStore?.fotoUrl || "";
-  const fotoExibicao = fotoFile ? fotoPreview : fotoDefault;
-
   const [accountForm, setAccountForm] = useState({
     nome: "",
     sobrenome: "",
     email: "",
     sexo: "",
+    foto: "",
     telefone: { area: "", numero: "" },
     identificacao: { tipoD: "", numero: "" },
-    endereco: { cep: "", logradouro: "", numero: "", bairro: "", cidade: { nome: "" } },
+    endereco: {
+      cep: "",
+      logradouro: "",
+      numero: "",
+      bairro: "",
+      cidade: { nome: "" },
+    },
     especialidades: [],
   });
+
+  const fotoBanco = userStore?.foto || userStore?.fotoUrl || accountForm?.foto || "";
+  const fotoClerk = user?.imageUrl || "";
+
+  const fotoDefault = fotoBanco
+    ? buildBucketUrl(fotoBanco)
+    : fotoClerk;
+
+  const fotoExibicao = fotoFile ? fotoPreview : fotoDefault;
 
   // hidratar
   useEffect(() => {
@@ -139,6 +166,7 @@ export default function Account() {
         cidade: { nome: userStore?.endereco?.cidade?.nome ?? "" },
       },
       especialidades: (userStore?.especialidades || []).map(String),
+      foto: userStore?.foto || userStore?.fotoUrl || user?.imageUrl || "",
     };
 
     setAccountForm(hydrated);
@@ -553,6 +581,8 @@ export default function Account() {
   }, [accountForm]);
 
   const disableSave = form?.saving || hasErrors || !requiredFilled || (!hasChanges && !fotoFile);
+
+  console.log("accountForm: ", accountForm)
 
   return (
     <Container component="main" maxWidth="lg" sx={{ py: 4 }}>

@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { loadMyCompanyRequest } from "../../store/modules/salao/actions";
 import consts from "../../consts";
@@ -92,11 +92,27 @@ export default function Layout({ toggleTheme }) {
     return () => clearTimeout(t);
   }, [isUiLoading]);
 
-  const buildImageUrl = (value = "") => {
+  const isHttpUrl = (value = "") => /^https?:\/\//i.test(String(value));
+
+  const buildImageUrl = useCallback((value = "") => {
     if (!value) return "";
-    if (value.startsWith("http")) return value;
-    return `${consts.bucketUrl.replace(/\/$/, "")}/${String(value).replace(/^\//, "")}`;
-  };
+
+    const raw = String(value).trim();
+
+    if (isHttpUrl(raw)) return raw;
+
+    const base = (consts.bucketUrl || "").replace(/\/$/, "");
+    const path = raw.replace(/^\//, "");
+
+    return `${base}/${path}`;
+  }, []);
+
+  const avatarUrl = useMemo(() => {
+    const fotoBanco = userStore?.foto || userStore?.fotoUrl || userStore?.imageUrl || "";
+    const fotoClerk = user?.imageUrl || "";
+
+    return fotoBanco ? buildImageUrl(fotoBanco) : fotoClerk;
+  }, [userStore, user?.imageUrl, buildImageUrl]);
 
   const pickLatestByType = (arquivos = [], tipo = "") => {
     const item = (arquivos || [])
@@ -108,7 +124,7 @@ export default function Layout({ toggleTheme }) {
   const capaUrl = useMemo(() => {
     const caminho = empresa?.capa || pickLatestByType(empresa?.arquivos, "capa");
     return buildImageUrl(caminho);
-  }, [empresa]);
+  }, [empresa, buildImageUrl]);
 
   const theme = useTheme();
   const location = useLocation();
@@ -188,26 +204,41 @@ export default function Layout({ toggleTheme }) {
   }, [form?.loading, logoUrl, capaUrl]);
 
   const isDark = theme.palette.mode === "dark";
+
   useEffect(() => {
-    // cor base imediata
     document.body.style.backgroundColor = isDark ? "#495057" : "#F1F5F9";
     document.body.style.backgroundImage = "none";
 
-    // ✅ se for yoda, fixa capa específica
-    const yodaBg = backgroundYoda;
-    const finalUrl = isYoda ? yodaBg : capaUrl;
+    const finalUrl = isYoda ? backgroundYoda : capaUrl;
 
     if (!finalUrl) return;
 
+    let cancelled = false;
+
     const img = new Image();
+
     img.onload = () => {
+      if (cancelled) return;
+
+      const imageRatio = img.naturalWidth / img.naturalHeight;
+      const viewportRatio = window.innerWidth / window.innerHeight;
+
+      const ratioDiff = Math.abs(imageRatio - viewportRatio);
+
+      const backgroundSize = ratioDiff > 0.7 ? "contain" : "cover";
+
       document.body.style.backgroundImage = `url('${finalUrl}')`;
-      document.body.style.backgroundSize = "cover";
+      document.body.style.backgroundSize = backgroundSize;
       document.body.style.backgroundPosition = "center";
       document.body.style.backgroundRepeat = "no-repeat";
       document.body.style.backgroundAttachment = "fixed";
     };
+
     img.src = finalUrl;
+
+    return () => {
+      cancelled = true;
+    };
   }, [capaUrl, isDark, isYoda]);
 
   const sidebarColors = useMemo(
@@ -476,7 +507,7 @@ export default function Layout({ toggleTheme }) {
               <IconButton data-tour="menu-config" onClick={handleOpenUserMenu} sx={{ p: 0 }}>
                 <Avatar
                   sx={{ border: "2px solid", borderColor: "var(--Gold)" }}
-                  src={user?.imageUrl || miniLogo}
+                  src={avatarUrl || miniLogo}
                   alt="Avatar"
                 />
               </IconButton>
