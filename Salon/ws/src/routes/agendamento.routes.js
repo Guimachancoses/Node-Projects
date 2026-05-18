@@ -19,129 +19,113 @@ router.post("/", async (req, res) => {
   const db = mongoose.connection;
   const session = await db.startSession();
   session.startTransaction();
+
   try {
-    //console.log("req.body:", req.body);
+    console.log("req.body:", req.body);
 
-    const { clienteId, salaoId, servicoId, colaboradorId, status_payment } =
-      req.body;
+    const { clienteId, salaoId, servicoId, colaboradorId, status_payment } = req.body;
 
-    // Validação dos campos obrigatórios
-    if (
-      !clienteId ||
-      !salaoId ||
-      !servicoId ||
-      !colaboradorId ||
-      !req.body.data
-    ) {
+    if (!clienteId || !salaoId || !servicoId || !colaboradorId || !req.body.data) {
       throw new Error("Campos obrigatórios faltando");
     }
 
-    // Busca o serviço e valida
     const servico = await Servico.findById(servicoId).select(
       "preco titulo descricao comissao duracao"
     );
+
     if (!servico) throw new Error("Serviço não encontrado");
 
-    // Validação e conversão da data
-    const TZ = "America/Sao_Paulo";
+    const inicioSP = parseDataSaoPaulo(req.body.data);
 
-    // Interpreta o horário recebido como São Paulo
-    const inicioSP = DateTime.fromISO(req.body.data, { zone: TZ });
-
-    if (!inicioSP.isValid) {
+    if (!inicioSP || !inicioSP.isValid) {
       throw new Error("Data de início inválida");
     }
 
     const agoraSP = DateTime.now().setZone(TZ);
 
-    // tolerância de 1 minuto para evitar rejeição por segundos
     if (inicioSP < agoraSP.minus({ minutes: 1 })) {
       throw new Error("Não é possível agendar para uma data no passado");
     }
 
-    // mantém seu fluxo com moment:
-    const inicio = moment(inicioSP.toJSDate());
+    const duracaoMinutos = getDuracaoMinutos(servico.duracao);
+    const fimSP = inicioSP.plus({ minutes: duracaoMinutos });
 
-    // Conversão da duração do serviço
-    const duracaoMinutos = util.hourToMinutes(
-      moment(servico.duracao).format("HH:mm")
-    );
-    const fim = moment(inicio).add(duracaoMinutos, "minutes");
+    const inicioUTCDate = inicioSP.toUTC().toJSDate();
+    const fimUTCDate = fimSP.toUTC().toJSDate();
 
-    // Verifica se o colaborador existe
+    const inicioDiaUTC = inicioSP.startOf("day").toUTC().toJSDate();
+    const fimDiaUTC = inicioSP.endOf("day").toUTC().toJSDate();
+
+    console.log("inicio recebido:", req.body.data);
+    console.log("inicio SP:", inicioSP.toISO());
+    console.log("fim SP:", fimSP.toISO());
+    console.log("inicio UTC salvo:", inicioUTCDate);
+    console.log("fim UTC salvo:", fimUTCDate);
+
     const colaborador = await Colaborador.findById(colaboradorId);
+
     if (!colaborador) {
       throw new Error("Colaborador não encontrado");
     }
 
-    // Verifica conflitos de horário para o colaborador, excluindo agendamentos cancelados
     const agendamentosColaborador = await Agendamento.find({
       colaboradorId,
       status: { $ne: "C" },
       data: {
-        $gte: moment(inicio).startOf('day').toDate(),
-        $lt: moment(inicio).endOf('day').toDate(),
+        $gte: inicioDiaUTC,
+        $lte: fimDiaUTC,
       },
     }).populate("servicoId", "duracao");
 
-    const conflito = agendamentosColaborador.find(ag => {
-      const inicioExistente = moment(ag.data);
-      const duracao = util.hourToMinutes(moment(ag.servicoId.duracao).format("HH:mm"));
-      const fimExistente = moment(inicioExistente).add(duracao, "minutes");
+    const conflito = agendamentosColaborador.find((ag) => {
+      const inicioExistenteSP = DateTime.fromJSDate(ag.data).setZone(TZ);
+      const duracaoExistente = getDuracaoMinutos(ag.servicoId.duracao);
+      const fimExistenteSP = inicioExistenteSP.plus({ minutes: duracaoExistente });
 
-      return (
-        inicioExistente.isBefore(fim) && fimExistente.isAfter(inicio)
-      );
+      return inicioExistenteSP < fimSP && fimExistenteSP > inicioSP;
     });
 
     if (conflito) {
       await session.abortTransaction();
       session.endSession();
+
       return res.status(409).json({
         success: false,
         error: "Colaborador já possui um agendamento neste horário",
       });
     }
 
-    // console.log("inicio:", inicio);
-    // console.log("fim:", fim);
-
-    // Verifica se o cliente já tem outro agendamento que se sobreponha ao novo horário
     const agendamentosCliente = await Agendamento.find({
       clienteId,
       status: { $ne: "C" },
       data: {
-        $gte: moment(inicio).startOf('day').toDate(),
-        $lt: moment(inicio).endOf('day').toDate(),
+        $gte: inicioDiaUTC,
+        $lte: fimDiaUTC,
       },
     }).populate("servicoId", "duracao");
 
-    const clienteConflito = agendamentosCliente.find(ag => {
-      const inicioExistente = moment(ag.data);
-      const duracao = util.hourToMinutes(moment(ag.servicoId.duracao).format("HH:mm"));
-      const fimExistente = moment(inicioExistente).add(duracao, "minutes");
+    const clienteConflito = agendamentosCliente.find((ag) => {
+      const inicioExistenteSP = DateTime.fromJSDate(ag.data).setZone(TZ);
+      const duracaoExistente = getDuracaoMinutos(ag.servicoId.duracao);
+      const fimExistenteSP = inicioExistenteSP.plus({ minutes: duracaoExistente });
 
-      return (
-        inicioExistente.isBefore(fim) && fimExistente.isAfter(inicio)
-      );
+      return inicioExistenteSP < fimSP && fimExistenteSP > inicioSP;
     });
-
-    //console.log("clienteConflito:", clienteConflito);
 
     if (clienteConflito) {
       await session.abortTransaction();
       session.endSession();
+
       return res.status(409).json({
         success: false,
         error: "Você já possui um agendamento que conflita com este horário",
       });
     }
 
-    // Cria o agendamento
     const agendamento = await new Agendamento({
       ...req.body,
-      data: inicio.toDate(),
-      fim: fim.toDate(),
+      data: inicioUTCDate,
+      fim: fimUTCDate,
       salaoId,
       colaboradorId,
       clienteId,
@@ -154,12 +138,17 @@ router.post("/", async (req, res) => {
     await session.commitTransaction();
     session.endSession();
 
-    res.json({ success: true, agendamento });
+    return res.json({ success: true, agendamento });
   } catch (err) {
     await session.abortTransaction();
     session.endSession();
-    //console.error("Erro ao criar agendamento:", err);
-    res.status(400).json({ success: false, error: err.message });
+
+    console.error("Erro ao criar agendamento:", err);
+
+    return res.status(400).json({
+      success: false,
+      error: err.message,
+    });
   }
 });
 
@@ -194,7 +183,7 @@ router.post("/dias-disponiveis", async (req, res) => {
 
 
     const filtroSalao = salaoId ? { salaoId } : {};
-    console.log("📥 REQUEST:", { data, salaoId, servicoId });
+    //console.log("📥 REQUEST:", { data, salaoId, servicoId });
 
     const horarios = await Horario.find({
       ...filtroSalao,
@@ -221,7 +210,7 @@ router.post("/dias-disponiveis", async (req, res) => {
     const agoraSP = moment.tz(TZ);
     const hojeSP = agoraSP.format("YYYY-MM-DD");
 
-    console.log("🕒 HOJE:", hojeSP, "| AGORA:", agoraSP.format("HH:mm"), "| TZ:", TZ);
+    //console.log("🕒 HOJE:", hojeSP, "| AGORA:", agoraSP.format("HH:mm"), "| TZ:", TZ);
 
     // duração serviço (usar UTC para não deslocar duração por timezone)
     const servicoDuracaoHHmm = moment.utc(servico.duracao).format("HH:mm");
@@ -245,7 +234,7 @@ router.post("/dias-disponiveis", async (req, res) => {
 
     for (let i = 0; i <= 365 && agenda.length <= 7; i++) {
       const dataFormatada = lastDay.format("YYYY-MM-DD");
-      console.log("\n📅 DIA:", dataFormatada);
+      //console.log("\n📅 DIA:", dataFormatada);
 
       const espacosValidos = horarios.filter((horario) => {
         const diaSemanaDisponivel = horario.dias.includes(lastDay.day());
@@ -257,21 +246,21 @@ router.post("/dias-disponiveis", async (req, res) => {
         return diaSemanaDisponivel && servicoDisponivel;
       });
 
-      console.log("🧩 ESPAÇOS VÁLIDOS:", espacosValidos.length);
+      //console.log("🧩 ESPAÇOS VÁLIDOS:", espacosValidos.length);
 
       if (espacosValidos.length > 0) {
         let todosHorariosDia = {};
 
         for (let espaco of espacosValidos) {
-          console.log("⏰ ESPAÇO:", { inicio: espaco.inicio, fim: espaco.fim });
+          //console.log("⏰ ESPAÇO:", { inicio: espaco.inicio, fim: espaco.fim });
 
           // DEBUG de conversão
-          console.log("🌎 ESPAÇO UTC->SP:", {
-            inicioUTC: moment.utc(espaco.inicio).format(),
-            fimUTC: moment.utc(espaco.fim).format(),
-            inicioSP: moment(espaco.inicio).tz(TZ).format(),
-            fimSP: moment(espaco.fim).tz(TZ).format(),
-          });
+          // console.log("🌎 ESPAÇO UTC->SP:", {
+          //   inicioUTC: moment.utc(espaco.inicio).format(),
+          //   fimUTC: moment.utc(espaco.fim).format(),
+          //   inicioSP: moment(espaco.inicio).tz(TZ).format(),
+          //   fimSP: moment(espaco.fim).tz(TZ).format(),
+          // });
 
           for (let colaboradorId of espaco.colaboradores) {
             if (!todosHorariosDia[colaboradorId]) {
@@ -308,7 +297,7 @@ router.post("/dias-disponiveis", async (req, res) => {
                 );
                 return horarioMoment.isAfter(agoraSP);
               });
-              console.log("🧹 FILTRADO (HOJE):", slots);
+              //console.log("🧹 FILTRADO (HOJE):", slots);
             }
 
             todosHorariosDia[colaboradorId] = [
@@ -323,7 +312,7 @@ router.post("/dias-disponiveis", async (req, res) => {
         const fimDiaUTC = lastDay.clone().endOf("day").utc().toDate();
 
         for (let colaboradorId of Object.keys(todosHorariosDia)) {
-          console.log("\n👤 COLAB:", colaboradorId);
+          //console.log("\n👤 COLAB:", colaboradorId);
 
           const agendamentos = await Agendamento.find({
             ...filtroSalao,
@@ -334,7 +323,7 @@ router.post("/dias-disponiveis", async (req, res) => {
             .select("data servicoId -_id")
             .populate("servicoId", "duracao");
 
-          console.log("📌 AGENDAMENTOS:", agendamentos.length);
+          //console.log("📌 AGENDAMENTOS:", agendamentos.length);
 
           let horariosOcupados = agendamentos
             .map((agendamento) =>
@@ -348,7 +337,7 @@ router.post("/dias-disponiveis", async (req, res) => {
             )
             .flat();
 
-          console.log("⛔ OCUPADOS:", horariosOcupados);
+          //console.log("⛔ OCUPADOS:", horariosOcupados);
 
           let horariosLivres = util
             .sliptByValue(
@@ -359,7 +348,7 @@ router.post("/dias-disponiveis", async (req, res) => {
             )
             .filter((space) => space.length > 0);
 
-          console.log("🟢 LIVRES INICIAL:", horariosLivres);
+          //console.log("🟢 LIVRES INICIAL:", horariosLivres);
 
           horariosLivres = horariosLivres.filter((h) => h.length >= servicoSlots);
 
@@ -390,7 +379,7 @@ router.post("/dias-disponiveis", async (req, res) => {
             });
           }
 
-          console.log("✅ FINAL:", horariosLivres);
+          //console.log("✅ FINAL:", horariosLivres);
 
           if (horariosLivres.length === 0) {
             delete todosHorariosDia[colaboradorId];
@@ -400,7 +389,7 @@ router.post("/dias-disponiveis", async (req, res) => {
         }
 
         const total = Object.keys(todosHorariosDia).length;
-        console.log("👥 DISPONÍVEIS NO DIA:", total);
+        //console.log("👥 DISPONÍVEIS NO DIA:", total);
 
         if (total > 0) {
           colaboradores.push(Object.keys(todosHorariosDia));
@@ -428,9 +417,9 @@ router.post("/dias-disponiveis", async (req, res) => {
     }).select("nome sobrenome foto");
 
 
-    console.log("\n🎯 RESULTADO FINAL:");
-    console.log("📅 Agenda:", agenda.length);
-    console.log("👥 Colaboradores:", colaboradores.length);
+    // console.log("\n🎯 RESULTADO FINAL:");
+    // console.log("📅 Agenda:", agenda.length);
+    // console.log("👥 Colaboradores:", colaboradores.length);
 
     res.json({ error: false, colaboradores, agenda });
   } catch (err) {

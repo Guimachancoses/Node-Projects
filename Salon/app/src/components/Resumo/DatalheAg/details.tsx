@@ -107,7 +107,7 @@ export default function Details() {
           Contato
         </Title>
         <Text small bold color={theme.colors.primary} spacing="5px 0 0">
-          {salao?.telefone?.replace(
+          {salao?.telefone?.numero.replace(
             /(\+55)(\d{2})(\d{5})(\d{4})/,
             "($2) $3-$4"
           )}
