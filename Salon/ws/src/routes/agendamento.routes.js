@@ -11,6 +11,7 @@ const Servico = require("../models/servico");
 const Colaborador = require("../models/colaborador");
 const Agendamento = require("../models/agendamento");
 const Horario = require("../models/horario");
+const SalaoColaborador = require("../models/salaoColaborador");
 require("dotenv").config();
 
 // Rota para criar um agendamento
@@ -410,16 +411,22 @@ router.post("/dias-disponiveis", async (req, res) => {
       lastDay = lastDay.add(1, "day");
     }
 
-    colaboradores = _.uniq(colaboradores.flat());
+    let colaboradoresIds = _.uniq(colaboradores.flat()).map(String);
 
-    const filtroColaborador = {
-      _id: { $in: colaboradores },
-      ...filtroSalao,
-    };
+    if (salaoId) {
+      const vinculos = await SalaoColaborador.find({
+        salaoId,
+        colaboradorId: { $in: colaboradoresIds },
+        status: "A",
+      }).select("colaboradorId");
 
-    colaboradores = await Colaborador.find(filtroColaborador).select(
-      "nome sobrenome foto"
-    );
+      colaboradoresIds = vinculos.map((v) => String(v.colaboradorId));
+    }
+
+    colaboradores = await Colaborador.find({
+      _id: { $in: colaboradoresIds },
+    }).select("nome sobrenome foto");
+
 
     console.log("\n🎯 RESULTADO FINAL:");
     console.log("📅 Agenda:", agenda.length);
