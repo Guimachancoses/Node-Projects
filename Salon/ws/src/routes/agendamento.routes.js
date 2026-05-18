@@ -14,6 +14,23 @@ const Horario = require("../models/horario");
 const SalaoColaborador = require("../models/relationship/salaoColaborador");
 require("dotenv").config();
 
+const parseDataSaoPaulo = (value) => {
+  if (!value) return null;
+
+  const raw = String(value).trim();
+
+  const hasTimezone = /([zZ]|[+-]\d{2}:?\d{2})$/.test(raw);
+
+  return hasTimezone
+    ? DateTime.fromISO(raw, { setZone: true }).setZone(TZ)
+    : DateTime.fromISO(raw, { zone: TZ });
+};
+
+const getDuracaoMinutos = (duracao) => {
+  const m = moment.utc(duracao);
+  return m.hours() * 60 + m.minutes();
+};
+
 // Rota para criar um agendamento
 router.post("/", async (req, res) => {
   const db = mongoose.connection;
