@@ -121,12 +121,12 @@ const Dashboard = () => {
 
     const confirmedToday = todayAppointments.filter((item) => {
         const status = String(item?.status || "").toLowerCase();
-        return status === "c" || status === "confirmado";
+        return status === "a" || status === "confirmado";
     }).length;
 
     const pendingToday = todayAppointments.filter((item) => {
         const status = String(item?.status || "").toLowerCase();
-        return status === "a" || status === "agendado" || status === "p";
+        return status === "p";
     }).length;
 
     const inactiveCollaborators = Math.max((colaboradores || []).length - colaboradoresAtivos.length, 0);
@@ -329,7 +329,7 @@ const Dashboard = () => {
             </Box>
 
             <Grid container spacing={2} sx={{ mb: 2 }}>
-                <Grid item xs={12} lg={7}>
+                <Grid item xs={12} lg={7} sx={{ width: { xs: "100%", md: "auto" } }}>
                     <Paper
                         elevation={0}
                         sx={{
@@ -662,7 +662,7 @@ const QuickAction = ({ href, icon, label }) => (
 
 const AppointmentRow = ({ appointment }) => {
     const status = String(appointment?.status || "pendente").toLowerCase();
-    const statusLabel = status === "c" || status === "confirmado" ? "Confirmado" : "Pendente";
+    const statusLabel = status === "a" || status === "confirmado" ? "Confirmado" : "Pendente";
     const statusColor = statusLabel === "Confirmado" ? "success" : "warning";
 
     return (

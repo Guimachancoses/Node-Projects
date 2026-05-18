@@ -101,7 +101,7 @@ const Login = () => {
 
       if (result.status === "complete") {
         await setActive({ session: result.createdSessionId });
-        navigate("/agendamentos", { replace: true }); // <- importante
+        navigate("/dashboard", { replace: true }); // <- importante
         return;
       }
 
