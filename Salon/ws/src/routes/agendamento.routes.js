@@ -26,8 +26,8 @@ const parseDataSaoPaulo = (value) => {
     : DateTime.fromISO(raw, { zone: TZ });
 };
 
-const getDuracaoMinutos = (duracao) => {
-  const m = moment.utc(duracao);
+const getDuracaoMinutos = (duracaoDate) => {
+  const m = moment(duracaoDate).tz(TZ);
   return m.hours() * 60 + m.minutes();
 };
 
@@ -65,6 +65,13 @@ router.post("/", async (req, res) => {
     }
 
     const duracaoMinutos = getDuracaoMinutos(servico.duracao);
+
+    console.log("⏱️ DURAÇÃO CREATE:", {
+      duracaoOriginal: servico.duracao,
+      duracaoUTC: moment.utc(servico.duracao).format("HH:mm"),
+      duracaoSP: moment(servico.duracao).tz(TZ).format("HH:mm"),
+      duracaoMinutos,
+    });
     const fimSP = inicioSP.plus({ minutes: duracaoMinutos });
 
     const inicioUTCDate = inicioSP.toUTC().toJSDate();
