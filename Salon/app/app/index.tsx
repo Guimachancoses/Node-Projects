@@ -1,5 +1,13 @@
 import { Redirect, router } from "expo-router";
-import { View, StyleSheet, ActivityIndicator, Linking } from "react-native";
+import {
+  View,
+  StyleSheet,
+  ActivityIndicator,
+  Linking,
+  Dimensions,
+  ScrollView,
+} from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import React, { useEffect, useState } from "react";
 import { useDispatch } from "react-redux";
 
@@ -30,6 +38,7 @@ export default function LoginScreen() {
   const { user } = useClerk();
   const { isSignedIn, isLoaded } = useAuth();
   const [showHours, setShowHours] = useState(false);
+  const { height } = Dimensions.get("window");
 
   useEffect(() => {
     dispatch(getSalao());
@@ -65,105 +74,119 @@ export default function LoginScreen() {
 
   return (
     <>
-      <Apresentacao />
-      <Box
-        background={util.toAlpha(theme.colors["primary"], 10)}
-        width="100%"
-        height="120px"
-        align="center"
-        justify="center"
-        direction="column"
-        removePaddingBottom
-      >
-        <Title color="primary">Sua imagem,</Title>
-        <Title color="primary">Nosso Cuidado!</Title>
-      </Box>
-
-      <Box
-        width="100%"
-        hasPadding
-        direction="column"
-        background={util.toAlpha(theme.colors["primary"], 10)}
-        removePaddingTop
-      >
-        <Box width="100%" direction="column">
-          <Text bold color="primary">
-            Horário de atendimento
-          </Text>
-          <Touchable onPress={() => setShowHours(!showHours)}>
-            <Box
-              width="100%"
-              justify="space-between"
-              align="center"
-              spacing="2px 0 0"
-            >
-              <Text>Fecha às 20:00</Text>
-              <MaterialIcons
-                name={showHours ? "keyboard-arrow-up" : "keyboard-arrow-down"}
-                size={24}
-                color={theme.colors.primary}
-              />
-            </Box>
-          </Touchable>
-
-          {showHours && (
-            <Box direction="column" spacing="2px 0 0">
-              <Text spacing="4px 0 0">Segunda à Sexta: 09:00 - 20:00</Text>
-              <Text spacing="4px 0 0">Sábado: 09:00 - 20:00</Text>
-              <Text spacing="4px 0 0">Domingo: Fechado</Text>
-            </Box>
-          )}
-        </Box>
-
-        <Box direction="column" spacing="10px 0 0" removePaddingBottom>
-          <Text bold color="primary">
-            Redes Sociais
-          </Text>
-          <Box spacing="5px 0 0">
-            <Touchable
-              onPress={() => Linking.openURL("https://www.instagram.com/parrudusbarbearia")}
-            >
-              <MaterialCommunityIcons
-                name="instagram"
-                size={30}
-                color={theme.colors.primary}
-              />
-            </Touchable>
-
-            <Touchable
-              onPress={() => Linking.openURL("https://www.facebook.com/parrudusbarbearia")}
-            >
-              <MaterialCommunityIcons
-                name="facebook"
-                size={30}
-                color={theme.colors.primary}
-              />
-            </Touchable>
-
-            <Touchable
-              onPress={() => Linking.openURL("https://parrudusbarbearia.com.br")}
-            >
-              <MaterialCommunityIcons
-                name="web"
-                size={30}
-                color={theme.colors.primary}
-              />
-            </Touchable>
-          </Box>
-        </Box>
-      </Box>
-
-      <View style={styles.headerContainer}>
-        <Button
-          background="primary"
-          mode="contained"
-          block
-          uppercase={false}
-          onPress={handleLogin}
+      <SafeAreaView
+        style={{ flex: 1 }}
+        edges={["left", "right", "bottom"]}
         >
-          Vamos Começar
-        </Button>
-      </View>
+        <ScrollView
+          contentContainerStyle={{
+            minHeight: height,
+          }}
+          showsVerticalScrollIndicator={false}
+        >
+          <Apresentacao />
+          <Box
+            background={util.toAlpha(theme.colors["primary"], 10)}
+            width="100%"
+            align="center"
+            justify="center"
+            direction="column"
+            removePaddingBottom
+            style={{
+              minHeight: height * 0.18,
+            }}
+          >
+            <Title color="primary">Sua imagem,</Title>
+            <Title color="primary">Nosso Cuidado!</Title>
+          </Box>
+
+          <Box
+            width="100%"
+            hasPadding
+            direction="column"
+            background={util.toAlpha(theme.colors["primary"], 10)}
+            removePaddingTop
+          >
+            <Box width="100%" direction="column">
+              <Text bold color="primary">
+                Horário de atendimento
+              </Text>
+              <Touchable onPress={() => setShowHours(!showHours)}>
+                <Box
+                  width="100%"
+                  justify="space-between"
+                  align="center"
+                  spacing="2px 0 0"
+                >
+                  <Text>Fecha às 20:00</Text>
+                  <MaterialIcons
+                    name={showHours ? "keyboard-arrow-up" : "keyboard-arrow-down"}
+                    size={24}
+                    color={theme.colors.primary}
+                  />
+                </Box>
+              </Touchable>
+
+              {showHours && (
+                <Box direction="column" spacing="2px 0 0">
+                  <Text spacing="4px 0 0">Segunda à Sexta: 09:00 - 20:00</Text>
+                  <Text spacing="4px 0 0">Sábado: 09:00 - 20:00</Text>
+                  <Text spacing="4px 0 0">Domingo: Fechado</Text>
+                </Box>
+              )}
+            </Box>
+
+            <Box direction="column" spacing="10px 0 0" removePaddingBottom>
+              <Text bold color="primary">
+                Redes Sociais
+              </Text>
+              <Box spacing="5px 0 0">
+                <Touchable
+                  onPress={() => Linking.openURL("https://www.instagram.com/parrudusbarbearia")}
+                >
+                  <MaterialCommunityIcons
+                    name="instagram"
+                    size={30}
+                    color={theme.colors.primary}
+                  />
+                </Touchable>
+
+                <Touchable
+                  onPress={() => Linking.openURL("https://www.facebook.com/parrudusbarbearia")}
+                >
+                  <MaterialCommunityIcons
+                    name="facebook"
+                    size={30}
+                    color={theme.colors.primary}
+                  />
+                </Touchable>
+
+                <Touchable
+                  onPress={() => Linking.openURL("https://parrudusbarbearia.com.br")}
+                >
+                  <MaterialCommunityIcons
+                    name="web"
+                    size={30}
+                    color={theme.colors.primary}
+                  />
+                </Touchable>
+              </Box>
+            </Box>
+          </Box>
+
+          <View style={styles.headerContainer}>
+            <Button
+              background="primary"
+              mode="contained"
+              block
+              uppercase={false}
+              onPress={handleLogin}
+            >
+              Vamos Começar
+            </Button>
+          </View>
+        </ScrollView>
+      </SafeAreaView >
     </>
   );
 }

@@ -36,6 +36,7 @@ import SwitchAccountIcon from "@mui/icons-material/SwitchAccount";
 import AutoFixHighIcon from "@mui/icons-material/AutoFixHigh";
 import MoreTimeIcon from "@mui/icons-material/MoreTime";
 import BusinessIcon from "@mui/icons-material/Business";
+import DashboardIcon from '@mui/icons-material/Dashboard';
 
 import miniLogo from "../../assets/mini_logo.jpg";
 import backgroundYoda from "../../assets/capa_fundo.png"
@@ -70,6 +71,7 @@ export default function Layout({ toggleTheme }) {
   const isYoda = userStore?.funcao === "yoda";
 
   const navItems = [
+    { text: "Dashboard", icon: <DashboardIcon />, path: "/dashboard" },
     ...(!isYoda ? [{ text: "Agendamentos", icon: <CalendarTodayIcon />, path: "/agendamentos" }] : []),
 
     ...(isYoda ? [{ text: "Empresas", icon: <BusinessIcon />, path: "/empresas" }] : []),
@@ -231,10 +233,17 @@ export default function Layout({ toggleTheme }) {
   }, [form?.loading, logoUrl, capaUrl]);
 
   const isDark = theme.palette.mode === "dark";
+  const isTouchLayout = !isDesktop;
 
   useEffect(() => {
     document.body.style.backgroundColor = isDark ? "#495057" : "#F1F5F9";
     document.body.style.backgroundImage = "none";
+    document.body.style.minHeight = "100dvh";
+    document.body.style.overflowX = "hidden";
+    document.body.style.overflowY = "auto";
+
+    document.documentElement.style.minHeight = "100dvh";
+    document.documentElement.style.overflowX = "hidden";
 
     const finalUrl = isYoda ? backgroundYoda : capaUrl;
 
@@ -249,16 +258,19 @@ export default function Layout({ toggleTheme }) {
 
       const imageRatio = img.naturalWidth / img.naturalHeight;
       const viewportRatio = window.innerWidth / window.innerHeight;
-
       const ratioDiff = Math.abs(imageRatio - viewportRatio);
 
-      const backgroundSize = ratioDiff > 0.7 ? "contain" : "cover";
+      const backgroundSize = isTouchLayout
+        ? "cover"
+        : ratioDiff > 0.7
+          ? "contain"
+          : "cover";
 
       document.body.style.backgroundImage = `url('${finalUrl}')`;
       document.body.style.backgroundSize = backgroundSize;
       document.body.style.backgroundPosition = "center";
       document.body.style.backgroundRepeat = "no-repeat";
-      document.body.style.backgroundAttachment = "fixed";
+      document.body.style.backgroundAttachment = isTouchLayout ? "scroll" : "fixed";
     };
 
     img.src = finalUrl;
@@ -266,7 +278,7 @@ export default function Layout({ toggleTheme }) {
     return () => {
       cancelled = true;
     };
-  }, [capaUrl, isDark, isYoda]);
+  }, [capaUrl, isDark, isYoda, isTouchLayout]);
 
   const sidebarColors = useMemo(
     () => ({
@@ -483,7 +495,8 @@ export default function Layout({ toggleTheme }) {
   //console.log("userRaw", userRaw)
 
   return (
-    <Box sx={{ display: "flex", minHeight: "100dvh" }}>
+    <Box sx={{ display: "flex", minHeight: "100dvh", width: "100%" }}>
+
       <CssBaseline />
 
       {/* Topbar */}
@@ -632,12 +645,14 @@ export default function Layout({ toggleTheme }) {
         component="main"
         sx={{
           flexGrow: 1,
-
           minWidth: 0,
-          p: { xs: 2, sm: 3 },
+          minHeight: "100dvh",
+          p: { xs: 1.5, sm: 2, md: 3 },
           width: isDesktop ? `calc(100% - ${currentDrawerWidth}px)` : "100%",
+          maxWidth: "100vw",
           transition: "width .25s ease",
-          overflowX: "auto",
+          overflowX: "hidden",
+          overflowY: "visible",
         }}
       >
         <Toolbar />

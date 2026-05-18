@@ -389,7 +389,16 @@ router.post("/dias-disponiveis", async (req, res) => {
     }
 
     colaboradores = _.uniq(colaboradores.flat());
-    colaboradores = await Colaborador.find({ _id: { $in: colaboradores } }).select(
+
+    const filtroColaborador = {
+      _id: { $in: colaboradores },
+    };
+
+    if (salaoId) {
+      filtroColaborador.salaoId = salaoId;
+    }
+
+    colaboradores = await Colaborador.find(filtroColaborador).select(
       "nome sobrenome foto"
     );
 

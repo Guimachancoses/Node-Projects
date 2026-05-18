@@ -26,6 +26,8 @@ export default function Especialistas({ colaboradores, agendamento }: Especialis
     (c: any) => c._id === agendamento?.colaboradorId
   );
 
+  //console.log("colaborador:", colaborador)
+
   const imageSource = colaborador?.foto
   ? { uri: colaborador.foto }
   : Logo;

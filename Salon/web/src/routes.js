@@ -18,6 +18,7 @@ import PoliticaDePrivacidade from "./pages/PoliticaDePrivacidade";
 import ForgotPassword from "./pages/ForgotPassword";
 import Empresa from "./pages/Empresa";
 import Empresas from "./pages/Empresas";
+import Dashboard from "./pages/DashBoard"
 import "./styles.css";
 
 const SPLASH_DURATION = 9000;
@@ -130,6 +131,7 @@ const Main = ({ toggleTheme, colorMode }) => {
         <Route path="/account" element={<Account />} />
         <Route path="/empresa" element={<Empresa />} />
         <Route path="/empresas" element={<Empresas />} />
+        <Route path="/dashboard" element={<Dashboard />} />
       </Route>
 
       <Route

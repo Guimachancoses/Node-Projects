@@ -7,16 +7,20 @@ import consts from "@/src/constants/consts";
 export default function Apresentacao() {
   const { salao } = useSelector((state: any) => state.salao);
 
-  //console.log(`${consts?.bucketUrl}/${salao?.arquivos?.[0]?.caminho}`);
+  const arquivoApresentacao = salao?.arquivos?.find((arquivo: any) =>
+    arquivo?.caminho?.includes("apresentacao")
+  );
 
   return (
     <Cover
-      image={{ uri: `${consts?.bucketUrl}/${salao?.arquivos?.[0]?.caminho}` }}
+      image={{
+        uri: `${consts?.bucketUrl}/${arquivoApresentacao?.caminho}`,
+      }}
       customWidth="100%"
-      customHeight="520px"
+      customHeight="585px"
       resizeMode="cover"
     >
-      <Gradient></Gradient>
+      <Gradient />
     </Cover>
   );
 }
