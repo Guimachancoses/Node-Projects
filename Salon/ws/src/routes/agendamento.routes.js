@@ -11,7 +11,7 @@ const Servico = require("../models/servico");
 const Colaborador = require("../models/colaborador");
 const Agendamento = require("../models/agendamento");
 const Horario = require("../models/horario");
-const SalaoColaborador = require("../models/salaoColaborador");
+const SalaoColaborador = require("../models/relationship/salaoColaborador");
 require("dotenv").config();
 
 // Rota para criar um agendamento
