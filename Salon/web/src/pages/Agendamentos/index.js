@@ -358,7 +358,8 @@ const Agendamentos = () => {
 
   const normalizeStatus = (status) => {
     const s = String(status || "").trim().toLowerCase();
-    if (["a", "agendado", "pendente"].includes(s)) return "A";
+    if (["a", "agendado"].includes(s)) return "A";
+    if (["p", "pendente"].includes(s)) return "P";
     if (["c", "confirmado"].includes(s)) return "C";
     if (["f", "finalizado"].includes(s)) return "F";
     if (["x", "cancelado"].includes(s)) return "X";
@@ -590,6 +591,7 @@ const Agendamentos = () => {
           >
             <MenuItem value="A">Agendado</MenuItem>
             <MenuItem value="C" disabled={behavior !== "update"}>Confirmado</MenuItem>
+            <MenuItem value="P" disabled={behavior !== "update"}>Pendente Confirmação</MenuItem>
             <MenuItem value="F" disabled={behavior !== "update"}>Finalizado</MenuItem>
             <MenuItem value="X" disabled={behavior !== "update"}>Cancelado</MenuItem>
           </Select>

@@ -522,7 +522,7 @@ export function* checkUser({email}) {
         })
       );
 
-      history.push(isYoda ? "/empresas" : "/agendamentos");
+      history.push(isYoda ? "/empresas" : "/dashboard");
     } else {
       yield put(
         setAlerta({

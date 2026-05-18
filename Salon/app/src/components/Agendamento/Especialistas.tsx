@@ -8,6 +8,7 @@ import util from "@/src/constants/util";
 import { updateForm } from "@/src/store/modules/salao/actions";
 import { View } from "react-native";
 import Logo from "@/src/assets/images/Logo.png";
+import consts from "@/src/constants/consts";
 
 interface EspecialistaProps {
   colaboradores: any;
@@ -28,9 +29,30 @@ export default function Especialistas({ colaboradores, agendamento }: Especialis
 
   //console.log("colaborador:", colaborador)
 
-  const imageSource = colaborador?.foto
-  ? { uri: colaborador.foto }
-  : Logo;
+  const getImage = (foto: any) => {
+    if (!foto) return Logo;
+
+    const raw = String(foto).trim();
+
+    if (
+      raw === "" ||
+      raw.toLowerCase() === "null" ||
+      raw.toLowerCase() === "undefined"
+    ) {
+      return Logo;
+    }
+
+    if (/^https?:\/\//i.test(raw)) {
+      return raw;
+    }
+
+    const bucketUrl = consts.bucketUrl.replace(/\/$/, "");
+    const path = raw.replace(/^\//, "");
+
+    return `${bucketUrl}/${path}`;
+  };
+
+  const imageSource = getImage(colaborador?.foto);
 
   return (
     <View style={{ backgroundColor: colors.background }}>

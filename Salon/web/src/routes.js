@@ -111,7 +111,7 @@ const Main = ({ toggleTheme, colorMode }) => {
             </SignedOut>
 
             <SignedIn>
-              <Navigate to="/agendamentos" replace />
+              <Navigate to="/dashboard" replace />
             </SignedIn>
           </>
         }
@@ -139,7 +139,7 @@ const Main = ({ toggleTheme, colorMode }) => {
         element={
           <>
             <SignedIn>
-              <Navigate to="/agendamentos" replace />
+              <Navigate to="/dashboard" replace />
             </SignedIn>
 
             <SignedOut>

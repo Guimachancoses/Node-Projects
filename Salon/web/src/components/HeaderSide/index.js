@@ -556,7 +556,7 @@ export default function Layout({ toggleTheme }) {
           </IconButton>
 
           <Box sx={{ flexGrow: 0, ml: 1 }}>
-            <Tooltip title="Configurações">
+            <Tooltip title="Configurações" >
               <IconButton data-tour="menu-config" onClick={handleOpenUserMenu} sx={{ p: 0 }}>
                 <Avatar
                   sx={{ border: "2px solid", borderColor: "var(--Gold)" }}
@@ -574,6 +574,7 @@ export default function Layout({ toggleTheme }) {
               open={Boolean(anchorElUser)}
               onClose={handleCloseUserMenu}
               keepMounted
+              disableScrollLock
             >
               <MenuItem data-tour="menu-minha-conta" onClick={handleCloseUserMenu} component={Link} to="/account">
                 <Typography>Minha Conta</Typography>

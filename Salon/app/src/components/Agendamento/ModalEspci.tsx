@@ -6,6 +6,7 @@ import { ScrollView } from "react-native-gesture-handler";
 import { Dimensions } from "react-native";
 import { useDispatch } from "react-redux";
 import Logo from "@/src/assets/images/Logo.png";
+import consts from "@/src/constants/consts";
 
 import { Text, Box, Touchable, Cover } from "../../styles";
 import {
@@ -51,16 +52,26 @@ export default function ModalEspci({
   const getImage = (foto: any) => {
     if (!foto) return Logo;
 
-    const value = String(foto).trim().toLowerCase();
+    const raw = String(foto).trim();
+
     if (
-      value === "" ||
-      value === "null" ||
-      value === "undefined"
+      raw === "" ||
+      raw.toLowerCase() === "null" ||
+      raw.toLowerCase() === "undefined"
     ) {
       return Logo;
     }
 
-    return foto;
+    // Se já vier URL completa, usa direto
+    if (/^https?:\/\//i.test(raw)) {
+      return raw;
+    }
+
+    // Se vier caminho do bucket, monta a URL completa
+    const bucketUrl = consts.bucketUrl.replace(/\/$/, "");
+    const path = raw.replace(/^\//, "");
+
+    return `${bucketUrl}/${path}`;
   };
 
   return (
@@ -97,19 +108,28 @@ export default function ModalEspci({
                       dispatch(updateForm({ modalEspecialista: false }));
                     }}
                   >
-                    <Cover
-                      image={getImage(colaborador?.foto)}
-                      customWidth={45}
-                      customHeight={45}
-                      resizeMode="cover"
-                      circle
+                    <Box
+                      width={53}
+                      height="53px"
+                      radius={27}
+                      align="center"
+                      justify="center"
                       border={
                         colaborador._id === agendamento.colaboradorId
                           ? `4px solid ${theme.colors.primary}`
-                          : "none"
+                          : "4px solid transparent"
                       }
-                      spacing="0 0 6px"
-                    />
+                    >
+                      <Cover
+                        image={getImage(colaborador?.foto)}
+                        customWidth={45}
+                        customHeight={45}
+                        resizeMode="cover"
+                        circle
+                      />
+                    </Box>
+
+
                     <Text small bold>
                       {colaborador.nome}
                     </Text>

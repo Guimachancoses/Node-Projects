@@ -126,7 +126,7 @@ const Dashboard = () => {
 
     const pendingToday = todayAppointments.filter((item) => {
         const status = String(item?.status || "").toLowerCase();
-        return status === "a" || status === "agendado" || status === "pendente";
+        return status === "a" || status === "agendado" || status === "p";
     }).length;
 
     const inactiveCollaborators = Math.max((colaboradores || []).length - colaboradoresAtivos.length, 0);
@@ -283,7 +283,7 @@ const Dashboard = () => {
                     >
                         Dashboard
                     </Typography>
-                    <Typography variant="body2" sx={{ color: isDark ? "rgba(255,255,255,0.72)" : "#B3D8D5" }}>
+                    <Typography variant="body2" sx={{ color: isDark ? "rgba(255,255,255,0.72)" : "#9ACBC8", fontWeight: 600 }}>
                         Acompanhe o movimento do dia e acesse as ações principais sem sair da tela.
                     </Typography>
                 </Box>
@@ -410,8 +410,17 @@ const Dashboard = () => {
                     </Paper>
                 </Grid>
 
-                <Grid item xs={12} lg={5}>
-                    <Paper elevation={0} sx={{ ...cardSx, height: "100%", minHeight: { xs: "auto", md: 260 } }}>
+                <Grid item xs={12} lg={5} sx={{ width: { xs: "100%", md: "auto" } }}>
+                    <Paper
+                        elevation={0}
+                        sx={{
+                            ...cardSx,
+                            width: "100%",
+                            maxWidth: "100%",
+                            height: "100%",
+                            minHeight: { xs: "auto", md: 260 },
+                        }}
+                    >
                         <SectionLabel icon={<EventAvailableIcon fontSize="small" />} label="Resumo do dia" />
 
                         <Grid container spacing={1.5} sx={{ mt: 1 }}>
@@ -485,7 +494,7 @@ const Dashboard = () => {
                             Alertas importantes
                         </Typography>
 
-                        <Stack spacing={1.2}>
+                        <Stack spacing={1.2} direction={{ xs: "column", sm: "row" }}>
                             {alerts.map((alert) => (
                                 <AlertRow key={alert.title} alert={alert} />
                             ))}
@@ -705,7 +714,7 @@ const AlertRow = ({ alert }) => {
             }}
         >
             <Box sx={{ color: colorBySeverity[alert.severity] || "info.main", mt: 0.2 }}>{alert.icon}</Box>
-            <Box>
+            <Box >
                 <Typography fontWeight={900}>{alert.title}</Typography>
                 <Typography variant="body2" color="text.secondary">
                     {alert.description}
