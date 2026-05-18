@@ -410,7 +410,7 @@ const Dashboard = () => {
                     </Paper>
                 </Grid>
 
-                <Grid item xs={12} lg={5} sx={{ width: { xs: "100%", md: "auto" } }}>
+                <Grid item xs={12} lg={5} sx={{ width: { xs: "100%", md: "27%" } }}>
                     <Paper
                         elevation={0}
                         sx={{
@@ -423,18 +423,62 @@ const Dashboard = () => {
                     >
                         <SectionLabel icon={<EventAvailableIcon fontSize="small" />} label="Resumo do dia" />
 
-                        <Grid container spacing={1.5} sx={{ mt: 1 }}>
-                            <Grid item xs={4}>
-                                <StatusBox icon={<CheckCircleIcon />} label="Confirmados" value={confirmedToday} color="#2e7d32" />
+                        <Grid
+                            container
+                            spacing={1.5}
+                            sx={{
+                                mt: 1,
+                                justifyContent: "center",
+                            }}
+                        >
+                            <Grid item xs={4} sx={{
+                                width: { xs: "100%", md: "90%" },
+                                maxWidth: 93,
+                                minHeight: 92,
+                                display: "flex",
+                                flexDirection: "column",
+                                justifyContent: "center",
+                            }}>
+                                <StatusBox
+                                    icon={<CheckCircleIcon />}
+                                    label="Confirmados"
+                                    value={confirmedToday}
+                                    color="#2e7d32"
+                                />
                             </Grid>
-                            <Grid item xs={4}>
-                                <StatusBox icon={<ScheduleIcon />} label="Pendentes" value={pendingToday} color="#ef6c00" />
+
+                            <Grid item xs={4} sx={{
+                                width: { xs: "100%", md: "40%" },
+                                maxWidth: 93,
+                                minHeight: 92,
+                                display: "flex",
+                                flexDirection: "column",
+                                justifyContent: "center",
+                            }}>
+                                <StatusBox
+                                    icon={<ScheduleIcon />}
+                                    label="Pendentes"
+                                    value={pendingToday}
+                                    color="#ef6c00"
+                                />
                             </Grid>
-                            <Grid item xs={4}>
-                                <StatusBox icon={<CalendarMonthIcon />} label="Total" value={todayAppointments.length} color="#00656d" />
+
+                            <Grid item xs={4} sx={{
+                                width: { xs: "100%", md: "30%" },
+                                maxWidth: 93,
+                                minHeight: 92,
+                                display: "flex",
+                                flexDirection: "column",
+                                justifyContent: "center",
+                            }}>
+                                <StatusBox
+                                    icon={<CalendarMonthIcon />}
+                                    label="Total"
+                                    value={todayAppointments.length}
+                                    color="#00656d"
+                                />
                             </Grid>
                         </Grid>
-
                         <Divider sx={{ my: 2 }} />
 
                         <Stack spacing={1.2}>
@@ -612,6 +656,8 @@ const MetricCard = ({ metric, cardSx, isMobile }) => (
 const StatusBox = ({ icon, label, value, color }) => (
     <Box
         sx={{
+            width: "100%",
+            maxWidth: 104,
             p: { xs: 1, sm: 1.5 },
             borderRadius: 2,
             minHeight: { xs: 92, sm: 112 },
@@ -619,22 +665,31 @@ const StatusBox = ({ icon, label, value, color }) => (
             border: `1px solid ${alpha(color, 0.18)}`,
             display: "flex",
             flexDirection: "column",
-            justifyContent: "space-between",
+            justifyContent: "center",
+            alignItems: "center",
+            textAlign: "center",
+            gap: 0.6,
         }}
     >
-        <Box sx={{ color, display: "flex" }}>{icon}</Box>
-        <Box>
-            <Typography variant="h5" fontWeight={900} color={color} lineHeight={1}>
-                {value}
-            </Typography>
-            <Typography
-                variant="body2"
-                color="text.secondary"
-                sx={{ fontSize: { xs: "0.75rem", sm: "0.875rem" }, lineHeight: 1.2 }}
-            >
-                {label}
-            </Typography>
+        <Box sx={{ color, display: "flex", justifyContent: "center" }}>
+            {icon}
         </Box>
+
+        <Typography variant="h5" fontWeight={900} color={color} lineHeight={1}>
+            {value}
+        </Typography>
+
+        <Typography
+            variant="body2"
+            color="text.secondary"
+            sx={{
+                fontSize: { xs: "0.72rem", sm: "0.8rem" },
+                lineHeight: 1.2,
+                wordBreak: "break-word",
+            }}
+        >
+            {label}
+        </Typography>
     </Box>
 );
 
