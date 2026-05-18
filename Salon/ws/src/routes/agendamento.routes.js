@@ -195,7 +195,11 @@ router.post("/dias-disponiveis", async (req, res) => {
     const filtroSalao = salaoId ? { salaoId } : {};
     console.log("📥 REQUEST:", { data, salaoId, servicoId });
 
-    const horarios = await Horario.find({ filtroSalao });
+    const horarios = await Horario.find({
+      ...filtroSalao,
+      especialidades: servicoId,
+    });
+
     const servico = await Servico.findOne({
       _id: servicoId,
       ...filtroSalao,
@@ -244,7 +248,11 @@ router.post("/dias-disponiveis", async (req, res) => {
 
       const espacosValidos = horarios.filter((horario) => {
         const diaSemanaDisponivel = horario.dias.includes(lastDay.day());
-        const servicoDisponivel = horario.especialidades.includes(servicoId);
+
+        const servicoDisponivel = (horario.especialidades || [])
+          .map((id) => String(id))
+          .includes(String(servicoId));
+
         return diaSemanaDisponivel && servicoDisponivel;
       });
 
@@ -328,16 +336,16 @@ router.post("/dias-disponiveis", async (req, res) => {
           console.log("📌 AGENDAMENTOS:", agendamentos.length);
 
           let horariosOcupados = agendamentos
-          .map((agendamento) =>
-            util.sliceMinutes(
-              moment(agendamento.data).tz(TZ),
-              moment(agendamento.data)
-                .tz(TZ)
-                .add(getDuracaoMinutos(agendamento.servicoId.duracao), "minutes"),
-              util.SLOT_DURATION
+            .map((agendamento) =>
+              util.sliceMinutes(
+                moment(agendamento.data).tz(TZ),
+                moment(agendamento.data)
+                  .tz(TZ)
+                  .add(getDuracaoMinutos(agendamento.servicoId.duracao), "minutes"),
+                util.SLOT_DURATION
+              )
             )
-          )
-          .flat();
+            .flat();
 
           console.log("⛔ OCUPADOS:", horariosOcupados);
 
@@ -413,9 +421,9 @@ router.post("/dias-disponiveis", async (req, res) => {
       "nome sobrenome foto"
     );
 
-     console.log("\n🎯 RESULTADO FINAL:");
-     console.log("📅 Agenda:", agenda.length);
-     console.log("👥 Colaboradores:", colaboradores.length);
+    console.log("\n🎯 RESULTADO FINAL:");
+    console.log("📅 Agenda:", agenda.length);
+    console.log("👥 Colaboradores:", colaboradores.length);
 
     res.json({ error: false, colaboradores, agenda });
   } catch (err) {
