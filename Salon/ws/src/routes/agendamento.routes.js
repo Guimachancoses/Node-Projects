@@ -38,7 +38,7 @@ router.post("/", async (req, res) => {
   session.startTransaction();
 
   try {
-    console.log("req.body:", req.body);
+    //console.log("req.body:", req.body);
 
     const { clienteId, salaoId, servicoId, colaboradorId, status_payment } = req.body;
 
@@ -66,12 +66,12 @@ router.post("/", async (req, res) => {
 
     const duracaoMinutos = getDuracaoMinutos(servico.duracao);
 
-    console.log("⏱️ DURAÇÃO CREATE:", {
-      duracaoOriginal: servico.duracao,
-      duracaoUTC: moment.utc(servico.duracao).format("HH:mm"),
-      duracaoSP: moment(servico.duracao).tz(TZ).format("HH:mm"),
-      duracaoMinutos,
-    });
+    // console.log("⏱️ DURAÇÃO CREATE:", {
+    //   duracaoOriginal: servico.duracao,
+    //   duracaoUTC: moment.utc(servico.duracao).format("HH:mm"),
+    //   duracaoSP: moment(servico.duracao).tz(TZ).format("HH:mm"),
+    //   duracaoMinutos,
+    // });
     const fimSP = inicioSP.plus({ minutes: duracaoMinutos });
 
     const inicioUTCDate = inicioSP.toUTC().toJSDate();
@@ -80,11 +80,11 @@ router.post("/", async (req, res) => {
     const inicioDiaUTC = inicioSP.startOf("day").toUTC().toJSDate();
     const fimDiaUTC = inicioSP.endOf("day").toUTC().toJSDate();
 
-    console.log("inicio recebido:", req.body.data);
-    console.log("inicio SP:", inicioSP.toISO());
-    console.log("fim SP:", fimSP.toISO());
-    console.log("inicio UTC salvo:", inicioUTCDate);
-    console.log("fim UTC salvo:", fimUTCDate);
+    // console.log("inicio recebido:", req.body.data);
+    // console.log("inicio SP:", inicioSP.toISO());
+    // console.log("fim SP:", fimSP.toISO());
+    // console.log("inicio UTC salvo:", inicioUTCDate);
+    // console.log("fim UTC salvo:", fimUTCDate);
 
     const colaborador = await Colaborador.findById(colaboradorId);
 
@@ -167,7 +167,7 @@ router.post("/", async (req, res) => {
     await session.abortTransaction();
     session.endSession();
 
-    console.error("Erro ao criar agendamento:", err);
+    //console.error("Erro ao criar agendamento:", err);
 
     return res.status(400).json({
       success: false,
@@ -191,7 +191,7 @@ router.post("/filter", async (req, res) => {
     }).populate([
       { path: "servicoId", select: "titulo duracao" },
       { path: "colaboradorId", select: "nome sobrenome" },
-      { path: "clienteId", select: "nome sobrenome" },
+      { path: "clienteId", select: "nome sobrenome telefone" },
     ]);
 
     res.json({ error: false, agendamento });

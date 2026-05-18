@@ -117,9 +117,31 @@ const Clientes = () => {
 
   const setTelefoneField = (key, value) => {
     setCliente("telefone", {
-      ...cliente.telefone,
+      ...(cliente?.telefone || {}),
       [key]: onlyDigits(value),
     });
+  };
+
+  const handleAreaChange = (e) => {
+    const typed = e.target.value;
+    const prevDigits = onlyDigits(cliente?.telefone?.area || "");
+    const nextDigitsRaw = onlyDigits(typed).slice(0, 2);
+
+    const prevMasked = maskArea(prevDigits);
+
+    const deletingMaskChar =
+      typed.length < prevMasked.length && nextDigitsRaw === prevDigits;
+
+    const nextDigits = deletingMaskChar
+      ? prevDigits.slice(0, -1)
+      : nextDigitsRaw;
+
+    setCliente("telefone", {
+      ...(cliente?.telefone || {}),
+      area: nextDigits,
+    });
+
+    setErrors((p) => ({ ...p, area: "" }));
   };
 
   const setEndereco = (patch) => {
@@ -566,7 +588,7 @@ const Clientes = () => {
           >
             <Tooltip title="Filtros avançados">
               <IconButton onClick={() => setFilterOpen(true)}>
-                <FilterListIcon sx={{  color: isDark ? "#fff" : "var(--primary-light)" }} />
+                <FilterListIcon sx={{ color: isDark ? "#fff" : "var(--primary-light)" }} />
               </IconButton>
             </Tooltip>
             <TextField
@@ -578,14 +600,14 @@ const Clientes = () => {
                 startAdornment: (
                   <SearchIcon
                     fontSize="small"
-                    style={{ marginRight: 8, opacity: 0.85,  color: isDark ? "#fff" : "var(--primary-light)" }}
+                    style={{ marginRight: 8, opacity: 0.85, color: isDark ? "#fff" : "var(--primary-light)" }}
                   />
                 ),
               }}
               sx={{
                 minWidth: { xs: "100%", sm: 320 },
                 "& .MuiOutlinedInput-root": {
-                   color: isDark ? "#fff" : "var(--primary-light)",
+                  color: isDark ? "#fff" : "var(--primary-light)",
                   "& fieldset": {
                     borderColor: isDark ? "#fff" : "var(--primary-light)", // borda padrão
                     borderRadius: 2
@@ -605,9 +627,9 @@ const Clientes = () => {
             />
 
             <Button
-              sx={{  color: isDark ? "#fff" : "var(--primary-light)" ,borderColor: isDark ? "#fff" : "var(--primary-light)" }}
+              sx={{ color: isDark ? "#fff" : "var(--primary-light)", borderColor: isDark ? "#fff" : "var(--primary-light)" }}
               variant="outlined"
-              startIcon={<ClearIcon sx={{  color: isDark ? "#fff" : "var(--primary-light)" }} />}
+              startIcon={<ClearIcon sx={{ color: isDark ? "#fff" : "var(--primary-light)" }} />}
               onClick={() => {
                 setQuickSearch("");
                 setFiltros({ nome: "", email: "", telefone: "", chatbotStatus: "" });
@@ -844,7 +866,7 @@ const Clientes = () => {
                   }}
                 />
               </div>
-              <div className="form-group col-6 mb-3">
+              <div className="form-group col-4 mb-3">
                 <TextField
                   label="Área"
                   type="text"
@@ -852,10 +874,16 @@ const Clientes = () => {
                   variant="outlined"
                   placeholder="(19)"
                   value={maskArea(cliente?.telefone?.area || "")}
-                  onChange={(e) => {
-                    setTelefoneField("area", e.target.value);
-                    setErrors((p) => ({ ...p, area: "" }));
-                  }}
+                  onChange={handleAreaChange}
+                  onBlur={() =>
+                    setErrors((p) => ({
+                      ...p,
+                      area:
+                        onlyDigits(cliente?.telefone?.area || "").length === 2
+                          ? ""
+                          : "DDD deve ter 2 dígitos",
+                    }))
+                  }
                   error={!!errors.area}
                   helperText={errors.area}
                   disabled={form.disabled}
@@ -867,8 +895,11 @@ const Clientes = () => {
                     ),
                   }}
                   inputProps={{
+                    inputMode: "numeric",
+                    maxLength: 4,
                     style: {
-                      fontSize: "0.8rem", // Altere esse valor conforme quiser
+                      fontSize: "0.8rem",
+                      textAlign: "center",
                     },
                   }}
                 />
