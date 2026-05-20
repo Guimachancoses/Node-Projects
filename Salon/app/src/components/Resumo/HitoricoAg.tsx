@@ -77,11 +77,11 @@ export default function HitoricoAg({ agendamento, value }: ServicoProps) {
                   style={{
                     ...styles.surface,
                     backgroundColor:
-                      agendamento?.statusPagamento === "S"
+                      agendamento?.status === "A"
                         ? "#e5ffe5"
                         : "#ffe5e5",
                     borderColor:
-                      agendamento?.statusPagamento === "S" ? "green" : "red",
+                      agendamento?.status === "A" ? "green" : "red",
                   }}
                   elevation={4}
                 >
@@ -89,11 +89,11 @@ export default function HitoricoAg({ agendamento, value }: ServicoProps) {
                     style={{
                       ...styles.pago,
                       color:
-                        agendamento?.statusPagamento === "S" ? "green" : "red",
+                        agendamento?.status === "A" ? "green" : "red",
                     }}
                     small
                   >
-                    {agendamento?.statusPagamento === "S" ? "Pago" : "Pendente"}
+                    {agendamento?.status === "A" ? "Confirmado" : "Pendente"}
                   </Text>
                 </Surface>
               </Box>
@@ -186,7 +186,7 @@ export default function HitoricoAg({ agendamento, value }: ServicoProps) {
 const styles = StyleSheet.create({
   surface: {
     height: 30,
-    width: 75,
+    width: 84,
     alignItems: "center",
     justifyContent: "center",
     borderWidth: 2,

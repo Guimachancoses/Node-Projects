@@ -36,6 +36,8 @@ export default function DateTime({
 
   const dynamicTextColor = isDarkMode ? "light" : "dark";
 
+  const dynamicBackgroundColor = dynamicTextColor === "light" ? "dark" : "light";
+
   const setAgendamento = (value: any, isTime: any) => {
     const { horariosDisponiveis } = util.selectAgendamento(
       agenda,
@@ -108,16 +110,16 @@ export default function DateTime({
                   ? theme.colors.primary
                   : util.toAlpha(theme.colors.muted, 20)
                 }`}
-              background={selected ? "primary" : "light"}
+              background={selected ? "primary" : dynamicBackgroundColor}
               onPress={() => setAgendamento(dateISO, false)}
             >
-              <Text small color={selected ? "light" : undefined}>
+              <Text small color={selected ? "light" : dynamicTextColor}>
                 {util.diasSemana[date.day()]}
               </Text>
-              <Title small color={selected ? "light" : undefined}>
+              <Title small color={selected ? "light"  : dynamicTextColor}>
                 {date.format("DD")}
               </Title>
-              <Text small color={selected ? "light" : undefined}>
+              <Text small color={selected ? "light"  : dynamicTextColor}>
                 {util.diasMes[date.month()]}
               </Text>
             </Touchable>
@@ -178,17 +180,17 @@ export default function DateTime({
                   width="100px"
                   height="35px"
                   spacing="0 10px 5px 0"
-                  background={selected ? "primary" : "light"}
+                  background={selected ? "primary" : dynamicBackgroundColor}
                   rounded="7px"
                   justify="center"
                   align="center"
                   border={`1px solid ${selected
                       ? theme.colors.primary
-                      : util.toAlpha(theme.colors.muted, 20)
+                      : util.toAlpha(theme.colors.muted, 50)
                     }`}
                   onPress={() => setAgendamento(horario, true)}
                 >
-                  <Text small color={selected ? "light" : undefined}>
+                  <Text small color={selected ? "light" : dynamicTextColor}>
                     {horario}
                   </Text>
                 </Touchable>

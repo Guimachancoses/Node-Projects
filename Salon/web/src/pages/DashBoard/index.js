@@ -329,7 +329,7 @@ const Dashboard = () => {
             </Box>
 
             <Grid container spacing={2} sx={{ mb: 2 }}>
-                <Grid item xs={12} lg={7} sx={{ width: { xs: "100%", md: "auto" } }}>
+                <Grid size={{ xs: 12, lg: 7 }} sx={{ width: { xs: "100%", md: "auto" } }}>
                     <Paper
                         elevation={0}
                         sx={{
@@ -410,14 +410,13 @@ const Dashboard = () => {
                     </Paper>
                 </Grid>
 
-                <Grid item xs={12} lg={5} sx={{ width: { xs: "100%", md: "27%" } }}>
+                <Grid size={{ xs: 12, lg: 7 }} sx={{ width: { xs: "100%", md: "27%" } }}>
                     <Paper
                         elevation={0}
                         sx={{
                             ...cardSx,
-                            width: "100%",
-                            maxWidth: "100%",
-                            height: "100%",
+                            width: { xs: "100%", md: "100%"},
+                            minWidth: "350px",
                             minHeight: { xs: "auto", md: 260 },
                         }}
                     >
@@ -432,8 +431,8 @@ const Dashboard = () => {
                             }}
                         >
                             <Grid item xs={4} sx={{
-                                width: { xs: "100%", md: "90%" },
-                                maxWidth: 93,
+                                width: { xs: "100%", md: "100%" },
+                                maxWidth: 102,
                                 minHeight: 92,
                                 display: "flex",
                                 flexDirection: "column",
@@ -489,7 +488,7 @@ const Dashboard = () => {
                     </Paper>
                 </Grid>
 
-                <Grid item xs={12} lg={7}>
+                <Grid size={{ xs: 12, lg: 3.2 }}>
                     <Paper elevation={0} sx={cardSx}>
                         <Stack direction="row" justifyContent="space-between" alignItems="center" mb={1.5}>
                             <Box>
@@ -531,7 +530,7 @@ const Dashboard = () => {
                     </Paper>
                 </Grid>
 
-                <Grid item xs={12} lg={5}>
+                <Grid size={{ xs: 12, lg: 6 }}>
                     <Paper elevation={0} sx={cardSx}>
                         <SectionLabel icon={<WarningAmberIcon fontSize="small" />} label="Atenção" />
                         <Typography variant="h6" fontWeight={900} sx={{ mt: 0.5, mb: 1.5 }}>

@@ -1,6 +1,6 @@
 import moment from "moment";
 import React from "react";
-import { Modal, Portal } from "react-native-paper";
+import { Modal, Portal, useTheme } from "react-native-paper";
 import theme from "@/src/styles/theme.json";
 import { ScrollView } from "react-native-gesture-handler";
 import { Dimensions } from "react-native";
@@ -33,7 +33,9 @@ export default function ModalEspci({
 }: ModalEspciProps) {
   const dispatch = useDispatch();
   const colaboradoresIdsDisponiveis = [] as any;
-
+  const { colors, dark } = useTheme();
+  const isDarkMode = dark;
+  const dynamicTextColor = isDarkMode ? "light" : "dark";
   for (let colaboradorId of Object.keys(colaboradoresDia)) {
     let horarios = colaboradoresDia[colaboradorId]?.flat(2);
     if (horarios?.includes(horaSelecionada)) {
@@ -45,9 +47,9 @@ export default function ModalEspci({
     colaboradoresIdsDisponiveis?.includes(c._id)
   );
 
-  const servico = servicos?.find((s: any) => s._id === agendamento?.serviId);
+  const servico = servicos?.find((s: any) => s._id === agendamento?.servicoId);
 
-  const containerStyle = { backgroundColor: "white", padding: 20, margin: 20 };
+  const containerStyle = { backgroundColor: colors.background, padding: 20, margin: 20 };
 
   const getImage = (foto: any) => {
     if (!foto) return Logo;
@@ -84,10 +86,10 @@ export default function ModalEspci({
         >
           <ScrollView>
             <Box hasPadding direction="column" removePaddingTop>
-              <Text bold color="dark" spacing="0 10px 5px">
+              <Text bold color={dynamicTextColor} spacing="0 10px 5px">
                 {servico?.titulo}
               </Text>
-              <Text small spacing="0 10px 0">
+              <Text small color={dynamicTextColor} spacing="0 10px 0">
                 Disponivéis em{" "}
                 {`${moment(agendamento?.data).format("DD/MM/YYYY [às] HH:mm")}`}
               </Text>
@@ -130,7 +132,7 @@ export default function ModalEspci({
                     </Box>
 
 
-                    <Text small bold>
+                    <Text small bold color={dynamicTextColor}>
                       {colaborador.nome}
                     </Text>
                   </Touchable>

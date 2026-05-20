@@ -40,13 +40,16 @@ import { useNotification } from "@/src/context/NotificationContext";
 import { registerForPushNotificationsAsync } from "@/src/utils/registerForPushNotificationsAsync";
 import { createEvent } from "@/src/hook/expoCalendar";
 import moment from "moment";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
+const NOTIFICATION_BADGE_KEY = "@notification_badge";
 const MaterialCommunityIcons = MaterialCommunityIconsRaw as any;
 const MENU_WIDTH = 250;
 
 export default function Home() {
   const dispatch = useDispatch();
   const { dark } = useTheme();
+  const isDarkMode = dark;
   const { form, salao, tipoServicos, agendamento, servicos } = useSelector(
     (state: any) => state.salao
   );
@@ -63,6 +66,30 @@ export default function Home() {
   const clienteId = cliente?.clienteId ?? cliente?._id;
   const clerkEmail = user?.primaryEmailAddress?.emailAddress;
   const scrollY = useRef(new Animated.Value(0)).current;
+  const [hasUnreadNotification, setHasUnreadNotification] = useState(false);
+
+  useEffect(() => {
+    AsyncStorage.getItem(NOTIFICATION_BADGE_KEY).then((value) => {
+      setHasUnreadNotification(value === "true");
+    });
+  }, []);
+
+  useEffect(() => {
+    if (!notification) return;
+
+    setHasUnreadNotification(true);
+    AsyncStorage.setItem(NOTIFICATION_BADGE_KEY, "true");
+  }, [notification]);
+
+  const clearAvatarBadge = async () => {
+    setHasUnreadNotification(false);
+    await AsyncStorage.setItem(NOTIFICATION_BADGE_KEY, "false");
+  };
+
+  const openMenu = async () => {
+    await clearAvatarBadge();
+    setMenuVisible(true);
+  };
 
   const imageOpacity = scrollY.interpolate({
     inputRange: [0, 220],
@@ -267,18 +294,40 @@ export default function Home() {
                 align="center"
                 justify="center"
                 rounded="20px"
-                border={`2px solid ${theme.colors.primary}`}
-                onPress={() => setMenuVisible(true)}
+                onPress={openMenu}
               >
-                <Cover
-                  image={{ uri: user?.imageUrl }}
-                  customWidth="50px"
-                  customHeight="50px"
-                  circle
+                <Box
+                  width={58}
+                  height="58px"
+                  radius={27}
+                  align="center"
+                  justify="center"
                   border={`4px solid ${theme.colors.primary}`}
-                  spacing="0 0 6px"
-                  resizeMode="cover"
-                />
+                >
+                  <Cover
+                    image={{ uri: user?.imageUrl }}
+                    customWidth="50px"
+                    customHeight="50px"
+                    circle
+                    resizeMode="cover"
+                  />
+
+                  {hasUnreadNotification && (
+                    <View
+                      style={{
+                        position: "absolute",
+                        top: 2,
+                        right: 2,
+                        width: 12,
+                        height: 12,
+                        borderRadius: 6,
+                        backgroundColor: "#d32f2f",
+                        borderWidth: 2,
+                        borderColor: "#fff",
+                      }}
+                    />
+                  )}
+                </Box>
               </Touchable>
             </Box>
 
@@ -421,7 +470,7 @@ export default function Home() {
           >
             <View
               style={{
-                backgroundColor: "white",
+                backgroundColor: isDarkMode ? "black" : "white",
                 padding: 32,
                 borderRadius: 16,
                 width: "85%",
@@ -429,10 +478,10 @@ export default function Home() {
                 elevation: 4,
               }}
             >
-              <Text bold color="primary" align="center" hasPadding style={{ fontSize: 20 }}>
+              <Text bold color={isDarkMode ? "primary-light" : "primary"} align="center" hasPadding style={{ fontSize: 20 }}>
                 Agendamento realizado com sucesso!
               </Text>
-              <Text align="center" spacing="0 0 18px" style={{ color: "#666" }}>
+              <Text align="center" spacing="0 0 18px" style={{ color: isDarkMode ? "white" : "#666" }}>
                 Seu agendamento foi confirmado. Você receberá uma notificação de lembrete
                 próximo ao horário.
               </Text>
@@ -487,7 +536,7 @@ export default function Home() {
               >
                 <Text
                   align="center"
-                  color="primary"
+                  color={isDarkMode ? "primary-light" : "primary"}
                   style={{ marginTop: 8, textDecorationLine: "underline" }}
                 >
                   Fechar
@@ -499,12 +548,12 @@ export default function Home() {
       </Portal>
       <Modal visible={showConfirmModal} transparent animationType="fade">
         <View style={{ flex: 1, backgroundColor: "rgba(0,0,0,0.4)", justifyContent: "center", alignItems: "center" }}>
-          <View style={{ backgroundColor: "white", padding: 24, borderRadius: 16, width: "85%" }}>
-            <Text bold color="primary" align="center" style={{ fontSize: 20 }}>
+          <View style={{ backgroundColor: isDarkMode ? "black" : "white", padding: 24, borderRadius: 16, width: "85%" }}>
+            <Text bold color={isDarkMode ? "primary-light" : "primary"} align="center" style={{ fontSize: 20 }}>
               Confirme seu agendamento
             </Text>
 
-            <Text align="center" style={{ color: "#666", marginTop: 8 }}>
+            <Text align="center" style={{ color: isDarkMode ? "white" : "#666", marginTop: 8 }}>
               Toque em confirmar para validar sua presença.
             </Text>
 
@@ -529,7 +578,7 @@ export default function Home() {
             </TouchableWithoutFeedback>
 
             <TouchableWithoutFeedback onPress={() => setShowConfirmModal(false)}>
-              <Text align="center" color="primary" style={{ marginTop: 10, textDecorationLine: "underline" }}>
+              <Text align="center" color={isDarkMode ? "primary-light" : "primary"} style={{ marginTop: 10, textDecorationLine: "underline" }}>
                 Fechar
               </Text>
             </TouchableWithoutFeedback>

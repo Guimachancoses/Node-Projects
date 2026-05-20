@@ -82,6 +82,17 @@ const Horarios = () => {
   const [currentDate, setCurrentDate] = useState(new Date());
   const [currentView, setCurrentView] = useState(isMobile ? "day" : "week");
 
+  const eventColors = [
+    "#2e7d32",
+    "#1565c0",
+    "#7b1fa2",
+    "#ef6c00",
+    "#00838f",
+    "#c62828",
+    "#5d4037",
+    "#455a64",
+  ];
+
   useEffect(() => {
     dispatch(allHorarios());
     dispatch(allServicos());
@@ -127,48 +138,69 @@ const Horarios = () => {
   };
 
   const formatEventos = useMemo(() => {
-    return (horarios || [])
+    const eventos = (horarios || [])
       .map((h) =>
         (h?.dias || []).map((dia) => {
           const inicio = moment(h?.inicio);
           const fim = moment(h?.fim);
 
-          const start = moment(currentDate)
+          const startMoment = moment(currentDate)
             .startOf("week")
             .add(dia, "days")
             .hour(inicio.hour())
             .minute(inicio.minute())
-            .second(0)
-            .toDate();
+            .second(0);
 
-          const end = moment(currentDate)
+          const endMoment = moment(currentDate)
             .startOf("week")
             .add(dia, "days")
             .hour(fim.hour())
             .minute(fim.minute())
-            .second(0)
-            .toDate();
+            .second(0);
 
           return {
             resource: h,
             title: `${h?.especialidades?.length || 0} espec. • ${h?.colaboradores?.length || 0} colab.`,
-            start,
-            end,
-            status: "confirmado",
+            start: startMoment.toDate(),
+            end: endMoment.toDate(),
+            dia,
+            timeKey: `${dia}-${startMoment.format("HH:mm")}-${endMoment.format("HH:mm")}`,
           };
         })
       )
       .flat();
+
+    const groupedByTime = eventos.reduce((acc, event) => {
+      if (!acc[event.timeKey]) acc[event.timeKey] = [];
+      acc[event.timeKey].push(event);
+      return acc;
+    }, {});
+
+    return eventos.map((event) => {
+      const group = groupedByTime[event.timeKey] || [];
+      const overlapIndex = group.findIndex((item) => item.resource?._id === event.resource?._id);
+
+      return {
+        ...event,
+        overlapIndex: overlapIndex >= 0 ? overlapIndex : 0,
+        overlapTotal: group.length,
+        color: eventColors[overlapIndex % eventColors.length],
+      };
+    });
   }, [horarios, currentDate]);
 
   const eventStyleGetter = (event) => ({
     style: {
-      backgroundColor: event?.status === "confirmado" ? "#2e7d32" : "#ef6c00",
+      backgroundColor: event?.color || "#2e7d32",
       color: "#fff",
       borderRadius: "8px",
       border: "none",
       padding: "4px 6px",
       fontSize: isMobile ? "0.72rem" : "0.82rem",
+      boxShadow:
+        event?.overlapTotal > 1
+          ? `inset 4px 0 0 rgba(255,255,255,0.45)`
+          : "none",
     },
   });
 
