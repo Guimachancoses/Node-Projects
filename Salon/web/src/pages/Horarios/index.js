@@ -67,6 +67,17 @@ function SlideTransition(props) {
   return <Slide {...props} direction="left" />;
 }
 
+const eventColors = [
+  "#2e7d32",
+  "#1565c0",
+  "#7b1fa2",
+  "#ef6c00",
+  "#00838f",
+  "#c62828",
+  "#5d4037",
+  "#455a64",
+];
+
 const Horarios = () => {
   const dispatch = useDispatch();
   const theme = useTheme();
@@ -81,17 +92,6 @@ const Horarios = () => {
   const [loading, setLoading] = useState(false);
   const [currentDate, setCurrentDate] = useState(new Date());
   const [currentView, setCurrentView] = useState(isMobile ? "day" : "week");
-
-  const eventColors = [
-    "#2e7d32",
-    "#1565c0",
-    "#7b1fa2",
-    "#ef6c00",
-    "#00838f",
-    "#c62828",
-    "#5d4037",
-    "#455a64",
-  ];
 
   useEffect(() => {
     dispatch(allHorarios());
