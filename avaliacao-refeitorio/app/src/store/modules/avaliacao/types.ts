@@ -9,6 +9,8 @@ export interface AvaliacaoPayload {
   rating: RatingOption;
   reasons: string[];
   comment: string;
+  nome?: string;
+  area?: string;
 }
 
 export interface Avaliacao {
@@ -17,6 +19,8 @@ export interface Avaliacao {
   rating: RatingOption;
   reasons: string[];
   comment: string;
+  nome?: string;
+  area?: string;
   createdAt?: string;
   updatedAt?: string;
 }

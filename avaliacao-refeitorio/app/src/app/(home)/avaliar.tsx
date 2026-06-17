@@ -1,6 +1,7 @@
 ﻿import { Image } from "expo-image";
 import { useEffect, useState } from "react";
 import {
+  Modal,
   Pressable,
   ScrollView,
   Text,
@@ -18,6 +19,7 @@ import {
   createAvaliacaoRequest,
   resetAvaliacaoStatus,
 } from "../../store/modules/avaliacao/action";
+import { AvaliacaoPayload } from "../../store/modules/avaliacao/types";
 import { RatingOption as RatingValue } from "../../store/modules/avaliacao/types";
 import { RootState } from "../../store/modules/rootReducer";
 
@@ -61,6 +63,33 @@ const negativeReasons = [
   "Opções repetidas",
 ];
 
+const areaOptions = [
+  "Gerenciamento de risco",
+  "SSMA",
+  "Torre de Controle",
+  "CTE",
+  "Documentação",
+  "Operações",
+  "Tesouraria",
+  "Recursos Humanos",
+  "Jornada",
+  "Almoxarifado",
+  "Compras",
+  "Manutenção",
+  "Borracharia",
+  "Contabilidade",
+  "Controladoria",
+  "Financeiro",
+  "Contas a Pagar",
+  "Motorista",
+  "G.T.I.",
+  "Facilites",
+  "Jurídico",
+  "Diretoria",
+  "Terceiros",
+  "Outros",
+].sort((a, b) => a.localeCompare(b, "pt-BR"));
+
 export default function AvaliarScreen() {
   const dispatch = useDispatch();
   const { loading, error } = useSelector((state: RootState) => state.avaliacao);
@@ -68,6 +97,11 @@ export default function AvaliarScreen() {
   const [selected, setSelected] = useState<RatingValue | null>(null);
   const [selectedReasons, setSelectedReasons] = useState<string[]>([]);
   const [comment, setComment] = useState("");
+  const [isIdentifyModalVisible, setIsIdentifyModalVisible] = useState(false);
+  const [wantsIdentify, setWantsIdentify] = useState(false);
+  const [identificationName, setIdentificationName] = useState("");
+  const [selectedArea, setSelectedArea] = useState("");
+  const [isAreaListOpen, setIsAreaListOpen] = useState(false);
 
   const { width } = useWindowDimensions();
   const layout = getResponsiveLayout(width);
@@ -89,11 +123,30 @@ export default function AvaliarScreen() {
   function handleSubmit() {
     if (!selected) return;
 
-    dispatch(createAvaliacaoRequest({
+    setWantsIdentify(false);
+    setIsAreaListOpen(false);
+    setIsIdentifyModalVisible(true);
+  }
+
+  function sendAvaliacao(includeIdentification: boolean) {
+    if (!selected) return;
+
+    const payload: AvaliacaoPayload = {
       rating: selected,
       reasons: selectedReasons,
       comment: comment.trim(),
-    }));
+    };
+
+    const nome = identificationName.trim();
+
+    if (includeIdentification && nome && selectedArea) {
+      payload.nome = nome;
+      payload.area = selectedArea;
+    }
+
+    setIsIdentifyModalVisible(false);
+    setIsAreaListOpen(false);
+    dispatch(createAvaliacaoRequest(payload));
   }
 
   return (
@@ -238,6 +291,186 @@ export default function AvaliarScreen() {
         onPress={handleSubmit}
         disabled={!selected || loading}
       />
+
+      <Modal
+        animationType="fade"
+        transparent
+        visible={isIdentifyModalVisible}
+        onRequestClose={() => setIsIdentifyModalVisible(false)}
+      >
+        <View
+          style={{
+            flex: 1,
+            justifyContent: "center",
+            backgroundColor: "rgba(0, 0, 0, 0.45)",
+            padding: 20,
+          }}
+        >
+          <View
+            style={{
+              backgroundColor: theme.colors.surface,
+              borderRadius: theme.radius.lg,
+              borderWidth: 1,
+              borderColor: theme.colors.border,
+              padding: 20,
+              gap: 16,
+            }}
+          >
+            <View style={{ gap: 6 }}>
+              <Text
+                style={{
+                  color: theme.colors.text,
+                  fontSize: 22,
+                  fontWeight: "900",
+                }}
+              >
+                Deseja se identificar?
+              </Text>
+
+              <Text
+                style={{
+                  color: theme.colors.muted,
+                  fontSize: 15,
+                  lineHeight: 21,
+                }}
+              >
+                A identificação é opcional. Se não preencher nome e área, a avaliação será enviada como anônima.
+              </Text>
+            </View>
+
+            <View style={{ flexDirection: "row", gap: 10 }}>
+              <Pressable
+                disabled={loading}
+                onPress={() => sendAvaliacao(false)}
+                style={({ pressed }) => ({
+                  flex: 1,
+                  alignItems: "center",
+                  borderRadius: theme.radius.md,
+                  borderWidth: 1,
+                  borderColor: theme.colors.border,
+                  paddingVertical: 13,
+                  backgroundColor: "#FFFFFF",
+                  opacity: pressed ? 0.86 : 1,
+                })}
+              >
+                <Text style={{ color: theme.colors.text, fontSize: 16, fontWeight: "800" }}>
+                  Não
+                </Text>
+              </Pressable>
+
+              <Pressable
+                disabled={loading}
+                onPress={() => setWantsIdentify(true)}
+                style={({ pressed }) => ({
+                  flex: 1,
+                  alignItems: "center",
+                  borderRadius: theme.radius.md,
+                  paddingVertical: 13,
+                  backgroundColor: theme.colors.primary,
+                  opacity: pressed ? 0.86 : 1,
+                })}
+              >
+                <Text style={{ color: "#FFFFFF", fontSize: 16, fontWeight: "800" }}>
+                  Sim
+                </Text>
+              </Pressable>
+            </View>
+
+            {wantsIdentify && (
+              <View style={{ gap: 12 }}>
+                <TextInput
+                  value={identificationName}
+                  onChangeText={setIdentificationName}
+                  placeholder="Nome"
+                  placeholderTextColor={theme.colors.muted}
+                  style={{
+                    backgroundColor: "#FFFFFF",
+                    borderRadius: theme.radius.md,
+                    borderWidth: 1,
+                    borderColor: theme.colors.border,
+                    color: theme.colors.text,
+                    fontSize: 16,
+                    paddingHorizontal: 14,
+                    paddingVertical: 13,
+                  }}
+                />
+
+                <View style={{ gap: 8 }}>
+                  <Pressable
+                    onPress={() => setIsAreaListOpen((current) => !current)}
+                    style={{
+                      backgroundColor: "#FFFFFF",
+                      borderRadius: theme.radius.md,
+                      borderWidth: 1,
+                      borderColor: theme.colors.border,
+                      paddingHorizontal: 14,
+                      paddingVertical: 13,
+                    }}
+                  >
+                    <Text
+                      style={{
+                        color: selectedArea ? theme.colors.text : theme.colors.muted,
+                        fontSize: 16,
+                        fontWeight: selectedArea ? "700" : "500",
+                      }}
+                    >
+                      {selectedArea || "Selecione a área"}
+                    </Text>
+                  </Pressable>
+
+                  {isAreaListOpen && (
+                    <ScrollView
+                      style={{
+                        maxHeight: 220,
+                        borderRadius: theme.radius.md,
+                        borderWidth: 1,
+                        borderColor: theme.colors.border,
+                        backgroundColor: "#FFFFFF",
+                      }}
+                    >
+                      {areaOptions.map((area) => (
+                        <Pressable
+                          key={area}
+                          onPress={() => {
+                            setSelectedArea(area);
+                            setIsAreaListOpen(false);
+                          }}
+                          style={({ pressed }) => ({
+                            paddingHorizontal: 14,
+                            paddingVertical: 12,
+                            backgroundColor:
+                              selectedArea === area ? "#E7F0EA" : "#FFFFFF",
+                            opacity: pressed ? 0.86 : 1,
+                          })}
+                        >
+                          <Text
+                            style={{
+                              color:
+                                selectedArea === area
+                                  ? theme.colors.primary
+                                  : theme.colors.text,
+                              fontSize: 15,
+                              fontWeight: selectedArea === area ? "800" : "600",
+                            }}
+                          >
+                            {area}
+                          </Text>
+                        </Pressable>
+                      ))}
+                    </ScrollView>
+                  )}
+                </View>
+
+                <PrimaryButton
+                  title={loading ? "Enviando..." : "Enviar avaliação"}
+                  onPress={() => sendAvaliacao(true)}
+                  disabled={loading}
+                />
+              </View>
+            )}
+          </View>
+        </View>
+      </Modal>
     </ScrollView>
   );
 }
