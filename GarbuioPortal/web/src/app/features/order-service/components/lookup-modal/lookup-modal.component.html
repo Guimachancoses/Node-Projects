@@ -1,0 +1,56 @@
+<po-modal #modal [p-title]="title" [p-secondary-action]="closeAction" (p-close)="closed.emit()">
+  <div class="lookup-search">
+    <po-input
+      name="lookupQuery"
+      p-label="Pesquisar por código ou descrição"
+      p-placeholder="Digite o termo de pesquisa"
+      [(ngModel)]="query"
+      (keyup.enter)="runSearch()"
+    />
+    <po-button
+      p-icon="an an-magnifying-glass"
+      p-kind="primary"
+      p-label="Pesquisar"
+      [p-disabled]="loading"
+      [p-loading]="loading"
+      (p-click)="runSearch()"
+    />
+  </div>
+
+  <po-table
+    [p-actions]="tableActions"
+    [p-columns]="columns"
+    [p-items]="items"
+    [p-loading]="loading"
+    p-no-data="Nenhum registro encontrado"
+    [p-striped]="true"
+  />
+
+  <div class="lookup-pagination" aria-label="Paginação da pesquisa">
+    <po-select
+      class="lookup-page-size"
+      name="lookupPageSize"
+      p-label="Registros por página"
+      [p-options]="pageSizeOptions"
+      [ngModel]="pageSize"
+      [p-disabled]="loading"
+      (ngModelChange)="changePageSize($event)"
+    />
+
+    <div class="lookup-navigation">
+      <span class="lookup-page-indicator">Página {{ page }}</span>
+      <po-button
+        p-icon="an an-caret-left"
+        p-label="Anterior"
+        [p-disabled]="page <= 1 || loading"
+        (p-click)="previousPage()"
+      />
+      <po-button
+        p-icon="an an-caret-right"
+        p-label="Próxima"
+        [p-disabled]="!hasNext || loading"
+        (p-click)="nextPage()"
+      />
+    </div>
+  </div>
+</po-modal>

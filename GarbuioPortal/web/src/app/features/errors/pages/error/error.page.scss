@@ -1,0 +1,52 @@
+:host {
+  display: block;
+  min-height: 100vh;
+}
+
+.error-page {
+  display: grid;
+  min-height: 100vh;
+  padding: 1rem;
+  place-items: center;
+  background: var(--color-neutral-light-05);
+}
+
+.error-card {
+  width: min(100%, 36rem);
+  padding: clamp(1.5rem, 5vw, 3rem);
+  text-align: center;
+  border: 1px solid var(--color-neutral-light-20);
+  border-radius: 0.5rem;
+  background: var(--color-neutral-light-00);
+  box-shadow: 0 0.25rem 1rem rgb(0 0 0 / 10%);
+}
+
+.error-icon {
+  display: block;
+  margin-bottom: 1rem;
+  color: var(--color-feedback-negative-base);
+  font-size: 3rem;
+}
+
+.error-code {
+  margin: 0;
+  color: var(--color-brand-01-base);
+  font-weight: 700;
+}
+
+h1 {
+  margin: 0.5rem 0;
+  color: var(--color-neutral-dark-90);
+}
+
+.error-message {
+  margin: 0 0 1.5rem;
+  color: var(--color-neutral-dark-70);
+}
+
+.error-actions {
+  display: flex;
+  justify-content: center;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}

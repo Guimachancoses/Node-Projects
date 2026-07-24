@@ -1,0 +1,15 @@
+export const AuthActionTypes = {
+  RESTORE_REQUESTED: '[Auth] Restore requested',
+  RESTORE_SUCCEEDED: '[Auth] Restore succeeded',
+  RESTORE_FAILED: '[Auth] Restore failed',
+  LOGIN_REQUESTED: '[Auth] Login requested',
+  LOGIN_SUCCEEDED: '[Auth] Login succeeded',
+  LOGIN_FAILED: '[Auth] Login failed',
+  CONTEXT_REQUESTED: '[Auth] Context requested',
+  CONTEXT_SUCCEEDED: '[Auth] Context succeeded',
+  CONTEXT_FAILED: '[Auth] Context failed',
+  LOGOUT_REQUESTED: '[Auth] Logout requested',
+  LOGOUT_SUCCEEDED: '[Auth] Logout succeeded',
+  LOGOUT_FAILED: '[Auth] Logout failed',
+  SESSION_CLEARED: '[Auth] Session cleared',
+} as const;

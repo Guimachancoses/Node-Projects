@@ -1,0 +1,79 @@
+<po-page-default p-title="Ordem de serviço" [p-actions]="pageActions">
+  @if (busy$ | async) {
+    <po-loading-overlay [p-screen-lock]="true" p-text="Processando ordem de serviço" />
+  }
+
+  <po-widget p-title="Dados da ordem">
+    <app-order-form
+      [data]="editor$ | async"
+      [loading]="(saveRequest$ | async)?.status === 'loading'"
+      (save)="saveOrderRequest($event)"
+      (openLookup)="openOrderLookup($event)"
+    />
+  </po-widget>
+
+  <po-widget class="supplies-widget" p-title="Insumos">
+    <div class="supply-actions">
+      <po-button
+        p-icon="an an-plus"
+        p-kind="primary"
+        p-label="Adicionar"
+        [p-disabled]="
+          (busy$ | async) === true ||
+          !currentEditor ||
+          currentEditor.mode !== 'update' ||
+          !currentEditor.value.branch ||
+          !currentEditor.value.order
+        "
+        (p-click)="addSupply()"
+      />
+    </div>
+
+    <po-table
+      [p-actions]="supplyTableActions"
+      [p-columns]="supplyColumns"
+      [p-items]="supplyItems"
+      p-no-data="Nenhum insumo informado"
+      [p-striped]="true"
+    />
+  </po-widget>
+</po-page-default>
+
+<po-modal
+  #supplyModal
+  p-title="Insumo da ordem de serviço"
+  [p-primary-action]="supplySaveAction"
+  [p-secondary-action]="supplyCloseAction"
+  (p-close)="closeSupplyModal()"
+>
+  <app-supply-form
+    [data]="supplyEditor$ | async"
+    [loading]="(saveSupplyRequest$ | async)?.status === 'loading'"
+    (save)="saveSupplyRequest($event)"
+    (openLookup)="openSupplyLookup($event)"
+  />
+</po-modal>
+
+<po-modal
+  #deleteModal
+  p-title="Excluir insumo"
+  [p-primary-action]="deletePrimaryAction"
+  [p-secondary-action]="deleteSecondaryAction"
+>
+  <p>
+    Confirma a exclusão do insumo
+    <strong>{{ selectedSupply?.sequence }}</strong
+    >? Esta operação não pode ser desfeita.
+  </p>
+</po-modal>
+
+<app-lookup-modal
+  [results]="(lookupItems$ | async) ?? []"
+  [loading]="(lookupRequest$ | async)?.status === 'loading'"
+  [page]="(lookupPagination$ | async)?.page ?? 1"
+  [pageSize]="(lookupPagination$ | async)?.pageSize ?? 10"
+  [hasNext]="(lookupPagination$ | async)?.hasNext ?? false"
+  (search)="searchLookup($event)"
+  (selected)="selectLookup($event)"
+  (closed)="closeLookup()"
+/>

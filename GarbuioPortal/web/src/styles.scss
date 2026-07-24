@@ -1,0 +1,54 @@
+html,
+body {
+  margin: 0;
+  min-height: 100%;
+}
+
+body {
+  background: var(--color-neutral-light-05);
+}
+
+button,
+input,
+select,
+textarea {
+  font: inherit;
+}
+
+po-menu .po-menu-header-container-logo {
+  height: 4rem;
+  min-height: 4rem;
+  overflow: hidden;
+}
+
+po-menu .po-menu-logo,
+po-menu .po-menu-short-logo {
+  display: block;
+  object-fit: contain;
+  transition:
+    width 180ms ease,
+    height 180ms ease,
+    opacity 120ms ease;
+}
+
+po-menu .po-menu-logo {
+  width: 10rem;
+  height: 3rem;
+}
+
+po-menu .po-menu-short-logo {
+  width: 2.5rem;
+  height: 2.5rem;
+  max-width: 2.5rem;
+  max-height: 2.5rem;
+  margin-inline: auto;
+}
+
+html[data-theme='dark'] {
+  color-scheme: dark;
+}
+
+html[data-theme='dark'] po-menu .po-menu-logo {
+  filter: brightness(0) saturate(100%) invert(82%) sepia(21%) saturate(865%)
+    hue-rotate(165deg) brightness(98%) contrast(96%);
+}

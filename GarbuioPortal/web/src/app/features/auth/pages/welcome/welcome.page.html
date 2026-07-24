@@ -1,0 +1,50 @@
+<po-page-default p-title="Bem-vindo ao Garbuio Portal">
+  <section class="welcome-shell" aria-label="Seleção do contexto de trabalho">
+    <img class="welcome-logo" src="totvs.svg" alt="TOTVS" />
+
+    <po-widget p-title="Contexto de trabalho">
+      <p class="welcome-description">
+        Selecione a data-base e a filial que serão usadas no primeiro carregamento das ordens.
+      </p>
+
+      <form class="context-form" [formGroup]="form">
+        <po-input formControlName="companyGroup" name="companyGroup" p-label="Grupo de empresa" />
+
+        <po-datepicker formControlName="baseDate" name="baseDate" p-label="Data-base" p-required />
+
+        <po-select
+          formControlName="branch"
+          name="branch"
+          p-label="Filial"
+          p-required
+          [p-options]="(branches$ | async) ?? []"
+        />
+
+        <po-radio-group
+          formControlName="theme"
+          name="theme"
+          p-label="Aparência"
+          [p-options]="themeOptions"
+        />
+      </form>
+
+      @if (contextRequest$ | async; as request) {
+        <div class="context-actions">
+          <po-button
+            p-label="Sair"
+            p-kind="tertiary"
+            [p-disabled]="request.status === 'loading'"
+            (p-click)="logout()"
+          />
+          <po-button
+            p-label="Continuar"
+            p-icon="an an-arrow-right"
+            [p-loading]="request.status === 'loading'"
+            [p-disabled]="form.invalid || request.status === 'loading'"
+            (p-click)="continue()"
+          />
+        </div>
+      }
+    </po-widget>
+  </section>
+</po-page-default>

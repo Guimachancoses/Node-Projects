@@ -1,0 +1,43 @@
+:host {
+  display: block;
+}
+
+.pagination-bar {
+  align-items: end;
+  display: flex;
+  gap: 1rem;
+  justify-content: space-between;
+  margin-top: 1rem;
+}
+
+.page-size {
+  width: 13rem;
+}
+
+.pagination-navigation {
+  align-items: center;
+  display: flex;
+  gap: 0.75rem;
+}
+
+.page-indicator {
+  color: var(--color-neutral-dark-70);
+  font-weight: 600;
+  min-width: 5rem;
+  text-align: center;
+}
+
+@media (max-width: 599px) {
+  .pagination-bar {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .page-size {
+    width: 100%;
+  }
+
+  .pagination-navigation {
+    justify-content: space-between;
+  }
+}

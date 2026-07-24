@@ -1,0 +1,74 @@
+<po-widget p-title="Filtros">
+  <form [formGroup]="form" (ngSubmit)="submit()">
+    <div class="po-row">
+      <po-datepicker
+        class="po-md-2 po-sm-6"
+        formControlName="startDate"
+        p-label="Data inicial"
+        p-required
+      />
+      <po-datepicker
+        class="po-md-2 po-sm-6"
+        formControlName="endDate"
+        p-label="Data final"
+        p-required
+      />
+      <po-select
+        class="po-md-2 po-sm-12"
+        formControlName="branch"
+        p-label="Filial"
+        p-required
+        [p-options]="branchOptions"
+      />
+      <po-select
+        class="po-md-2 po-sm-6"
+        formControlName="status"
+        p-label="Situação"
+        p-placeholder="Todas"
+        [p-options]="statusOptions"
+      />
+      <div class="po-md-2 po-sm-6 lookup-field">
+        <po-input formControlName="order" p-label="Ordem" p-placeholder="Número da ordem" />
+        <po-button
+          class="lookup-field__button"
+          p-icon="an an-magnifying-glass"
+          p-kind="tertiary"
+          p-aria-label="Pesquisar ordem na STJ"
+          p-tooltip="Pesquisar ordem"
+          [p-disabled]="loading"
+          (p-click)="openOrderLookup()"
+        />
+      </div>
+      <div class="po-md-2 po-sm-6 lookup-field">
+        <po-input formControlName="plate" p-label="Placa" p-placeholder="Código do bem" />
+        <po-button
+          class="lookup-field__button"
+          p-icon="an an-magnifying-glass"
+          p-kind="tertiary"
+          p-aria-label="Pesquisar placa ou bem"
+          p-tooltip="Pesquisar placa"
+          [p-disabled]="loading"
+          (p-click)="openPlateLookup()"
+        />
+      </div>
+    </div>
+
+    <div class="filter-actions">
+      <po-button
+        p-icon="an an-broom"
+        p-kind="tertiary"
+        p-label="Limpar filtros"
+        [p-disabled]="loading"
+        (p-click)="clear()"
+      />
+      <po-button
+        p-icon="an an-magnifying-glass"
+        p-kind="primary"
+        p-label="Pesquisar"
+        [p-disabled]="loading"
+        [p-loading]="loading"
+        (p-click)="submit()"
+      />
+    </div>
+  </form>
+</po-widget>

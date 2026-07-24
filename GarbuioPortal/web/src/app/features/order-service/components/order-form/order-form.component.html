@@ -1,0 +1,117 @@
+<form [formGroup]="form">
+  <div class="po-row">
+    <po-input class="po-md-2 po-sm-6" formControlName="order" p-label="Ordem" />
+    <po-select
+      class="po-md-2 po-sm-6"
+      formControlName="status"
+      p-label="Situação"
+      [p-options]="statusOptions"
+    />
+    <po-select
+      class="po-md-2 po-sm-6"
+      formControlName="type"
+      p-label="Tipo O. S."
+      p-required
+      [p-options]="typeOptions"
+    />
+    <po-select
+      class="po-md-4 po-sm-12"
+      formControlName="branch"
+      p-label="Filial"
+      p-required
+      [p-options]="branchOptions"
+    />
+    <po-datepicker
+      class="po-md-2 po-sm-6"
+      formControlName="originalDate"
+      p-label="Data original"
+      p-required
+    />
+    <po-select
+      class="po-md-6 po-sm-12"
+      formControlName="originBranch"
+      p-label="Filial origem"
+      [p-options]="originBranchOptions"
+    />
+    <po-datepicker
+      class="po-md-2 po-sm-6"
+      formControlName="startDate"
+      p-label="Data de início"
+      p-required
+    />
+    <po-input
+      class="po-md-2 po-sm-6"
+      formControlName="startTime"
+      p-label="Hora de início"
+      p-required
+      p-mask="99:99"
+      p-placeholder="hh:mm"
+    />
+    <po-select
+      class="po-md-2 po-sm-6"
+      formControlName="thirdParty"
+      p-label="Terceiro"
+      [p-options]="thirdPartyOptions"
+    />
+  </div>
+
+  <div class="po-row lookup-row">
+    <po-input
+      class="po-md-10 po-sm-9"
+      formControlName="assetDescription"
+      p-label="Bem"
+      [p-help]="form.controls.assetCode.value ? 'Código: ' + form.controls.assetCode.value : ''"
+    />
+    <po-button
+      class="po-md-2 po-sm-3 lookup-button"
+      p-icon="an an-magnifying-glass"
+      p-label="Pesquisar"
+      [p-disabled]="loading || isEditing"
+      (p-click)="requestLookup('asset')"
+    />
+  </div>
+
+  <div class="po-row lookup-row">
+    <po-input
+      class="po-md-10 po-sm-9"
+      formControlName="serviceDescription"
+      p-label="Serviço"
+      [p-help]="form.controls.serviceCode.value ? 'Código: ' + form.controls.serviceCode.value : ''"
+    />
+    <po-button
+      class="po-md-2 po-sm-3 lookup-button"
+      p-icon="an an-magnifying-glass"
+      p-label="Pesquisar"
+      [p-disabled]="loading || isEditing"
+      (p-click)="requestLookup('service')"
+    />
+  </div>
+
+  <div class="po-row lookup-row">
+    <po-input
+      class="po-md-10 po-sm-9"
+      formControlName="costCenterDescription"
+      p-label="Centro de custo"
+      [p-help]="
+        form.controls.costCenterCode.value ? 'Código: ' + form.controls.costCenterCode.value : ''
+      "
+    />
+    <po-button
+      class="po-md-2 po-sm-3 lookup-button"
+      p-icon="an an-magnifying-glass"
+      p-label="Pesquisar"
+      [p-disabled]="loading || isEditing"
+      (p-click)="requestLookup('costCenter')"
+    />
+  </div>
+
+  <div class="po-row">
+    <po-input
+      class="po-md-3 po-sm-6"
+      formControlName="inclusionUser"
+      p-label="Usuário de inclusão"
+    />
+    <po-input class="po-md-3 po-sm-6" formControlName="changeUser" p-label="Usuário de alteração" />
+    <po-textarea class="po-md-12" formControlName="notes" p-label="Observação" [p-rows]="5" />
+  </div>
+</form>
